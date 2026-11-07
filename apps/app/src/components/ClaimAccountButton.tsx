@@ -28,7 +28,7 @@ export function ClaimAccountButton({ email }: { email: string }) {
 
   if (status === "sent") {
     return (
-      <p className="text-sm text-success flex items-center gap-1.5">
+      <p className="text-sm font-medium text-success-fg flex items-center gap-1.5">
         <CheckCircle2 className="h-4 w-4" /> Check {email} for a link to set your password.
       </p>
     )
@@ -40,7 +40,7 @@ export function ClaimAccountButton({ email }: { email: string }) {
         {status === "sending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Claim this account"}
       </Button>
       {status === "error" && (
-        <p className="text-xs text-error mt-2">Could not send the claim link. Try again.</p>
+        <p className="text-xs font-medium text-error mt-2">Could not send the claim link. Try again.</p>
       )}
     </div>
   )

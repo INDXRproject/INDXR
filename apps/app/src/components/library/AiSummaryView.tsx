@@ -17,6 +17,7 @@ import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { NocookieYouTubePlayer, YouTubePlayerHandle } from "./NocookieYouTubePlayer";
 import { SummaryMarkdown } from "./SummaryMarkdown";
+import { noticeCompact } from "@indxr/shared/lib/notice";
 
 // Samenvatting-schema (ADR-090): overkoepelende samenvatting + secties met kop, begin/eind-
 // tijdstempel (seconden) en uitgewerkte notities. De bewerkte versie leeft APART in de kolom
@@ -165,7 +166,7 @@ export function AiSummaryView({
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8">
-              {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+              {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success-fg" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
               {copied ? "Copied!" : "Copy"}
             </Button>
             <DropdownMenu>
@@ -211,11 +212,11 @@ export function AiSummaryView({
 
         {/* Stale notice — de samenvatting dateert van vóór de laatste transcript-edit (ADR-085). */}
         {isStale && (
-          <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
+          <div role="status" className={`flex items-center gap-2 ${noticeCompact("warning")}`}>
             <span className="flex-1">This summary was written before you last edited the transcript.</span>
             <button
               onClick={() => (onRegenerate ? onRegenerate() : router.replace(`/dashboard/library/${id}?tab=original`))}
-              className="font-medium underline hover:no-underline shrink-0 cursor-pointer"
+              className="font-bold text-fg-strong underline hover:no-underline shrink-0 cursor-pointer"
             >
               Regenerate
             </button>

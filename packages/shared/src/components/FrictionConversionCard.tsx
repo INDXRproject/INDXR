@@ -47,7 +47,7 @@ export function FrictionConversionCard({
   return (
     <div className={`border-2 border-[var(--fg-strong)] bg-[var(--bg)] p-6 text-left space-y-4 ${className ?? ""}`}>
       <h3 className="text-lg font-bold text-[var(--fg-strong)]">{headline}</h3>
-      <p className="text-sm text-[var(--fg-subtle)] leading-relaxed">{body}</p>
+      <p className="text-sm text-[var(--fg)] leading-relaxed">{body}</p>
       <div className="flex flex-col sm:flex-row gap-3">
         {primaryCtaOnClick ? (
           <button type="button" onClick={primaryCtaOnClick} className={PRIMARY}>

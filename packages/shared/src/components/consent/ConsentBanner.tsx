@@ -31,7 +31,7 @@ export function ConsentBanner({
       aria-live="polite"
       className="fixed inset-x-0 bottom-0 z-[60] p-3 sm:p-5"
     >
-      <div className="relative mx-auto max-w-3xl rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface-elevated)] shadow-lg p-3 sm:p-5">
+      <div className="relative mx-auto max-w-3xl border-2 border-[var(--border-strong)] bg-[var(--bg)] shadow-[6px_6px_0_0_var(--fg-strong)] p-3 sm:p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="text-xs sm:text-sm text-[var(--fg-subtle)] leading-snug sm:leading-relaxed">
             <p>
@@ -51,14 +51,14 @@ export function ConsentBanner({
             <button
               type="button"
               onClick={onDecline}
-              className="h-9 sm:h-10 flex-1 sm:flex-none px-4 sm:px-5 rounded-[var(--radius)] border border-[var(--border-strong)] bg-[var(--surface)] text-sm font-medium text-[var(--fg)] hover:bg-[var(--surface-sunken)] transition-colors cursor-pointer"
+              className="h-9 sm:h-10 flex-1 sm:flex-none px-4 sm:px-5 border-2 border-[var(--border-strong)] bg-[var(--bg)] text-sm font-bold text-[var(--fg-strong)] hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
             >
               Decline
             </button>
             <button
               type="button"
               onClick={onAccept}
-              className="h-9 sm:h-10 flex-1 sm:flex-none px-4 sm:px-5 rounded-[var(--radius)] border border-[var(--accent)] bg-[var(--accent)] text-sm font-medium text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
+              className="h-9 sm:h-10 flex-1 sm:flex-none px-4 sm:px-5 border-2 border-[var(--border-strong)] bg-[var(--accent)] text-sm font-bold text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
             >
               Accept
             </button>

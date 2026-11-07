@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@indxr/shared/components/ui/button"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { cn } from "@indxr/shared/lib/utils"
 import {
   STORAGE_BLOCK_MB,
@@ -79,14 +80,11 @@ export function StorageMeterCard({
       </div>
 
       {over ? (
-        <div className="mt-4 border-2 border-error bg-error-subtle px-4 py-3">
-          <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full.</p>
-          <p className="text-sm text-fg-subtle mt-1">
-            New transcripts are paused until you free up space. Delete some transcripts from your{" "}
-            <a href="/dashboard/library" className="text-[var(--link)] hover:underline">library</a>
-            {atMax ? "" : ", or buy more room below"}. Your existing transcripts are safe.
-          </p>
-        </div>
+        <Notice tone="error" title="Your library is full." className="mt-4">
+          New transcripts are paused until you free up space. Delete some transcripts from your{" "}
+          <a href="/dashboard/library" className="font-bold text-link underline hover:no-underline">library</a>
+          {atMax ? "" : ", or buy more room below"}. Your existing transcripts are safe.
+        </Notice>
       ) : null}
 
       {atMax ? (
@@ -94,13 +92,13 @@ export function StorageMeterCard({
           <Button disabled variant="outline" size="sm" className="h-8">
             +{STORAGE_BLOCK_MB} MB
           </Button>
-          <span className="text-xs text-fg-muted">
+          <span className="text-xs font-medium text-fg">
             You&apos;ve reached the maximum library storage ({LIBRARY_STORAGE_MAX_MB} MB). Delete transcripts to free space.
           </span>
         </div>
       ) : confirming ? (
         <div className="mt-4 border-2 border-border-strong px-4 py-3">
-          <p className="text-sm text-fg">
+          <p className="text-sm text-fg-strong">
             Spend <strong>{STORAGE_BLOCK_COST_CREDITS} credits</strong> for a permanent{" "}
             <strong>+{STORAGE_BLOCK_MB} MB</strong> of library storage? Extra space never expires, like your credits.
           </p>
@@ -132,7 +130,7 @@ export function StorageMeterCard({
       )}
 
       {msg && (
-        <p className={cn("text-sm mt-3", msg.type === "error" ? "text-error" : "text-success")}>{msg.text}</p>
+        <Notice tone={msg.type} className="mt-3">{msg.text}</Notice>
       )}
     </div>
   )

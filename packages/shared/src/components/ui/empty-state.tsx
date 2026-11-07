@@ -1,5 +1,6 @@
 import { Button } from "./button"
 import { FileText } from "lucide-react"
+import { EMPTY_FRAME, EMPTY_ICON } from "../../lib/notice"
 
 interface EmptyStateProps {
   icon?: React.ComponentType<{ className?: string }>;
@@ -18,17 +19,17 @@ export function EmptyState({
   action
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-xl border border-dashed border-border bg-surface-sunken">
+    <div className={`flex flex-col items-center justify-center ${EMPTY_FRAME}`}>
 
-      <div className="mb-6 p-6 rounded-full bg-surface border border-border">
-        <Icon className="size-12 text-fg-muted" />
+      <div className={EMPTY_ICON}>
+        <Icon className="size-6 text-fg-strong" />
       </div>
 
-      <h3 className="text-2xl font-semibold mb-2 text-fg">
+      <h3 className="text-2xl font-bold tracking-[-0.02em] mb-2 text-fg-strong">
         {title}
       </h3>
 
-      <p className="text-fg-muted max-w-md mb-6">
+      <p className="text-fg max-w-md mb-6">
         {description}
       </p>
 

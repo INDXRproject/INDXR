@@ -55,7 +55,7 @@ export function InvoiceButton({ transactionId, initialUrl }: { transactionId: st
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
         {loading ? "Generating…" : "Request invoice"}
       </button>
-      {error && <span className="text-[11px] text-error">{error}</span>}
+      {error && <span role="alert" className="text-[11px] font-medium text-error">{error}</span>}
     </div>
   )
 }

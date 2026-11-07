@@ -102,14 +102,14 @@ export function MoveToCollectionMenu({
               </span>
               {allIn && <Check className="h-3.5 w-3.5 text-accent-fg shrink-0" />}
               {someIn && (
-                <span className="text-[10px] rounded-full bg-surface-sunken px-1.5 py-0.5 text-fg-muted shrink-0">
+                <span className="text-[10px] border border-border-strong px-1 py-px font-mono uppercase text-fg-strong shrink-0">
                   some
                 </span>
               )}
             </button>
           );
         })}
-        {filtered.length === 0 && <p className="px-2 py-1.5 text-xs text-fg-muted">No collections</p>}
+        {filtered.length === 0 && <p className="px-2 py-1.5 text-xs font-medium text-fg">No collections</p>}
       </div>
 
       <div className="border-t border-border-subtle pt-1">

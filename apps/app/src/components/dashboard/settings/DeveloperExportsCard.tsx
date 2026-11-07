@@ -63,7 +63,7 @@ export function DeveloperExportsCard({ initialChunkSize }: DeveloperExportsCardP
                     {option.label}
                     <span className="text-xs text-fg-muted font-normal">({option.sub})</span>
                     {savedValue === option.value && (
-                      <Check className="size-3.5 text-success" />
+                      <Check className="size-3.5 text-success-fg" />
                     )}
                   </div>
                   <div className="text-xs text-fg-muted">{option.tokens}</div>

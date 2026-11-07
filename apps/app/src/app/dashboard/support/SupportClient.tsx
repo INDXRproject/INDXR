@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle, AlertCircle, Clock, Paperclip, X } from "lucide-react"
+import { Paperclip, X } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { cn } from "@indxr/shared/lib/utils"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 
@@ -120,31 +121,19 @@ export function SupportClient({ transcripts }: Props) {
 
       {/* Result banners */}
       {result?.type === "success" && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
-          <CheckCircle className="h-5 w-5 text-success shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-fg">Ticket submitted</p>
-            <p className="text-sm text-fg-muted mt-0.5">
-              We&apos;ve received your message and will get back to you as soon as possible.
-            </p>
-          </div>
-        </div>
+        <Notice tone="success" title="Ticket submitted" className="mb-6">
+          We&apos;ve received your message and will get back to you as soon as possible.
+        </Notice>
       )}
 
       {result?.type === "rate-limit" && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
-          <Clock className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <p className="text-sm text-fg">
-            You can send at most 5 tickets per hour. Please try again later.
-          </p>
-        </div>
+        <Notice tone="warning" className="mb-6">
+          You can send at most 5 tickets per hour. Please try again later.
+        </Notice>
       )}
 
       {result?.type === "error" && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-error/30 bg-error/10 px-4 py-3">
-          <AlertCircle className="h-5 w-5 text-error shrink-0 mt-0.5" />
-          <p className="text-sm text-fg">{result.message}</p>
-        </div>
+        <Notice tone="error" className="mb-6">{result.message}</Notice>
       )}
 
       {/* Form */}
@@ -191,7 +180,7 @@ export function SupportClient({ transcripts }: Props) {
               className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
             {subject.length > 160 && (
-              <p className={cn("text-xs", subject.length >= 200 ? "text-error" : "text-fg-muted")}>
+              <p className={cn("text-xs", subject.length >= 200 ? "font-medium text-error" : "text-fg-muted")}>
                 {subject.length}/200
               </p>
             )}
@@ -212,7 +201,7 @@ export function SupportClient({ transcripts }: Props) {
               className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent/50 resize-y"
             />
             {body.length > 4000 && (
-              <p className={cn("text-xs", body.length >= 5000 ? "text-error" : "text-fg-muted")}>
+              <p className={cn("text-xs", body.length >= 5000 ? "font-medium text-error" : "text-fg-muted")}>
                 {body.length}/5000
               </p>
             )}
@@ -267,7 +256,7 @@ export function SupportClient({ transcripts }: Props) {
               </div>
             )}
             <p className="text-xs text-fg-muted">PNG, JPG, WebP or GIF · up to 5 MB.</p>
-            {fileError && <p className="text-xs text-error">{fileError}</p>}
+            {fileError && <p role="alert" className="text-xs font-medium text-error">{fileError}</p>}
           </div>
 
           <Button type="submit" disabled={submitting || !subject.trim() || !body.trim()}>

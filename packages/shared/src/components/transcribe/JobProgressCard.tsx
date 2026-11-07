@@ -48,11 +48,11 @@ export function JobProgressCard({
       className={cn("w-full", className)}
       header={
         <div className="flex items-start gap-2 min-w-0">
-          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--accent-fg)]" />
+          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-fg-strong" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--fg-strong)]">{STATUS_LABEL[status]}</p>
+            <p className="text-sm font-bold text-fg-strong">{STATUS_LABEL[status]}</p>
             {title?.trim() && (
-              <p className="mt-0.5 truncate text-xs text-[var(--fg-muted)]">{title}</p>
+              <p className="mt-0.5 truncate text-xs text-fg">{title}</p>
             )}
           </div>
         </div>

@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { PACKAGES, formatEur } from "@indxr/shared/lib/pricing"
 import { InvoiceButton } from "@/components/dashboard/billing/InvoiceButton"
+import { Receipt } from "lucide-react"
+import { EMPTY_FRAME, EMPTY_ICON } from "@indxr/shared/lib/notice"
 
 // Aankoophistorie uit credit_transactions. Een aankoop = een 'credit'-rij met een
 // stripe_session_id in metadata (door de Stripe-webhook weggeschreven). Bedragen/credits
@@ -35,7 +37,10 @@ function packageName(credits: number): string | null {
 export function PurchaseHistoryCard({ purchases, showInvoice = true, bare = false }: { purchases: PurchaseRow[]; showInvoice?: boolean; bare?: boolean }) {
   const body =
     purchases.length === 0 ? (
-      <p className="text-sm text-fg-muted py-4">No purchases yet.</p>
+      <div className={EMPTY_FRAME}>
+        <div className={EMPTY_ICON}><Receipt className="h-6 w-6 text-fg-strong" /></div>
+        <p className="font-bold text-fg-strong">No purchases yet.</p>
+      </div>
     ) : (
       <div className="divide-y divide-border-subtle">
         {purchases.map((p) => {
@@ -76,7 +81,10 @@ export function PurchaseHistoryCard({ purchases, showInvoice = true, bare = fals
       </CardHeader>
       <CardContent>
         {purchases.length === 0 ? (
-          <p className="text-sm text-fg-muted py-4">No purchases yet.</p>
+          <div className={EMPTY_FRAME}>
+        <div className={EMPTY_ICON}><Receipt className="h-6 w-6 text-fg-strong" /></div>
+        <p className="font-bold text-fg-strong">No purchases yet.</p>
+      </div>
         ) : (
           <div className="divide-y divide-border-subtle">
             {purchases.map((p) => {

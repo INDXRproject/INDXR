@@ -5,19 +5,20 @@ import { Button } from "@indxr/shared/components/ui/button"
 import { XCircle } from "lucide-react"
 import Link from 'next/link'
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+import { EMPTY_ICON, NOTICE_BAR } from "@indxr/shared/lib/notice"
 
 export default function BillingCancelPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-      <Card className="w-full max-w-md bg-surface border-border text-center">
+      <Card className={`w-full max-w-md rounded-none border-2 border-border-strong bg-bg text-center shadow-none ${NOTICE_BAR.warning}`}>
         <CardHeader>
-          <div className="mx-auto bg-error-subtle p-4 rounded-full mb-4">
-            <XCircle className="h-12 w-12 text-error" />
+          <div className={EMPTY_ICON}>
+            <XCircle className="h-7 w-7 text-warning-fg" />
           </div>
-          <CardTitle className="text-2xl text-fg">Payment Cancelled</CardTitle>
+          <CardTitle className="text-2xl font-bold text-fg-strong">Payment Cancelled</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-fg-muted">
+          <p className="text-fg">
             No worries! No charges were made to your card. You can try again whenever you're ready.
           </p>
           <div className="flex flex-col gap-3">

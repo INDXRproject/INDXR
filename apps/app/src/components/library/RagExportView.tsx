@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Download, Lock } from "lucide-react";
 import { Button } from "@indxr/shared/components/ui/button";
+import { EMPTY_FRAME, EMPTY_ICON } from "@indxr/shared/lib/notice";
 import { buildRagJson } from "@indxr/shared/utils/formatTranscript";
 import { trackExport } from "@indxr/shared/lib/measurement";
 import type { TranscriptItem } from "@indxr/shared/utils/formatTranscript";
@@ -57,10 +58,13 @@ export function RagExportView({
   // here too so the component can never serve as a free bypass.
   if (ragExports.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-4">
-        <Lock className="h-8 w-8 text-fg-muted mx-auto" />
-        <p className="text-fg-muted text-sm">
-          No RAG exports yet. Use the <strong>Export → RAG JSON</strong> option in the transcript
+      <div className={`max-w-2xl mx-auto my-8 ${EMPTY_FRAME}`}>
+        <div className={EMPTY_ICON}>
+          <Lock className="h-6 w-6 text-fg-strong" />
+        </div>
+        <p className="font-bold text-fg-strong">No RAG exports yet.</p>
+        <p className="mt-2 mb-6 text-fg text-sm">
+          Use the <strong>Export → RAG JSON</strong> option in the transcript
           viewer to create your first export.
         </p>
         <Link href={`/dashboard/library/${transcriptId}`}>

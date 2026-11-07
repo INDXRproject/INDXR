@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@indxr/shared/components/ui/button"
 import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { mapPasswordError } from "@indxr/shared/lib/passwordErrors"
@@ -85,9 +86,9 @@ export default function ResetPasswordPage() {
         <CardContent>
           {status === "invalid" ? (
             <div className="grid gap-4">
-              <p className="text-sm text-fg-muted">
+              <Notice tone="error">
                 Request a fresh reset link and try again.
-              </p>
+              </Notice>
               <Link href="/forgot-password">
                 <Button className="w-full">Request a new link</Button>
               </Link>
@@ -123,9 +124,9 @@ export default function ResetPasswordPage() {
                   />
                 </div>
                 {error && (
-                  <div className="text-error text-sm font-medium bg-error-subtle border border-error/20 rounded-lg p-3">
+                  <Notice tone="error">
                     {error}
-                  </div>
+                  </Notice>
                 )}
                 <Button type="submit" className="w-full" disabled={isSubmitting || status !== "ready"}>
                   {isSubmitting ? "Updating…" : "Update password"}

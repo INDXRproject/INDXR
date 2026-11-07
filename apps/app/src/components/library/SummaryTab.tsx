@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@indxr/shared/components/ui/button";
 import {
@@ -11,6 +11,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@indxr/shared/components/ui/dialog";
+import { Notice } from "@indxr/shared/components/ui/notice";
+import { EMPTY_FRAME, EMPTY_ICON } from "@indxr/shared/lib/notice";
 import { BalanceLine } from "@indxr/shared/components/transcribe/CostBreakdown";
 import { summaryCreditCost } from "@indxr/shared/lib/pricing";
 import { idempotencyKey, clearIdempotencyKey } from "@indxr/shared/lib/idempotency";
@@ -184,16 +186,16 @@ export function SummaryTab(props: SummaryTabProps) {
           <Sparkles className="h-6 w-6 text-amber-500" /> AI Summary
         </div>
         <div className="mt-8 flex flex-col items-center text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-          <p className="mt-4 text-base font-medium text-fg">
+          <Loader2 className="h-8 w-8 animate-spin text-fg-strong" />
+          <p className="mt-4 text-base font-bold text-fg-strong">
             {analyzing ? "Analyzing the transcript…" : `Writing your summary — chapter ${Math.min(done + 1, total)} of ${total}`}
           </p>
           {!analyzing && (
-            <div className="mt-3 h-2 w-full max-w-sm overflow-hidden rounded-full bg-surface-sunken">
-              <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+            <div className="mt-3 h-3 w-full max-w-sm overflow-hidden border-2 border-border-strong bg-bg">
+              <div className="h-full bg-accent transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
           )}
-          <p className="mt-4 max-w-md text-sm text-fg-muted">
+          <p className="mt-4 max-w-md text-sm text-fg">
             This runs on our servers — you can close this tab and come back; your summary will be waiting.
           </p>
         </div>
@@ -208,10 +210,7 @@ export function SummaryTab(props: SummaryTabProps) {
         <div className="flex items-center gap-2 text-xl font-bold text-fg">
           <Sparkles className="h-6 w-6 text-amber-500" /> AI Summary
         </div>
-        <div className="mt-6 flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          <span className="flex-1">{error}</span>
-        </div>
+        <Notice tone="error" className="mt-6">{error}</Notice>
         <div className="mt-4">
           <Button onClick={() => setShowConfirm(true)} className="gap-2">
             <Sparkles className="h-4 w-4" /> Try again
@@ -250,9 +249,12 @@ export function SummaryTab(props: SummaryTabProps) {
       <div className="flex items-center gap-2 text-xl font-bold text-fg">
         <Sparkles className="h-6 w-6 text-amber-500" /> AI Summary
       </div>
-      <div className="mt-8 flex flex-col items-center text-center">
-        <p className="text-base font-medium text-fg">No summary yet</p>
-        <p className="mt-1 max-w-md text-sm text-fg-muted">
+      <div className={`mt-8 flex flex-col items-center ${EMPTY_FRAME}`}>
+        <div className={EMPTY_ICON}>
+          <Sparkles className="h-6 w-6 text-fg-strong" />
+        </div>
+        <p className="text-base font-bold text-fg-strong">No summary yet</p>
+        <p className="mt-1 max-w-md text-sm text-fg">
           Turn this transcript into a chapter-by-chapter summary with clickable timestamps.
         </p>
         <Button onClick={() => setShowConfirm(true)} disabled={submitting} className="mt-5 gap-2">
@@ -277,8 +279,8 @@ export function SummaryTab(props: SummaryTabProps) {
                 : "A chapter-by-chapter summary with clickable timestamps."}
             </DialogDescription>
           </DialogHeader>
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
-            <div className="flex items-baseline justify-between border-b border-border px-4 py-3">
+          <div className="overflow-hidden border-2 border-border-strong bg-bg">
+            <div className="flex items-baseline justify-between border-b-2 border-border-strong px-4 py-3">
               <span className="font-medium">Total</span>
               <span className="text-[22px] font-semibold tabular-nums text-fg-strong">{summaryCost} credits</span>
             </div>

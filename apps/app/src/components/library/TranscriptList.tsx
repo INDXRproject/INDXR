@@ -7,8 +7,9 @@ import {
   ExternalLink,
   Loader2,
   Download,
-  AlertCircle,
   X,
+  Search,
+  FileText,
   CheckCheck,
   MoreHorizontal,
   Check,
@@ -51,7 +52,8 @@ import {
   AlertDialogTitle,
 } from "@indxr/shared/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@indxr/shared/components/ui/sheet";
-import { HexagonEmptyState } from "@indxr/shared/components/icons/HexagonEmptyState";
+import { Notice } from "@indxr/shared/components/ui/notice";
+import { EMPTY_FRAME, EMPTY_ICON, noticeCompact } from "@indxr/shared/lib/notice";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -462,11 +464,11 @@ export function TranscriptList({
   if (transcripts.length === 0) {
     if (narrowed) {
       return (
-        <div className="border-2 border-dashed border-border-strong py-20 text-center">
+        <div className={EMPTY_FRAME}>
           <div className="flex flex-col items-center">
-            <HexagonEmptyState className="mb-4" />
-            <h3 className="text-lg font-medium text-fg">No transcripts match</h3>
-            <p className="text-sm text-fg-muted mt-2 max-w-xs">Try a different search, or clear your filters.</p>
+            <div className={EMPTY_ICON}><Search className="h-6 w-6 text-fg-strong" /></div>
+            <h3 className="text-lg font-bold text-fg-strong">No transcripts match</h3>
+            <p className="text-sm text-fg mt-2 max-w-xs">Try a different search, or clear your filters.</p>
             <Button variant="outline" className="mt-6" onClick={onClearFilters}>
               Clear all filters
             </Button>
@@ -475,11 +477,11 @@ export function TranscriptList({
       );
     }
     return (
-      <div className="border-2 border-dashed border-border-strong py-20 text-center">
+      <div className={EMPTY_FRAME}>
         <div className="flex flex-col items-center">
-          <HexagonEmptyState className="mb-4" />
-          <h3 className="text-lg font-medium text-fg">Library is empty</h3>
-          <p className="text-sm text-fg-muted mt-2 max-w-xs">Transcripts you extract will appear here.</p>
+          <div className={EMPTY_ICON}><FileText className="h-6 w-6 text-fg-strong" /></div>
+          <h3 className="text-lg font-bold text-fg-strong">Library is empty</h3>
+          <p className="text-sm text-fg mt-2 max-w-xs">Transcripts you extract will appear here.</p>
           <Link href="/dashboard/transcribe">
             <Button className="mt-6">Transcribe a video</Button>
           </Link>
@@ -508,7 +510,7 @@ export function TranscriptList({
         {rowRag ? (
           <span className="ml-auto text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
         ) : (
-          <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+          <span className="ml-auto text-[9px] font-bold border border-border-strong bg-accent text-fg-on-accent font-mono px-1 py-px">PAID</span>
         )}
       </DropdownMenuItem>
     </DropdownMenuSubContent>
@@ -574,18 +576,10 @@ export function TranscriptList({
     <>
       {/* Download feedback */}
       {downloadError && (
-        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error mb-2">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span className="flex-1">{downloadError}</span>
-          <button onClick={() => setDownloadError(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
-        </div>
+        <Notice tone="error" className="mb-2" onDismiss={() => setDownloadError(null)}>{downloadError}</Notice>
       )}
       {downloadWarning && (
-        <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning mb-2">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span className="flex-1">{downloadWarning}</span>
-          <button onClick={() => setDownloadWarning(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
-        </div>
+        <Notice tone="warning" className="mb-2" onDismiss={() => setDownloadWarning(null)}>{downloadWarning}</Notice>
       )}
 
       {/* Mobile select bar */}
@@ -662,7 +656,7 @@ export function TranscriptList({
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   <div className={cn("flex items-center gap-1.5", compact && "flex-wrap")}>
-                    {unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-label="Unread" />}
+                    {unread && <span className="h-2 w-2 shrink-0 border border-border-strong bg-accent" aria-label="Unread" />}
                     {editingId === t.id ? (
                       <input
                         ref={editTitleRef}
@@ -746,7 +740,7 @@ export function TranscriptList({
                         {t.has_rag ? (
                           <span className="ml-auto text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
                         ) : (
-                          <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                          <span className="ml-auto text-[9px] font-bold border border-border-strong bg-accent text-fg-on-accent font-mono px-1 py-px">PAID</span>
                         )}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -818,7 +812,7 @@ export function TranscriptList({
                 <DropdownMenuLabel className="text-xs text-fg-muted font-normal">Developer</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => openRag(Array.from(selectedIds))}>
                   RAG JSON
-                  <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                  <span className="ml-auto text-[9px] font-bold border border-border-strong bg-accent text-fg-on-accent font-mono px-1 py-px">PAID</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -901,7 +895,7 @@ export function TranscriptList({
               <p className="text-xs text-fg-muted font-medium px-1 mb-1">Developer</p>
               <Button variant="secondary" size="sm" className="w-full justify-between" onClick={() => { openRag(Array.from(selectedIds)); setShowBulkExportSheet(false); }}>
                 RAG JSON
-                <span className="text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                <span className="text-[9px] font-bold border border-border-strong bg-accent text-fg-on-accent font-mono px-1 py-px">PAID</span>
               </Button>
             </div>
           </div>
@@ -959,7 +953,7 @@ export function TranscriptList({
                     label="RAG JSON"
                     trailing={rowSheet.has_rag
                       ? <span className="text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
-                      : <span className="text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>}
+                      : <span className="text-[9px] font-bold border border-border-strong bg-accent text-fg-on-accent font-mono px-1 py-px">PAID</span>}
                     onClick={() => { const id = rowSheet.id; setRowSheet(null); openRag([id]); }}
                   />
                 </div>
@@ -1001,7 +995,7 @@ export function TranscriptList({
               </DialogHeader>
 
               {ragBulkLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-fg-muted" /></div>
+                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-fg-strong" /></div>
               ) : ragBulkItems && (
                 <div className="space-y-4">
                   <div className="space-y-1.5 max-h-48 overflow-y-auto overflow-x-hidden">
@@ -1016,10 +1010,10 @@ export function TranscriptList({
                   </div>
 
                   {/* Cost summary */}
-                  <div className="rounded-lg border border-border bg-surface-elevated/30 p-3 text-sm space-y-1">
+                  <div className="border-2 border-border-strong bg-bg p-3 text-sm space-y-1">
                     {freeCount > 0 && <p className="text-fg-muted">{freeCount} already exported — free</p>}
                     {totalCost === 0 ? (
-                      <p className="text-success font-medium">All already exported — free re-download.</p>
+                      <p className="text-success-fg font-medium">All already exported — free re-download.</p>
                     ) : (
                       <>
                         <div className="flex items-center justify-between">
@@ -1036,24 +1030,18 @@ export function TranscriptList({
                   </div>
 
                   {insufficient && (
-                    <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                      Not enough credits. You have {credits} but need {totalCost}.
-                    </div>
+                    <Notice tone="error">Not enough credits. You have {credits} but need {totalCost}.</Notice>
                   )}
                 </div>
               )}
 
               {ragBulkError && (
-                <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {ragBulkError}
-                </div>
+                <Notice tone="error">{ragBulkError}</Notice>
               )}
               {ragBulkSuccess && (
-                <div className="flex items-center justify-between gap-2 rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-sm text-success">
+                <div role="status" className={`flex items-center justify-between gap-2 ${noticeCompact("success")}`}>
                   <span className="font-medium">Export complete — download started.</span>
-                  <button onClick={() => setShowRagModal(false)} className="shrink-0 opacity-60 hover:opacity-100 cursor-pointer" aria-label="Close">
+                  <button onClick={() => setShowRagModal(false)} className="shrink-0 p-1 text-fg-strong hover:bg-bg-subtle cursor-pointer" aria-label="Close">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -1089,7 +1077,7 @@ export function TranscriptList({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-error text-white hover:bg-error/90" onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

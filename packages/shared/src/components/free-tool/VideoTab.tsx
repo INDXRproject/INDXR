@@ -23,6 +23,8 @@ import { MethodBadge } from "../transcribe/MethodBadge"
 import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
+import { Notice } from "../ui/notice"
+import { NOTICE_ICON, NOTICE_TITLE, notice } from "../../lib/notice"
 
 interface VideoTabProps {
   onPlaylistDetected?: () => void
@@ -1021,7 +1023,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   // irreversibility already sits on the button before the click. What remains is one short reassurance
   // line inside the progress card itself, via JobProgressCard's `note` slot.
   const backgroundNote = (
-    <p className="text-xs leading-snug text-fg-muted">
+    <p className="text-xs leading-snug text-fg">
       Runs in the background — safe to close this tab; finished transcripts appear in your Library.
     </p>
   )
@@ -1030,38 +1032,25 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     <div className="animate-in fade-in zoom-in-95 duration-300">
       {/* Watchdog permanent failure notice — credits already refunded */}
       {watchdogRefundNotice && (
-        <div
-          aria-live="polite"
-          className="mb-6 p-4 bg-surface border border-border rounded-xl flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2"
-        >
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
-            <p className="text-sm text-fg-muted">
-              We konden deze video niet verwerken na meerdere pogingen. Je credits zijn teruggestort.
-            </p>
-          </div>
-          <button
-            aria-label="Sluiten"
-            onClick={() => setWatchdogRefundNotice(false)}
-            className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
-          >
-            ✕
-          </button>
+        <div aria-live="polite" className="mb-6 animate-in fade-in slide-in-from-top-2">
+          <Notice tone="warning" onDismiss={() => setWatchdogRefundNotice(false)}>
+            We couldn't process this video after several attempts. Your credits have been refunded.
+          </Notice>
         </div>
       )}
       {/* Video Job Resume Banner — shown when a running Whisper job is detected on mount */}
       {videoResumeData && !isStreaming && (
         <div
           aria-live="polite"
-          className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
+          className={`mb-6 ${notice("info")} flex items-center justify-between animate-in fade-in slide-in-from-top-2`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg text-accent-fg shrink-0">
+            <div className="shrink-0 text-fg-strong">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">AI transcription in progress</p>
-              <p className="text-xs text-fg-muted">
+              <p className={`text-sm ${NOTICE_TITLE}`}>AI transcription in progress</p>
+              <p className="text-xs text-fg">
                 {videoResumeData.title ? `"${videoResumeData.title}"` : 'A video'} is still being transcribed
               </p>
             </div>
@@ -1194,7 +1183,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                     </a>
                   )}
                 </div>
-                <p className="text-xs text-fg-muted">Once started, this can&apos;t be cancelled.</p>
+                <p className="text-xs font-medium text-fg">Once started, this can&apos;t be cancelled.</p>
               </div>
             </div>
           )
@@ -1202,46 +1191,45 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
         {/* Duplicate pause-and-confirm prompt */}
         {existingTranscriptId && showDuplicateChoices && (
-          <div className="px-1 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="flex items-center gap-1.5 text-sm text-warning-fg dark:text-amber-500">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span className="font-medium">You already have this transcript in your library. Extract again?</span>
+          <div className="flex flex-col gap-3 border-2 border-border-strong bg-bg p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-start gap-2">
+              <AlertCircle className={cn("mt-0.5 h-4 w-4 shrink-0", NOTICE_ICON.warning)} />
+              <span className={cn("text-sm", NOTICE_TITLE)}>You already have this transcript in your library. Extract again?</span>
             </div>
-            <div className="flex items-center gap-2 pl-5">
-              <a
-                href={appHref(`/dashboard/library/${existingTranscriptId}`)}
-                className="text-sm font-medium text-accent-fg hover:underline"
-              >
-                View in Library
-              </a>
-              <span className="text-fg-muted/40 text-xs">·</span>
-              <button
-                className="text-sm text-fg-muted hover:text-fg hover:underline transition-colors"
+            <div className="flex flex-wrap items-center gap-2 pl-6">
+              <Button asChild size="sm">
+                <a href={appHref(`/dashboard/library/${existingTranscriptId}`)}>
+                  View in Library
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => handleExtract()}
               >
                 Extract anyway
-              </button>
-              <span className="text-fg-muted/40 text-xs">·</span>
-              <button
-                className="text-sm text-fg-muted hover:text-fg hover:underline transition-colors"
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={() => setShowDuplicateChoices(false)}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
         {/* Soft info banner: shown when duplicate exists but prompt is not active */}
         {existingTranscriptId && !showDuplicateChoices && (
-          <div className="px-1 -mt-1 flex items-center gap-1.5 text-sm text-warning-fg dark:text-amber-500 animate-in fade-in">
+          <div className="px-1 -mt-1 flex flex-wrap items-center gap-1.5 text-sm font-medium text-warning-fg animate-in fade-in">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
               {existingTranscriptMethod === 'whisper_ai' || existingTranscriptMethod === 'assemblyai'
                 ? 'You already have this transcript (AI Transcription) — '
                 : 'You already have this transcript in your library — '}
             </span>
-            <a href={appHref(`/dashboard/library/${existingTranscriptId}`)} className="font-medium hover:underline">
+            <a href={appHref(`/dashboard/library/${existingTranscriptId}`)} className="font-bold text-fg-strong underline underline-offset-2 hover:text-fg">
               View in Library
             </a>
           </div>
@@ -1251,26 +1239,20 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
         {!existingTranscriptId && !showDuplicateChoices && !showWhisperConfirm && (
           <div className="flex justify-between items-start px-1">
              {whisperNetworkDisconnected ? (
-               <div className="p-3 rounded-lg bg-surface-elevated/60 border border-border flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-fg-muted mt-0.5 shrink-0" />
-                 <div>
-                   <p className="text-sm text-fg/80">
-                     Your transcript is still being processed. Check your Library in a few minutes — it will appear there when ready.
-                   </p>
-                   <a href={appHref('/dashboard/library')} className="text-xs text-accent-fg hover:underline mt-1 inline-block">
-                     Go to Library →
-                   </a>
-                 </div>
-               </div>
+               <Notice tone="info" className="w-full">
+                 <p>
+                   Your transcript is still being processed. Check your Library in a few minutes — it will appear there when ready.
+                 </p>
+                 <a href={appHref('/dashboard/library')} className="text-xs font-bold text-fg-strong underline underline-offset-2 hover:text-fg mt-1 inline-block">
+                   Go to Library →
+                 </a>
+               </Notice>
              ) : error && ['EMPTY', 'NON_YOUTUBE', 'MALFORMED', 'PLAYLIST_IN_VIDEO'].includes(error.type || '') ? (
                // Client-side validation (empty/invalid/playlist-in-video URL): a clean inline message at
                // the field. NOT routed through resolveErrorCopy — that has no code for these, so it fired
                // transcribe_error_unknown_code:"(none)" (the 20 undiagnosable events). Nothing hit the
                // backend, so there is no code to show.
-               <div className="p-3 rounded-lg bg-surface-elevated/60 border border-error flex items-start gap-2 w-full">
-                 <AlertCircle className="h-4 w-4 text-error mt-0.5 shrink-0" />
-                 <p className="text-sm text-fg/90">{error.message}</p>
-               </div>
+               <Notice tone="error" className="w-full">{error.message}</Notice>
              ) : error ? (
                (() => {
                  // Map VideoTab's error flags to a backend code, then render the one shared
@@ -1310,10 +1292,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                })()
              ) : isAlreadyProcessing && loading && whisperStatus !== 'idle' ? (
                <div className="flex flex-col gap-2 w-full">
-                 <div className="p-3 rounded-lg bg-surface-elevated/60 border border-border flex items-start gap-2">
-                   <AlertCircle className="h-4 w-4 text-fg-muted mt-0.5 shrink-0" />
-                   <p className="text-sm text-fg/80">This video is already being processed — showing the existing progress.</p>
-                 </div>
+                 <Notice tone="info">This video is already being processed — showing the existing progress.</Notice>
                  <JobProgressCard
                    title={videoTitle}
                    status={whisperStatus}
@@ -1343,21 +1322,21 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       {/* Playlist Detection Banner */}
       {isPlaylistUrl && (
-        <div className="mb-8 p-4 bg-accent/10 border border-primary/20 rounded-xl flex items-center justify-between text-left animate-in slide-in-from-top-2 duration-300">
+        <div className={cn("mb-8 flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300", notice("info"))}>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/20 rounded-lg text-accent-fg">
-              <AlertCircle className="h-5 w-5" />
+            <div className="shrink-0">
+              <AlertCircle className={cn("h-5 w-5", NOTICE_ICON.info)} />
             </div>
             <div>
-              <p className="text-fg font-medium">Playlist detected</p>
-              <p className="text-sm text-fg-muted">Would you like to switch to the Playlist tab to extract multiple videos?</p>
+              <p className={NOTICE_TITLE}>Playlist detected</p>
+              <p className="text-sm text-fg">Would you like to switch to the Playlist tab to extract multiple videos?</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleGuardedTabSwitch(onPlaylistDetected)}
-            className="bg-bg hover:bg-surface-elevated"
+            className="shrink-0"
           >
             Switch to Playlist
           </Button>
@@ -1374,16 +1353,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <ResultCardShell
               header={
                 <div className="flex items-center gap-2 min-w-0">
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent-fg)]" />
-                  <p className="truncate text-sm font-semibold text-[var(--fg-strong)]">Fetching captions</p>
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-fg-strong" />
+                  <p className="truncate text-sm font-bold text-fg-strong">Fetching captions</p>
                   <span className="ml-auto shrink-0"><MethodBadge method="captions">YouTube captions</MethodBadge></span>
                 </div>
               }
             >
               <div className="space-y-3">
-                <p className="text-xs text-fg-muted">Reading YouTube&apos;s caption track</p>
-                <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-                  <div className="h-full w-full rounded-full bg-accent/60 motion-safe:animate-pulse" />
+                <p className="text-xs text-fg">Reading YouTube&apos;s caption track</p>
+                <div className="h-2.5 overflow-hidden border-2 border-border-strong bg-bg">
+                  <div className="h-full w-full bg-accent motion-safe:animate-pulse" />
                 </div>
               </div>
             </ResultCardShell>
@@ -1466,9 +1445,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
       {/* No Captions Warning */}
       {transcript !== null && transcript.length === 0 && !loading && (
-        <div className="mb-8 p-4 bg-warning-subtle border border-warning/20 rounded-lg text-warning-fg dark:text-warning text-sm">
+        <Notice tone="warning" className="mb-8">
           No captions available for this video
-        </div>
+        </Notice>
       )}
 
     </div>

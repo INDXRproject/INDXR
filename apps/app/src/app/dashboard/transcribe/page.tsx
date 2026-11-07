@@ -12,6 +12,7 @@ import { TranscriptMetadata } from "@indxr/shared/types/transcript"
 import { SaveErrorModal } from "@/components/SaveErrorModal"
 import { ActiveJobsIndicator } from "@/components/dashboard/ActiveJobsIndicator"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+import { Notice } from "@indxr/shared/components/ui/notice"
 
 export default function TranscribePage() {
   const [isExtracting, setIsExtracting] = useState(false)
@@ -379,17 +380,15 @@ export default function TranscribePage() {
       <ActiveJobsIndicator excludeVisible />
 
       {storageFull && (
-        <div className="rounded-xl border border-error/20 bg-error-subtle px-4 py-3 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-error-fg dark:text-error">Your library is full — this transcript wasn&apos;t saved.</p>
-            <p className="text-sm text-fg-subtle mt-1">
-              You can still copy or export it above. To save new transcripts, delete some from your{" "}
-              <a href="/dashboard/library" className="text-accent-fg hover:underline">library</a>, or buy more space on your{" "}
-              <a href="/dashboard/account" className="text-accent-fg hover:underline">account page</a>. Your existing transcripts are safe.
-            </p>
-          </div>
-          <button onClick={() => setStorageFull(false)} className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>
-        </div>
+        <Notice
+          tone="error"
+          title={<>Your library is full — this transcript wasn&apos;t saved.</>}
+          onDismiss={() => setStorageFull(false)}
+        >
+          You can still copy or export it above. To save new transcripts, delete some from your{" "}
+          <a href="/dashboard/library" className="font-medium text-[var(--link)] underline hover:text-[var(--link-hover)]">library</a>, or buy more space on your{" "}
+          <a href="/dashboard/account" className="font-medium text-[var(--link)] underline hover:text-[var(--link-hover)]">account page</a>. Your existing transcripts are safe.
+        </Notice>
       )}
 
       <TranscribeWorkbench

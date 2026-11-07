@@ -7,6 +7,7 @@ import { CostBreakdown, BalanceLine } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
 import { Switch } from "./ui/switch";
 import { playlistFreeIds } from "../lib/pricing";
+import { NOTICE_BAR, NOTICE_BASE, NOTICE_ICON, NOTICE_TITLE, noticeCompact } from "../lib/notice";
 
 interface VideoAvailability {
   videoId: string
@@ -131,11 +132,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
   }
 
   return (
-    <div className="bg-surface border border-border rounded-xl animate-in fade-in slide-in-from-top-4 duration-500 my-6 shadow-lg">
-      <div className="p-6 border-b border-border bg-surface-elevated/30 rounded-t-xl flex flex-wrap justify-between items-center gap-3">
+    <div className="bg-bg border-2 border-border-strong animate-in fade-in slide-in-from-top-4 duration-500 my-6">
+      <div className="p-6 border-b-2 border-border-strong flex flex-wrap justify-between items-center gap-3">
         <div className="min-w-0">
-           <h3 className="text-lg font-semibold text-fg mb-1">Before you start</h3>
-           <p className="text-sm text-fg-muted">Choose how each video is transcribed, and see what it costs.</p>
+           <h3 className="text-lg font-bold text-fg-strong mb-1">Before you start</h3>
+           <p className="text-sm text-fg">Choose how each video is transcribed, and see what it costs.</p>
         </div>
 
         {/* Global method switch — a real switch with a visible on/off track (ADR-080), flips
@@ -181,8 +182,8 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
           totalAmount={totalExtractionCredits > 0 ? `${totalExtractionCredits} credit${totalExtractionCredits !== 1 ? "s" : ""}` : "Free"}
         />
 
-        <div className="flex items-start gap-2 text-xs text-fg-muted bg-surface-elevated/30 border border-border rounded-lg px-3 py-2">
-          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+        <div className={`flex items-start gap-2 ${noticeCompact("info")}`}>
+          <Info className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${NOTICE_ICON.info}`} />
           <span>
             Nothing is checked in advance. If a video turns out to have no captions, or is private or
             members-only, it&apos;s skipped during extraction with a note — and any credits held for it
@@ -195,7 +196,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
              {/* Per-video rows — method colour + a tappable (44px) toggle chip (ADR-080). The
                  method badge carries the per-row cost; free auto-captions read as "Auto · free". */}
              {extractableResults.length > 0 && (
-               <div className="overflow-hidden rounded-xl border border-border">
+               <div className="overflow-hidden border-2 border-border-strong">
                  <div className="max-h-72 divide-y divide-border-subtle overflow-y-auto">
                    {extractableResults.map((video) => {
                      const isAi = video.status === 'needs_whisper'
@@ -228,7 +229,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                            <button
                              type="button"
                              onClick={() => toggleSingleWhisper(video.videoId, !isAi)}
-                             className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg border border-border px-3 text-xs font-medium text-fg-subtle hover:bg-surface-elevated transition-colors cursor-pointer"
+                             className="inline-flex min-h-[44px] shrink-0 items-center border-2 border-border-strong bg-bg px-3 text-xs font-bold text-fg-strong hover:bg-bg-subtle transition-colors cursor-pointer"
                            >
                              {isAi ? 'Use captions' : 'Use AI'}
                            </button>
@@ -242,27 +243,27 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
 
             {/* Unavailable List (Expandable) */}
             {currentSummary.unavailable > 0 && (
-                <div className="border border-error/20 rounded-xl overflow-hidden bg-error-subtle">
+                <div className={`overflow-hidden ${NOTICE_BASE} ${NOTICE_BAR.error}`}>
                   <button
                     onClick={() => setExpandedSection(expandedSection === 'unavailable' ? null : 'unavailable')}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-error-subtle transition-colors cursor-pointer"
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-bg-subtle transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4 text-error" />
-                        <span className="font-medium text-error-fg dark:text-error-fg">
+                        <XCircle className={`h-4 w-4 ${NOTICE_ICON.error}`} />
+                        <span className={NOTICE_TITLE}>
                             {currentSummary.unavailable} unavailable videos (skipped)
                         </span>
                     </div>
-                    {expandedSection === 'unavailable' ? <ChevronUp className="h-4 w-4 text-error"/> : <ChevronDown className="h-4 w-4 text-error"/>}
+                    {expandedSection === 'unavailable' ? <ChevronUp className="h-4 w-4 text-fg-strong"/> : <ChevronDown className="h-4 w-4 text-fg-strong"/>}
                   </button>
                   
                   {expandedSection === 'unavailable' && (
-                    <div className="max-h-48 overflow-y-auto p-2 space-y-1 border-t border-red-500/10">
+                    <div className="max-h-48 overflow-y-auto p-2 space-y-1 border-t-2 border-border-strong">
                       {unavailableVideos.map((video) => (
-                        <div key={video.videoId} className="flex items-center gap-3 p-2 rounded-lg bg-surface-elevated/20">
+                        <div key={video.videoId} className="flex items-center gap-3 p-2">
                           <div className="flex-1 min-w-0">
                              <p className="text-sm text-fg truncate">{video.title}</p>
-                             <p className="text-xs text-error flex items-center gap-1">
+                             <p className="text-xs font-medium text-error flex items-center gap-1">
                                <XCircle className="h-3 w-3" />
                                {getErrorTypeLabel(video.errorType)}: {video.reason}
                              </p>
@@ -281,7 +282,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
          {/* Action bar — balance reads as secondary but readable, never amber; irreversibility
              sits right at the Extract button, before the click. On < md it sticks to the bottom
              of the viewport while the list is in view so the Extract button is always reachable. */}
-        <div className="sticky bottom-[calc(var(--tabbar-h)+var(--safe-bottom)+0.5rem)] z-10 flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 shadow-lg md:static md:bottom-auto md:bg-surface-elevated/30 md:p-4 md:shadow-none">
+        <div className="sticky bottom-[calc(var(--tabbar-h)+var(--safe-bottom)+0.5rem)] z-10 flex flex-col gap-2 border-2 border-border-strong bg-bg p-4 md:static md:bottom-auto md:bg-bg-subtle md:p-4">
             <div className="flex flex-wrap items-center gap-3">
                 <BalanceLine have={userCredits} cost={totalExtractionCredits} />
                 <div className="ml-auto flex gap-2">
@@ -300,11 +301,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                 </div>
             </div>
             {containsDuplicates && (
-                <p className="text-xs text-fg-muted">
+                <p className="text-xs text-fg">
                     {localResults.filter(r => r.isDuplicate && r.status !== 'unavailable').length} video(s) already in your library — existing transcripts will be skipped.
                 </p>
             )}
-            <p className="text-xs text-fg-muted">Once started, this can&apos;t be cancelled.</p>
+            <p className="text-xs font-medium text-fg">Once started, this can&apos;t be cancelled.</p>
         </div>
       </div>
     </div>

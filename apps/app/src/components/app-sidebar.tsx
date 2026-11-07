@@ -31,6 +31,7 @@ import { UserAvatar } from "@indxr/shared/components/UserAvatar"
 import { CookieSettingsLink } from "@indxr/shared/components/consent/CookieSettingsLink"
 import { Progress } from "@indxr/shared/components/ui/progress"
 import { cn } from "@indxr/shared/lib/utils"
+import { NOTICE_BAR, NOTICE_BASE } from "@indxr/shared/lib/notice"
 
 interface Collection {
   id: string
@@ -355,7 +356,7 @@ export function AppSidebar() {
                           <div className="relative shrink-0">
                             <item.icon className="h-4 w-4" />
                             {item.title === "Messages" && hasUnreadMessages && (
-                              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-accent" />
+                              <span className="absolute -top-1 -right-1 h-2 w-2 border border-border-strong bg-accent" aria-label="Unread messages" />
                             )}
                           </div>
                           <span className={cn(collapsed && "hidden")}>{item.title}</span>
@@ -425,14 +426,16 @@ export function AppSidebar() {
                         <div className="pl-2 pr-1 py-1 space-y-0.5">
 
                         {sidebarFeedback && (
-                          <div className={cn(
-                            "mx-2 mb-1 flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[10px] leading-snug",
-                            sidebarFeedback.type === 'error'
-                              ? "bg-error/10 border-error/20 text-error"
-                              : "bg-success/10 border-success/20 text-success"
-                          )}>
+                          <div
+                            role={sidebarFeedback.type === 'error' ? "alert" : "status"}
+                            className={cn(
+                              "mx-2 mb-1 flex items-start gap-1.5 px-2 py-1.5 text-[10px] font-medium leading-snug",
+                              NOTICE_BASE,
+                              NOTICE_BAR[sidebarFeedback.type]
+                            )}
+                          >
                             <span className="flex-1">{sidebarFeedback.message}</span>
-                            <button onClick={() => setSidebarFeedback(null)} className="opacity-60 hover:opacity-100 shrink-0 cursor-pointer">✕</button>
+                            <button onClick={() => setSidebarFeedback(null)} aria-label="Dismiss" className="text-fg-strong hover:bg-bg-subtle px-0.5 shrink-0 cursor-pointer">✕</button>
                           </div>
                         )}
 
@@ -515,7 +518,7 @@ export function AppSidebar() {
                                         maxLength={150}
                                       />
                                       {editingName.length > 120 && (
-                                        <span className={`text-[10px] ${editingName.length >= 150 ? 'text-error' : 'text-fg-muted'}`}>
+                                        <span className={`text-[10px] ${editingName.length >= 150 ? 'font-medium text-error' : 'text-fg-muted'}`}>
                                           {editingName.length}/150
                                         </span>
                                       )}
@@ -562,25 +565,29 @@ export function AppSidebar() {
 
                               {/* Inline delete confirmation */}
                               {isConfirmDelete && (
-                                <div className="mx-2 mb-1 p-2 rounded-md bg-error/10 border border-error/20 text-xs">
+                                <div className="mx-2 mb-1 p-2 border-2 border-border-strong bg-bg text-xs">
                                   <p className="text-fg mb-2 leading-snug">
-                                    Delete <span className="font-medium">&ldquo;{col.name}&rdquo;</span>?{" "}
-                                    <span className="text-fg-muted">Transcripts will be moved to All Transcripts.</span>
+                                    <span className="font-bold text-fg-strong">Delete &ldquo;{col.name}&rdquo;?</span>{" "}
+                                    <span className="text-fg">Transcripts will be moved to All Transcripts.</span>
                                   </p>
                                   <div className="flex gap-1.5">
-                                    <button
+                                    <Button
+                                      size="xs"
+                                      variant="outline"
                                       onClick={() => setConfirmDeleteId(null)}
-                                      className="flex-1 py-1 rounded text-center text-fg-muted hover:text-fg hover:bg-surface-elevated/50 transition-colors cursor-pointer"
+                                      className="flex-1"
                                     >
                                       Cancel
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                      size="xs"
+                                      variant="destructive"
                                       onClick={() => handleDeleteConfirm(col.id)}
                                       disabled={isDeleting}
-                                      className="flex-1 py-1 rounded text-center bg-error text-error-foreground hover:bg-error/80 transition-colors cursor-pointer disabled:opacity-50"
+                                      className="flex-1"
                                     >
                                       {isDeleting ? "…" : "Delete"}
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               )}
@@ -637,9 +644,9 @@ export function AppSidebar() {
         <SidebarFooter>
           {/* Nav guard — inline confirmation card when user tries to leave during active extraction */}
           {pendingNavHref && (
-            <div className="mx-3 mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-bottom-2">
-              <p className="text-xs font-semibold text-fg mb-1">Are you sure you want to leave?</p>
-              <p className="text-[11px] text-fg-muted mb-3 leading-snug">
+            <div role="alert" className={cn("mx-3 mb-3 p-3 animate-in fade-in slide-in-from-bottom-2", NOTICE_BASE, NOTICE_BAR.warning)}>
+              <p className="text-xs font-bold text-fg-strong mb-1">Are you sure you want to leave?</p>
+              <p className="text-[11px] text-fg mb-3 leading-snug">
                 Your extraction will continue in the background, but leaving may cause unexpected behavior. We recommend staying on this page until extraction is complete.
               </p>
               <div className="flex gap-2">
@@ -652,8 +659,8 @@ export function AppSidebar() {
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs flex-1 text-fg-muted"
+                  variant="outline"
+                  className="h-7 text-xs flex-1"
                   onClick={() => {
                     router.push(pendingNavHref)
                     setPendingNavHref(null)

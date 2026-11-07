@@ -4,6 +4,7 @@ import { Button } from "@indxr/shared/components/ui/button"
 import { Input } from "@indxr/shared/components/ui/input"
 import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
 import { AuthSplit } from "@/components/auth/AuthSplit"
@@ -91,9 +92,9 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {message && (
-            <div className="mb-4 rounded-lg border border-success/20 bg-success-subtle p-3 text-sm font-medium text-success">
+            <Notice tone="success" className="mb-4">
               {message}
-            </div>
+            </Notice>
           )}
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
@@ -125,9 +126,9 @@ export default function LoginPage() {
             </div>
             
             {error && (
-              <div className="text-error text-sm font-medium bg-error-subtle border border-error/20 rounded-lg p-3">
+              <Notice tone="error">
                 {error}
-              </div>
+              </Notice>
             )}
             
             <Button type="submit" className="w-full" disabled={isSubmitting}>

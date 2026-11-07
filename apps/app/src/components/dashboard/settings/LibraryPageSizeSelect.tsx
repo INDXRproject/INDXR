@@ -26,7 +26,7 @@ export function LibraryPageSizeSelect({ initialValue }: { initialValue: PageSize
 
   return (
     <div className="flex items-center gap-2">
-      {saved && <Check className="size-3.5 text-success" />}
+      {saved && <Check className="size-3.5 text-success-fg" />}
       <div className="inline-flex items-center gap-0.5 rounded-lg border border-border p-0.5 bg-surface">
         {OPTIONS.map((size) => (
           <button

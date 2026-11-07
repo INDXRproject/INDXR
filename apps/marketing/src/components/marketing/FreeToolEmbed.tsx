@@ -14,6 +14,7 @@ import { TranscriptMetadata } from "@indxr/shared/types/transcript"
 import { MicroTrustRow } from "@indxr/shared/components/MicroTrustRow"
 import { FrictionConversionCard } from "@indxr/shared/components/FrictionConversionCard"
 import { appHref } from "@indxr/shared/lib/cross-host-links"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 
 const WELCOME = FREE_TIER.WELCOME_CREDITS
@@ -77,15 +78,14 @@ export function FreeToolEmbed() {
   return (
     <div className="text-left">
       {storageFull && (
-        <div className="mb-6 rounded-xl border border-[var(--error)]/20 bg-[var(--error-subtle)] px-4 py-3 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-[var(--error-fg)]">Your library is full — this transcript wasn&apos;t saved.</p>
-            <p className="text-sm text-[var(--fg-subtle)] mt-1">
-              You can still copy or export it below. To save new transcripts, delete some from your library, or buy more space on your account page. Your existing transcripts are safe.
-            </p>
-          </div>
-          <button onClick={() => setStorageFull(false)} className="text-[var(--fg-muted)] hover:text-[var(--fg)] shrink-0 text-xs leading-none" aria-label="Dismiss">✕</button>
-        </div>
+        <Notice
+          tone="error"
+          className="mb-6"
+          title={<>Your library is full — this transcript wasn&apos;t saved.</>}
+          onDismiss={() => setStorageFull(false)}
+        >
+          You can still copy or export it below. To save new transcripts, delete some from your library, or buy more space on your account page. Your existing transcripts are safe.
+        </Notice>
       )}
 
       <TranscribeWorkbench

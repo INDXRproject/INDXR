@@ -3,6 +3,7 @@
 import { Button } from "@indxr/shared/components/ui/button"
 import { Input } from "@indxr/shared/components/ui/input"
 import { Label } from "@indxr/shared/components/ui/label"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
 import { useState } from "react"
@@ -56,10 +57,10 @@ export default function ForgotPasswordPage() {
         <CardContent>
           {isSent ? (
             <div className="flex flex-col items-center justify-center space-y-4 py-6">
-              <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
-                <Mail className="h-6 w-6 text-success" />
+              <div className="flex h-12 w-12 items-center justify-center border-2 border-border-strong bg-bg">
+                <Mail className="h-6 w-6 text-success-fg" />
               </div>
-              <p className="text-center text-sm text-fg-muted">
+              <p className="text-center text-sm text-fg">
                 We have sent a password reset link to <span className="font-semibold text-fg">{email}</span>.
               </p>
               <Button
@@ -84,9 +85,9 @@ export default function ForgotPasswordPage() {
                 />
               </div>
               {error && (
-                <div className="text-error text-sm font-medium bg-error/10 border border-error/20 rounded-lg p-3">
+                <Notice tone="error">
                   {error}
-                </div>
+                </Notice>
               )}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Sending..." : "Send Reset Link"}

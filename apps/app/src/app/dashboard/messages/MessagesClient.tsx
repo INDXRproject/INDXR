@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Inbox, Archive, ArchiveRestore, CheckCheck, ChevronLeft, ChevronDown, ChevronRight, Send } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
 import { cn } from "@indxr/shared/lib/utils"
+import { EMPTY_FRAME, EMPTY_ICON } from "@indxr/shared/lib/notice"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { SupportClient } from "../support/SupportClient"
 
@@ -42,9 +43,9 @@ interface Props {
 }
 
 const CATEGORY_STYLES: Record<string, string> = {
-  bug:      "bg-error/10 text-error",
-  billing:  "bg-warning/10 text-warning",
-  feedback: "bg-success/10 text-success",
+  bug:      "bg-error text-white",
+  billing:  "bg-accent text-fg-on-accent",
+  feedback: "bg-success text-white",
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -235,7 +236,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold text-fg">Messages</h1>
           {unreadCount > 0 && activeTab === "inbox" && (
-            <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-fg-on-accent text-xs font-medium flex items-center justify-center">
+            <span className="min-w-[20px] h-5 px-1.5 border-2 border-border-strong bg-accent text-fg-on-accent font-mono text-xs font-bold tabular-nums flex items-center justify-center">
               {unreadCount}
             </span>
           )}
@@ -302,10 +303,10 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
             {/* Message list */}
             <div className={cn("flex flex-col gap-1 w-full lg:w-80 shrink-0", mobileDetail && "hidden md:flex")}>
               {visible.length === 0 ? (
-                <div className="relative overflow-hidden rounded-lg text-center py-12 text-fg-muted">
+                <div className={EMPTY_FRAME}>
                   <div className="relative">
-                    <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">{showArchived ? "No archived messages." : "No messages — we'll write when something matters."}</p>
+                    <div className={EMPTY_ICON}><Inbox className="h-6 w-6 text-fg-strong" /></div>
+                    <p className="text-sm font-bold text-fg-strong">{showArchived ? "No archived messages." : "No messages — we'll write when something matters."}</p>
                   </div>
                 </div>
               ) : (
@@ -332,7 +333,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs text-fg-muted truncate">INDXR</span>
-                      {!msg.read && <span className="h-2 w-2 rounded-full bg-accent shrink-0" />}
+                      {!msg.read && <span className="h-2 w-2 border border-border-strong bg-accent shrink-0" aria-label="Unread" />}
                     </div>
                   </button>
                 ))
@@ -342,10 +343,10 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
             {/* Message detail */}
             <div className={cn("flex-1 min-w-0", !mobileDetail && "hidden md:block")}>
               {!selected ? (
-                <div className="hidden md:flex h-64 items-center justify-center text-fg-muted rounded-lg border border-border bg-surface">
+                <div className={cn("hidden md:flex h-64 items-center justify-center", EMPTY_FRAME)}>
                   <div className="text-center">
-                    <Inbox className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">Select a message to read it.</p>
+                    <div className={EMPTY_ICON}><Inbox className="h-6 w-6 text-fg-strong" /></div>
+                    <p className="text-sm font-bold text-fg-strong">Select a message to read it.</p>
                   </div>
                 </div>
               ) : (
@@ -405,16 +406,16 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                         onClick={() => handleExpandTicket(ticket.id)}
                         className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-surface-elevated transition-colors cursor-pointer"
                       >
-                        <span className={cn("shrink-0 text-xs px-2 py-0.5 rounded-full font-medium", CATEGORY_STYLES[ticket.category])}>
+                        <span className={cn("shrink-0 border-2 border-border-strong px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.04em]", CATEGORY_STYLES[ticket.category])}>
                           {CATEGORY_LABELS[ticket.category]}
                         </span>
-                        {hasUnread && <span className="h-2 w-2 rounded-full bg-accent shrink-0" />}
+                        {hasUnread && <span className="h-2 w-2 border border-border-strong bg-accent shrink-0" aria-label="Unread" />}
                         <span className="flex-1 text-sm font-medium text-fg truncate">
                           {ticket.subject}
                         </span>
                         <span className={cn(
-                          "shrink-0 text-xs px-2 py-0.5 rounded-full",
-                          ticket.status === "open" ? "bg-accent-subtle text-accent-fg" : "bg-surface-elevated text-fg-muted"
+                          "shrink-0 border-2 border-border-strong px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.04em]",
+                          ticket.status === "open" ? "bg-accent text-fg-on-accent" : "bg-bg text-fg-strong"
                         )}>
                           {ticket.status === "open" ? "Open" : "Closed"}
                         </span>
@@ -480,7 +481,7 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                                     rows={3}
                                     className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
                                   />
-                                  {replyError && <p className="text-xs text-error">{replyError}</p>}
+                                  {replyError && <p role="alert" className="text-xs font-medium text-error">{replyError}</p>}
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"
@@ -508,12 +509,12 @@ function MessagesClientInner({ initialMessages, initialTickets, transcripts, ini
                               )}
                             </div>
                           ) : (
-                            <div className="px-4 py-2.5 border-t border-border/50 bg-surface-elevated">
-                              <p className="text-xs text-fg-muted">
-                                This ticket is closed.{" "}
+                            <div className="px-4 py-2.5 border-t-2 border-border-strong bg-bg-subtle">
+                              <p className="text-xs text-fg">
+                                <span className="font-bold text-fg-strong">This ticket is closed.</span>{" "}
                                 <button
                                   onClick={() => switchTopTab("support")}
-                                  className="underline hover:text-fg transition-colors cursor-pointer"
+                                  className="font-bold text-fg-strong underline hover:no-underline transition-colors cursor-pointer"
                                 >
                                   Open a new ticket
                                 </button>{" "}

@@ -77,7 +77,7 @@ export default async function SettingsPage() {
         <DeveloperExportsCard initialChunkSize={chunkSize} />
 
         {/* Danger zone — gescheiden onderaan, weg van credits/accountoverzicht */}
-        <div className="pt-4 mt-4 border-t border-error/20">
+        <div className="pt-4 mt-4 border-t-2 border-border-strong">
           <DeleteAccountCard />
         </div>
       </div>

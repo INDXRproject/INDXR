@@ -18,6 +18,7 @@ import {
 } from "@indxr/shared/components/ui/alert-dialog"
 import { createClient } from "@indxr/shared/utils/supabase/client"
 import { marketingHref } from "@indxr/shared/lib/cross-host-links"
+import { NOTICE_BAR } from "@indxr/shared/lib/notice"
 
 export function DeleteAccountCard() {
   const [open, setOpen] = useState(false)
@@ -49,10 +50,10 @@ export function DeleteAccountCard() {
   }
 
   return (
-    <Card className="border-error/40 bg-error-subtle/20">
+    <Card className={`rounded-none border-2 border-border-strong bg-bg shadow-none ${NOTICE_BAR.error}`}>
       <CardHeader>
-        <CardTitle className="text-error">Delete account</CardTitle>
-        <CardDescription className="text-fg-subtle">
+        <CardTitle className="font-bold text-fg-strong">Delete account</CardTitle>
+        <CardDescription className="text-fg">
           Permanently delete your account and everything in it — transcripts, credits, summaries, and
           history. This cannot be undone.
         </CardDescription>

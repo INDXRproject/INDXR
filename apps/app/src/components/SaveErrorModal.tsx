@@ -2,6 +2,7 @@
 
 import { AlertCircle, X } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
+import { NOTICE_CODE, NOTICE_ICON } from "@indxr/shared/lib/notice"
 import {
   Dialog,
   DialogContent,
@@ -31,27 +32,25 @@ export function SaveErrorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md border-error/30">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-error-subtle rounded-lg">
-              <AlertCircle className="h-6 w-6 text-error" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border-strong bg-bg">
+              <AlertCircle className={`h-5 w-5 ${NOTICE_ICON.error}`} />
             </div>
-            <DialogTitle className="text-fg text-lg">Failed to Save Transcript</DialogTitle>
+            <DialogTitle className="text-fg-strong text-lg font-bold">Failed to Save Transcript</DialogTitle>
           </div>
-          <DialogDescription className="text-fg-muted">
+          <DialogDescription className="text-fg">
             Your transcript was generated successfully, but we couldn&apos;t save it to your library.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
-          <div className="p-4 rounded-lg bg-error-subtle border border-error/20">
-            <p className="text-sm text-error-fg font-mono wrap-break-word">
-              {errorMessage}
-            </p>
-          </div>
+          <p className="wrap-break-word">
+            <span className={`${NOTICE_CODE} normal-case`}>{errorMessage}</span>
+          </p>
 
-          <p className="text-xs text-fg-muted mt-4">
+          <p className="text-sm text-fg mt-4">
             Don&apos;t worry - your transcript is still available on this page.
             Click retry to save it to your library without re-transcribing.
           </p>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 
 import { cn } from "../../lib/utils"
+import { NOTICE_BAR } from "../../lib/notice"
 
 /**
  * Result card chrome — the one wrapper every below-the-form state renders inside
@@ -22,17 +23,18 @@ export function ResultCardShell({
   className?: string
   children: ReactNode
 }) {
+  // Stijl B: ink frame on white paper; success/error add the tone bar on the left (lib/notice.ts).
   const toneClass =
     tone === "success"
-      ? "border-[var(--success)]/30 bg-[var(--success-subtle)]"
+      ? NOTICE_BAR.success
       : tone === "error"
-        ? "border-[var(--border)] bg-[var(--surface-elevated)]"
-        : "border-[var(--border)] bg-[var(--surface)]"
+        ? NOTICE_BAR.error
+        : ""
 
   return (
     <div
       className={cn(
-        "rounded-xl border px-4 py-4 text-left animate-in fade-in slide-in-from-top-2 duration-300",
+        "border-2 border-border-strong bg-bg px-4 py-4 text-left text-fg animate-in fade-in slide-in-from-top-2 duration-300",
         toneClass,
         className
       )}

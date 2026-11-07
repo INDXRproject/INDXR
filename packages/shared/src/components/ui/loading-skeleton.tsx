@@ -11,7 +11,7 @@ export function LoadingSkeleton({ className, lines = 3 }: LoadingSkeletonProps) 
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className="h-4 bg-surface-elevated rounded animate-pulse"
+          className="h-4 bg-border-subtle animate-pulse"
           style={{ width: `${100 - i * 10}%` }}
         />
       ))}
@@ -21,12 +21,12 @@ export function LoadingSkeleton({ className, lines = 3 }: LoadingSkeletonProps) 
 
 export function CardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("p-6 border rounded-lg", className)}>
+    <div className={cn("p-6 border-2 border-border-strong", className)}>
       <div className="flex items-center gap-4 mb-4">
-        <div className="size-12 bg-surface-elevated rounded animate-pulse" />
+        <div className="size-12 bg-border-subtle animate-pulse" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-surface-elevated rounded animate-pulse w-3/4" />
-          <div className="h-3 bg-surface-elevated rounded animate-pulse w-1/2" />
+          <div className="h-4 bg-border-subtle animate-pulse w-3/4" />
+          <div className="h-3 bg-border-subtle animate-pulse w-1/2" />
         </div>
       </div>
       <LoadingSkeleton lines={3} />

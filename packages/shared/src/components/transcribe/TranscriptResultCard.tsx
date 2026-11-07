@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { CheckCircle, Info } from "lucide-react"
 
 import { cn } from "../../lib/utils"
+import { NOTICE_ICON, NOTICE_TITLE } from "../../lib/notice"
 import { ResultCardShell } from "./ResultCardShell"
 
 /**
@@ -34,15 +35,15 @@ export function TranscriptResultCard({
       header={
         <div className="flex items-start gap-2 min-w-0">
           {isError ? (
-            <Info className="h-4 w-4 shrink-0 mt-0.5 text-[var(--fg-muted)]" />
+            <Info className={cn("h-4 w-4 shrink-0 mt-0.5", NOTICE_ICON.error)} />
           ) : (
-            <CheckCircle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--success)]" />
+            <CheckCircle className={cn("h-4 w-4 shrink-0 mt-0.5", NOTICE_ICON.success)} />
           )}
           <div className="min-w-0">
-            <p className={cn("font-semibold text-sm", isError ? "text-[var(--fg)]" : "text-[var(--success-fg)] dark:text-[var(--success)]")}>
+            <p className={cn("text-sm", NOTICE_TITLE)}>
               {headline}
             </p>
-            {meta && <p className="mt-0.5 text-xs text-[var(--fg-muted)] tabular-nums">{meta}</p>}
+            {meta && <p className="mt-0.5 text-xs text-fg tabular-nums">{meta}</p>}
           </div>
         </div>
       }
@@ -50,7 +51,7 @@ export function TranscriptResultCard({
         libraryHref && !isError ? (
           <a
             href={libraryHref}
-            className="rounded-lg border border-[var(--success)]/40 px-2.5 py-1 text-xs font-medium text-[var(--success-fg)] dark:text-[var(--success)] hover:bg-[var(--success-subtle)] transition-colors"
+            className="inline-flex items-center border-2 border-border-strong bg-bg px-2.5 py-1 text-xs font-bold text-fg-strong hover:bg-bg-subtle transition-colors"
           >
             View in Library
           </a>

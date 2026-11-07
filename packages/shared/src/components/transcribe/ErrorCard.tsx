@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react"
 import posthog from "posthog-js"
 
 import { cn } from "../../lib/utils"
+import { notice, NOTICE_BODY, NOTICE_CODE, NOTICE_TITLE } from "../../lib/notice"
 
 /**
  * One shared error surface for the whole transcribe flow (ADR-080). Fixed anatomy:
@@ -55,24 +56,24 @@ export function ErrorCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-error/30 border-l-[3px] border-l-error bg-surface px-4 py-3.5 text-left",
+        notice("error"),
         className
       )}
     >
       <div className="flex items-start gap-2.5">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-error" />
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-error" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="font-medium text-fg">{title}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-fg-subtle">{body}</p>
-          {creditsNote && <p className="mt-1.5 text-[13px] font-medium text-success">{creditsNote}</p>}
+          <p className={NOTICE_TITLE}>{title}</p>
+          <p className={cn("mt-1", NOTICE_BODY)}>{body}</p>
+          {creditsNote && <p className="mt-1.5 text-sm font-bold text-success-fg">{creditsNote}</p>}
 
           {actions && actions.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {actions.map((a) => {
                 const cls = cn(
-                  "inline-flex h-9 min-h-[36px] items-center rounded-lg px-3.5 text-[13px] font-medium transition-colors cursor-pointer",
+                  "inline-flex h-9 min-h-[36px] items-center border-2 border-border-strong px-3.5 text-sm font-bold transition-colors cursor-pointer",
                   a.variant === "secondary"
-                    ? "border border-border-strong text-fg-subtle hover:bg-surface-elevated"
+                    ? "bg-bg text-fg-strong hover:bg-bg-subtle"
                     : "bg-accent text-fg-on-accent hover:bg-accent-hover"
                 )
                 return a.href ? (
@@ -88,9 +89,9 @@ export function ErrorCard({
             </div>
           )}
 
-          {note && <div className="mt-3 text-[13px] leading-relaxed text-fg-muted">{note}</div>}
+          {note && <div className="mt-3 text-sm leading-relaxed text-fg">{note}</div>}
 
-          {code && <p className="mt-2.5 font-mono text-[11px] text-fg-muted">{code}</p>}
+          {code && <p className="mt-3"><span className={NOTICE_CODE}>Code · {code}</span></p>}
         </div>
       </div>
     </div>

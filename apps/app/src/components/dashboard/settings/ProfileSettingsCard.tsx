@@ -77,11 +77,11 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
         <div className="flex items-center justify-between">
             <CardTitle className="text-lg text-fg">Profile & Identity</CardTitle>
             {isVerified ? (
-                <Badge variant="outline" className="border-green-500/50 text-success bg-success-subtle gap-1">
+                <Badge variant="outline" className="border-2 border-border-strong font-mono text-[11px] font-bold uppercase tracking-[0.04em] gap-1 rounded-none bg-success text-white">
                     <CheckCircle2 className="h-3 w-3" /> Verified
                 </Badge>
             ) : (
-                <Badge variant="outline" className="border-warning/50 text-warning bg-warning-subtle gap-1">
+                <Badge variant="outline" className="border-2 border-border-strong font-mono text-[11px] font-bold uppercase tracking-[0.04em] gap-1 rounded-none bg-accent text-fg-on-accent">
                     <AlertCircle className="h-3 w-3" /> Unverified
                 </Badge>
             )}
@@ -100,14 +100,14 @@ export function ProfileSettingsCard({ user, profile }: { user: User, profile: Pr
                         size="sm" 
                         onClick={handleResendVerification} 
                         disabled={isResending}
-                        className="border-warning/30 text-warning hover:bg-warning-subtle hover:text-warning whitespace-nowrap"
+                        className="whitespace-nowrap"
                      >
                         {isResending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Resend Link"}
                      </Button>
                 )}
             </div>
             {!isVerified && (
-                <p className="text-xs text-warning/80">
+                <p className="text-xs font-medium text-warning-fg">
                     Your email is unverified. Please check your inbox to fully activate your account features.
                 </p>
             )}

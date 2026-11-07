@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { HelpCircle, Lightbulb, Bug, Send, CheckCircle } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
+import { Notice } from "@indxr/shared/components/ui/notice"
+import { EMPTY_ICON, NOTICE_BAR, NOTICE_BASE } from "@indxr/shared/lib/notice"
 
 type Category = "feedback" | "bug" | "question"
 
@@ -166,7 +168,7 @@ export default function ContactPage() {
                 />
               </div>
 
-              {error && <p className="text-sm text-[var(--error)]">{error}</p>}
+              {error && <Notice tone="error">{error}</Notice>}
 
               <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
                 <Send className="h-4 w-4 mr-2" />
@@ -178,11 +180,13 @@ export default function ContactPage() {
 
         {/* Confirmation */}
         {submitted && (
-          <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
-            <CheckCircle className="h-10 w-10 text-[var(--success)] mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-[var(--fg)] mb-2">Message received</h2>
-            <p className="text-sm text-[var(--fg-muted)] max-w-sm mx-auto">
-              Thanks — we&apos;ve got your message and will reply to <span className="text-[var(--fg)]">{email}</span>.
+          <div role="status" className={`${NOTICE_BASE} ${NOTICE_BAR.success} p-8 text-center`}>
+            <div className={EMPTY_ICON}>
+              <CheckCircle className="h-6 w-6 text-success-fg" />
+            </div>
+            <h2 className="text-lg font-bold text-fg-strong mb-2">Message received</h2>
+            <p className="text-sm text-fg max-w-sm mx-auto">
+              Thanks — we&apos;ve got your message and will reply to <span className="font-bold text-fg-strong">{email}</span>.
             </p>
           </div>
         )}

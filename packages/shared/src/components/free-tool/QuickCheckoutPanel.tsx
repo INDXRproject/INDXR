@@ -1,12 +1,14 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { UploadCloud, FileAudio, X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { UploadCloud, FileAudio, X, Loader2, CheckCircle2 } from "lucide-react"
 import posthog from "posthog-js"
 import { Button } from "../ui/button"
 import { marketingHref } from "../../lib/cross-host-links"
 import { PACKAGES, formatEur, cheapestCoveringPackage } from "../../lib/pricing"
 import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
+import { Notice } from "../ui/notice"
+import { NOTICE_BAR } from "../../lib/notice"
 
 // growth-plan.md §6.2 Onderdeel D + §6.3 H3/H4/H5/H6: via/kw (+ gclid) are first-touch-captured
 // into the indxr_acq cookie by AcquisitionCapture — read them back out here so the balie's
@@ -223,8 +225,8 @@ export function QuickCheckoutPanel() {
 
   if (quote) {
     return (
-      <div className="mt-8 rounded-lg border border-border bg-surface p-6">
-        <h3 className="text-lg font-semibold text-fg mb-4">Your quote</h3>
+      <div className="mt-8 border-2 border-border-strong bg-bg p-6">
+        <h3 className="text-lg font-bold text-fg-strong mb-4">Your quote</h3>
         <div className="space-y-4 mb-4">
           {quote.files.map((f, i) => (
             <div key={i} className="border-b border-border-subtle pb-3">
@@ -238,17 +240,17 @@ export function QuickCheckoutPanel() {
               </div>
               {/* H3: render the free preview once it's ready, poll while pending, show failures honestly */}
               {f.preview_status === "pending" && (
-                <p className="text-xs text-fg-muted mt-2 flex items-center gap-1.5">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Preparing free preview…
+                <p className="text-xs text-fg mt-2 flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin text-fg-strong" /> Preparing free preview…
                 </p>
               )}
               {f.preview_status === "failed" && (
-                <p className="text-xs text-fg-muted mt-2">Preview unavailable — the full transcript still works.</p>
+                <p className="text-xs font-medium text-warning-fg mt-2">Preview unavailable — the full transcript still works.</p>
               )}
               {f.preview_status === "ready" && f.preview_text && (
-                <div className="mt-2 rounded-md border border-border-subtle bg-surface-elevated/40 p-3 max-h-32 overflow-y-auto">
-                  <p className="text-xs text-fg-subtle mb-1">Free preview (first part, up to 3 min)</p>
-                  <p className="text-sm text-fg-muted leading-relaxed">{f.preview_text}</p>
+                <div className="mt-2 border-2 border-border-strong bg-bg p-3 max-h-32 overflow-y-auto">
+                  <p className="text-xs font-bold text-fg-strong mb-1">Free preview (first part, up to 3 min)</p>
+                  <p className="text-sm text-fg leading-relaxed">{f.preview_text}</p>
                 </div>
               )}
             </div>
@@ -288,7 +290,7 @@ export function QuickCheckoutPanel() {
             withdrawal once my transcript is delivered.
           </span>
         </label>
-        {error && <p className="text-sm text-error mb-3">{error}</p>}
+        {error && <Notice tone="error" className="mb-3">{error}</Notice>}
         <Button onClick={pay} disabled={!accepted || payLoading} className="w-full">
           {payLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay ${formatEur(quote.total_price_cents / 100)}`}
         </Button>
@@ -305,10 +307,10 @@ export function QuickCheckoutPanel() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          ${files.length ? "p-5" : "p-6 sm:p-12"} rounded-2xl border-2 border-dashed transition-all
+          ${files.length ? "p-5" : "p-6 sm:p-12"} border-2 border-dashed border-border-strong transition-all
           ${isDragging
-            ? "border-primary bg-accent/10 scale-105"
-            : "border-border bg-surface-elevated/10 hover:bg-surface-elevated/20"
+            ? "bg-accent"
+            : "bg-bg hover:bg-bg-subtle"
           }
         `}
       >
@@ -322,27 +324,27 @@ export function QuickCheckoutPanel() {
         />
         {files.length === 0 ? (
           <label htmlFor="quick-checkout-upload-input" className="flex flex-col items-center justify-center text-center cursor-pointer">
-            <div className="p-4 bg-surface-elevated rounded-full mb-4">
-              <UploadCloud className="h-8 w-8 text-fg-muted" />
+            <div className="flex h-14 w-14 items-center justify-center border-2 border-border-strong bg-bg mb-4">
+              <UploadCloud className="h-8 w-8 text-fg-strong" />
             </div>
-            <h3 className="text-xl font-semibold text-fg mb-2">Upload your file</h3>
-            <p className="text-fg-muted mb-2">Drag and drop your file here, or <span className="hidden md:inline">click</span><span className="md:hidden">tap</span> to choose a file</p>
-            <p className="text-sm text-fg-muted">
+            <h3 className="text-xl font-bold text-fg-strong mb-2">Upload your file</h3>
+            <p className="text-fg mb-2">Drag and drop your file here, or <span className="hidden md:inline">click</span><span className="md:hidden">tap</span> to choose a file</p>
+            <p className="text-sm text-fg">
               See the price and read a free preview before you pay (max {MAX_FILES} files)
             </p>
           </label>
         ) : (
           <div className="space-y-3">
             {files.map((f, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg bg-success-subtle px-4 py-3">
+              <div key={i} className={`flex items-center justify-between border-2 border-border-strong bg-bg px-4 py-3 ${NOTICE_BAR.success}`}>
                 <div className="flex items-center gap-3">
-                  <FileAudio className="h-5 w-5 text-success shrink-0" />
+                  <FileAudio className="h-5 w-5 text-success-fg shrink-0" />
                   <div>
                     <p className="text-sm text-fg">{f.name}</p>
                     <p className="text-xs text-fg-muted">{formatFileSize(f.size)}</p>
                   </div>
                 </div>
-                <button onClick={() => removeFile(i)} className="text-fg-muted hover:text-fg" aria-label="Remove file">
+                <button onClick={() => removeFile(i)} className="p-1 text-fg-strong hover:bg-bg-subtle" aria-label="Remove file">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -357,9 +359,7 @@ export function QuickCheckoutPanel() {
       </div>
 
       {error && (
-        <p className="text-sm text-error flex items-center justify-center gap-1">
-          <AlertCircle className="h-4 w-4" /> {error}
-        </p>
+        <Notice tone="error">{error}</Notice>
       )}
 
       <div className="text-center">

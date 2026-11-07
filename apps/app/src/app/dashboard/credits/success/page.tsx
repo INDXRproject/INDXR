@@ -10,6 +10,7 @@ import { useAuth } from '@indxr/shared/hooks/useAuth'
 import { createClient } from '@indxr/shared/utils/supabase/client'
 import { eurForCredits } from '@indxr/shared/lib/pricing'
 import { trackPurchase } from '@indxr/shared/lib/gtag'
+import { EMPTY_ICON, NOTICE_BAR } from '@indxr/shared/lib/notice'
 
 // Poll onze eigen credit_transactions (RLS: eigen rijen) op de aankoop-rij die de
 // Stripe-webhook wegschrijft. Dat bevestigt dat de webhook verwerkte én levert het
@@ -89,43 +90,43 @@ export default function BillingSuccessPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-      <Card className="w-full max-w-md bg-surface border-border text-center">
+      <Card className={`w-full max-w-md rounded-none border-2 border-border-strong bg-bg text-center shadow-none ${status === 'processing' ? NOTICE_BAR.info : NOTICE_BAR.success}`}>
         <CardHeader>
           {status === 'processing' ? (
             <>
-              <div className="mx-auto bg-surface-elevated p-4 rounded-full mb-4">
-                <Loader2 className="h-12 w-12 text-fg-muted animate-spin" />
+              <div className={EMPTY_ICON}>
+                <Loader2 className="h-7 w-7 text-fg-strong animate-spin" />
               </div>
-              <CardTitle className="text-2xl text-fg">Confirming your payment…</CardTitle>
+              <CardTitle className="text-2xl font-bold text-fg-strong">Confirming your payment…</CardTitle>
             </>
           ) : (
             <>
-              <div className="mx-auto bg-success-subtle p-4 rounded-full mb-4">
-                <CheckCircle2 className="h-12 w-12 text-success" />
+              <div className={EMPTY_ICON}>
+                <CheckCircle2 className="h-7 w-7 text-success-fg" />
               </div>
-              <CardTitle className="text-2xl text-fg">Payment successful</CardTitle>
+              <CardTitle className="text-2xl font-bold text-fg-strong">Payment successful</CardTitle>
             </>
           )}
         </CardHeader>
         <CardContent className="space-y-6">
           {status === 'confirmed' && creditsAdded != null ? (
-            <div className="bg-bg p-5 rounded-lg border border-border space-y-1">
-              <p className="text-fg">
-                <span className="font-semibold">{creditsAdded.toLocaleString()}</span> credits added.
+            <div className="bg-bg p-5 border-2 border-border-strong space-y-1">
+              <p className="text-fg-strong">
+                <span className="font-bold">{creditsAdded.toLocaleString()}</span> credits added.
               </p>
               {credits != null && (
-                <p className="text-sm text-fg-muted">
+                <p className="text-sm text-fg">
                   New balance: <span className="font-semibold text-fg">{credits.toLocaleString()}</span> credits
                 </p>
               )}
             </div>
           ) : status === 'pending' ? (
-            <p className="text-sm text-fg-muted">
+            <p className="text-sm text-fg">
               Your payment was received. Your credits will appear in your account within a
               minute — refresh your dashboard if they aren&apos;t visible yet.
             </p>
           ) : (
-            <p className="text-sm text-fg-muted">
+            <p className="text-sm text-fg">
               Please wait while we confirm your payment.
             </p>
           )}

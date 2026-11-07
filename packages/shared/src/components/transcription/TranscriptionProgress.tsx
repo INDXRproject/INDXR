@@ -54,19 +54,19 @@ export function TranscriptionProgress({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="flex items-baseline justify-between gap-3 text-xs text-fg-muted">
+      <div className="flex items-baseline justify-between gap-3 text-xs text-fg">
         <span className="min-w-0">{SUBLABEL[status]}</span>
         {context && <span className="shrink-0 font-mono tabular-nums">{context}</span>}
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+      <div className="h-2.5 overflow-hidden border-2 border-border-strong bg-bg">
         {hasBytes ? (
           <div
-            className="h-full rounded-full bg-accent transition-[width] duration-500"
+            className="h-full bg-accent transition-[width] duration-500"
             style={{ width: `${pct}%` }}
           />
         ) : (
-          <div className="h-full w-full rounded-full bg-accent/60 motion-safe:animate-pulse" />
+          <div className="h-full w-full bg-accent motion-safe:animate-pulse" />
         )}
       </div>
 
@@ -75,8 +75,8 @@ export function TranscriptionProgress({
           <span
             key={s}
             className={cn(
-              "h-[3px] flex-1 rounded-full",
-              i < currentIndex ? "bg-success" : i === currentIndex ? "bg-accent" : "bg-surface-sunken",
+              "h-[3px] flex-1",
+              i < currentIndex ? "bg-fg-strong" : i === currentIndex ? "bg-accent" : "bg-bg-subtle",
             )}
           />
         ))}

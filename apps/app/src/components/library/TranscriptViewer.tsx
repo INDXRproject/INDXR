@@ -18,7 +18,6 @@ import {
   Loader2,
   X,
   Save,
-  AlertCircle,
   MoreHorizontal,
   RotateCcw,
   Play,
@@ -62,6 +61,7 @@ import {
 } from "@indxr/shared/components/ui/dialog";
 
 import { FeedbackCard } from "@indxr/shared/components/ui/FeedbackCard";
+import { noticeCompact } from "@indxr/shared/lib/notice";
 import { useRouter } from "next/navigation";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useAuth } from "@indxr/shared/hooks/useAuth";
@@ -855,7 +855,7 @@ export function TranscriptViewer({
                   {(localRagExports?.length ?? 0) > 0 ? (
                     <span className="ml-auto text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
                   ) : (
-                    <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
+                    <span className="ml-auto text-[9px] font-bold border border-border-strong bg-accent text-fg-on-accent font-mono px-1 py-px">PAID</span>
                   )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1075,8 +1075,9 @@ export function TranscriptViewer({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={handleDeleteConfirm}
-              className="bg-error text-error-foreground hover:bg-error/90 gap-2"
+              className="gap-2"
             >
               <Trash2 className="h-4 w-4" />
               Delete Permanently
@@ -1182,7 +1183,7 @@ export function TranscriptViewer({
                 ))}
               </div>
               {/* Cost breakdown — what it costs, your balance, what remains */}
-              <div className="rounded-lg border border-border bg-surface-elevated/30 p-3 text-sm space-y-1">
+              <div className="border-2 border-border-strong bg-bg p-3 text-sm space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-fg-muted">This export</span>
                   <span className="font-semibold text-fg tabular-nums">{ragCost} credit{ragCost !== 1 ? "s" : ""}</span>
@@ -1198,10 +1199,9 @@ export function TranscriptViewer({
                 </p>
               </div>
               {ragInsufficientCredits && (
-                <div className="flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>Not enough credits.</span>
-                  <a href="/dashboard/credits" className="ml-auto font-medium underline hover:no-underline">Buy credits →</a>
+                <div role="alert" className={cn("flex items-center gap-2", noticeCompact("error"))}>
+                  <span className="font-bold text-fg-strong">Not enough credits.</span>
+                  <a href="/dashboard/credits" className="ml-auto font-bold text-fg-strong underline hover:no-underline">Buy credits →</a>
                 </div>
               )}
               <DialogFooter>

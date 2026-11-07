@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "border-2 border-border-strong bg-accent font-bold text-fg-on-accent hover:bg-accent-hover",
         destructive:
-          "bg-error text-white hover:bg-error/90 focus-visible:ring-error/20 dark:bg-error/60 dark:focus-visible:ring-error/40",
+          "border-2 border-border-strong bg-error font-bold text-white hover:bg-error/90 focus-visible:ring-error/20 dark:bg-error/80 dark:focus-visible:ring-error/40",
         outline:
           "border-2 border-border-strong bg-bg font-bold text-fg-strong hover:bg-bg-subtle",
         secondary:

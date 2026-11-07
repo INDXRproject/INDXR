@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { createParagraphMode, buildRagJson, generateSrt, generateVtt, generateCsv, generateJson, generateMarkdown, generateTxt, buildReadingParagraphs } from "../utils/formatTranscript";
 import { deductRagExportCreditsAction } from "../actions/rag-export";
 import { appHref } from "../lib/cross-host-links";
+import { notice, noticeCompact, NOTICE_BODY, NOTICE_ICON, NOTICE_TITLE } from "../lib/notice";
 import { Button } from "./ui/button";
 import posthog from "posthog-js";
 import {
@@ -272,21 +273,21 @@ export function TranscriptCard({
   return (
     <>
     {showSignupCard && !user && (
-      <div className="w-full max-w-4xl mx-auto mt-8 rounded-lg border border-success/25 bg-success-subtle px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div className={cn("w-full max-w-4xl mx-auto mt-8 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4", notice("success"))}>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-fg">✓ Got your transcript.</p>
-          <p className="text-sm font-semibold text-fg">Sign up free to save it, extract playlists, and transcribe with AI.</p>
+          <p className={cn("text-sm", NOTICE_TITLE)}>✓ Got your transcript.</p>
+          <p className={NOTICE_BODY}>Sign up free to save it, extract playlists, and transcribe with AI.</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <a
             href={marketingHref('/signup')}
-            className="rounded-md bg-accent px-4 py-1.5 text-sm font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap"
+            className="inline-flex items-center border-2 border-border-strong bg-accent font-bold text-fg-on-accent hover:bg-accent-hover transition-colors whitespace-nowrap px-4 py-1.5 text-sm"
           >
             Sign Up Free
           </a>
           <a
             href={marketingHref('/login')}
-            className="text-sm font-medium text-fg-muted hover:text-fg transition-colors whitespace-nowrap"
+            className="text-sm font-bold text-fg-strong underline underline-offset-4 hover:text-fg transition-colors whitespace-nowrap"
           >
             Log In
           </a>
@@ -294,8 +295,7 @@ export function TranscriptCard({
       </div>
     )}
     <Card className={cn(
-      "w-full max-w-4xl mx-auto mt-3 border shadow-sm",
-      completion && !completion.warning && "border-success/30"
+      "w-full max-w-4xl mx-auto mt-3 border"
     )}>
       <CardHeader className="pb-4 border-b">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -304,8 +304,8 @@ export function TranscriptCard({
               {completion ? (
                 <>
                   {completion.warning
-                    ? <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
-                    : <CheckCircle className="h-5 w-5 shrink-0 text-success" />}
+                    ? <AlertTriangle className={cn("h-5 w-5 shrink-0", NOTICE_ICON.warning)} />
+                    : <CheckCircle className={cn("h-5 w-5 shrink-0", NOTICE_ICON.success)} />}
                   <span>{completion.warning ? "Transcript saved" : "Transcript ready"}</span>
                 </>
               ) : "Transcript Results"}
@@ -323,7 +323,7 @@ export function TranscriptCard({
                   : "No content"}
             </CardDescription>
             {completion?.warning && (
-              <p className="mt-1 text-xs text-warning-fg dark:text-warning">{completion.warning}</p>
+              <p className="mt-1 text-xs font-medium text-warning-fg">{completion.warning}</p>
             )}
           </div>
           {/* Actions wrap instead of overflowing on 390px — "View in Library" used to run off-screen
@@ -374,7 +374,7 @@ export function TranscriptCard({
 
             {completion?.libraryHref && (
               <a href={completion.libraryHref}>
-                <Button variant="outline" size="sm" className="gap-2 border-success/40 text-success-fg dark:text-success hover:bg-success-subtle">
+                <Button variant="outline" size="sm" className="gap-2">
                   View in Library
                 </Button>
               </a>
@@ -401,21 +401,21 @@ export function TranscriptCard({
       </CardHeader>
 
       {showSignupPrompt && (
-        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent/5 px-4 py-3 text-sm">
+        <div className={cn("mx-6 mt-4 flex items-center justify-between gap-3", noticeCompact("info"))}>
           <div className="flex items-center gap-2">
-            <LogIn className="size-4 text-accent-fg shrink-0" />
+            <LogIn className={cn("size-4 shrink-0", NOTICE_ICON.info)} />
             <span className="text-fg"><strong>Sign up or log in</strong> to export as CSV, SRT, VTT, JSON, or Markdown.</span>
           </div>
-          <a href={marketingHref('/login')} className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors">
+          <a href={marketingHref('/login')} className="shrink-0 inline-flex items-center border-2 border-border-strong bg-accent font-bold text-fg-on-accent hover:bg-accent-hover transition-colors whitespace-nowrap px-3 py-1.5 text-xs">
             Sign in
           </a>
         </div>
       )}
 
       {showInsufficientCreditsForRag && (
-        <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm">
+        <div className={cn("mx-6 mt-4 flex items-center justify-between gap-3", noticeCompact("error"))}>
           <span className="text-fg">Not enough credits for RAG export — need {ragCost} credit{ragCost !== 1 ? 's' : ''}.</span>
-          <a href={appHref('/dashboard/credits')} className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-fg-on-accent hover:bg-accent/90 transition-colors whitespace-nowrap">
+          <a href={appHref('/dashboard/credits')} className="shrink-0 inline-flex items-center border-2 border-border-strong bg-accent font-bold text-fg-on-accent hover:bg-accent-hover transition-colors whitespace-nowrap px-3 py-1.5 text-xs">
             Buy credits →
           </a>
         </div>
@@ -463,7 +463,7 @@ export function TranscriptCard({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="rounded-lg border border-border bg-surface-elevated/30 px-4 py-3 space-y-1.5">
+          <div className="border-2 border-border-strong bg-bg px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between text-sm">
               <span className="text-fg-muted">Export cost</span>
               <span className="font-semibold text-fg">{ragCost} credit{ragCost !== 1 ? 's' : ''}</span>

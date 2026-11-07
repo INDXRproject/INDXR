@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { trackPurchase } from "@indxr/shared/lib/gtag"
+import { Notice } from "@indxr/shared/components/ui/notice"
 
 // Snelle balie — statuspagina na Stripe-redirect of credits-betaling (growth-plan.md §6.2
 // Onderdeel B). Pollt het publieke backend-statusendpoint (beveiligd door access_token, geen
@@ -73,26 +74,26 @@ export default function QuickCheckoutStatusPage() {
   return (
     <div className="max-w-xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-semibold text-fg mb-4">Your order</h1>
-      {error && <p className="text-sm text-error">{error}</p>}
+      {error && <Notice tone="error">{error}</Notice>}
       {!error && status === "pending" && (
-        <p className="text-sm text-fg-muted flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Confirming payment…
+        <p className="text-sm text-fg flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin text-fg-strong" /> Confirming payment…
         </p>
       )}
       {!error && files.length > 0 && (
         <div className="space-y-3 mt-4">
           {files.map((f, i) => (
-            <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-surface p-4 text-sm">
+            <div key={i} className="flex items-center justify-between border-2 border-border-strong bg-bg p-4 text-sm">
               <span className="text-fg">{f.filename}</span>
               {f.secure_url ? (
                 <a href={f.secure_url} className="text-[var(--link)] hover:underline flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" /> View transcript
                 </a>
               ) : f.job_status === "error" ? (
-                <span className="text-error">Failed — credits refunded</span>
+                <span className="font-medium text-error">Failed — credits refunded</span>
               ) : (
-                <span className="text-fg-muted flex items-center gap-1">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Transcribing…
+                <span className="text-fg flex items-center gap-1">
+                  <Loader2 className="h-4 w-4 animate-spin text-fg-strong" /> Transcribing…
                 </span>
               )}
             </div>

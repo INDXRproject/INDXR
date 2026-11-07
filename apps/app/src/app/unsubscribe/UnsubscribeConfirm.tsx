@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Check } from "lucide-react"
 import { Button } from "@indxr/shared/components/ui/button"
+import { Notice } from "@indxr/shared/components/ui/notice"
 
 type State = "idle" | "loading" | "done" | "error"
 
@@ -26,14 +27,14 @@ export function UnsubscribeConfirm({ token }: { token: string }) {
   if (state === "done") {
     return (
       <div className="space-y-4">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-subtle">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center border-2 border-border-strong bg-bg">
           <Check className="h-6 w-6 text-success-fg" />
         </div>
-        <p className="text-sm text-fg-muted">
+        <p className="text-sm font-medium text-fg-strong">
           You&apos;re all set — you won&apos;t receive marketing &amp; product emails from
           INDXR.AI anymore. You&apos;ll still get replies to your own support tickets.
         </p>
-        <p className="text-xs text-fg-subtle">
+        <p className="text-xs text-fg">
           Changed your mind? You can turn these emails back on any time in your{" "}
           app settings.
         </p>
@@ -43,7 +44,7 @@ export function UnsubscribeConfirm({ token }: { token: string }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-fg-muted">
+      <p className="text-sm text-fg">
         Stop receiving marketing &amp; announcement emails from INDXR.AI? This won&apos;t
         affect replies to your support tickets.
       </p>
@@ -51,7 +52,7 @@ export function UnsubscribeConfirm({ token }: { token: string }) {
         {state === "loading" ? "Unsubscribing…" : "Confirm unsubscribe"}
       </Button>
       {state === "error" && (
-        <p className="text-sm text-error">Something went wrong. Please try again.</p>
+        <Notice tone="error">Something went wrong. Please try again.</Notice>
       )}
     </div>
   )

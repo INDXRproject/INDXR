@@ -3,6 +3,7 @@ import { useState } from "react"
 import { CheckCircle, Info, ChevronDown, ChevronRight } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { ResultCardShell } from "../transcribe/ResultCardShell"
+import { NOTICE_ICON, NOTICE_TITLE, noticeCompact } from "../../lib/notice"
 
 // ── Completion receipt (ADR-050 fase 3) ─────────────────────────────────────────
 // One honest receipt for every job type. Principle: "silence on success, explain on
@@ -105,14 +106,14 @@ export function CompletionReceipt({
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 text-xs font-medium text-fg-muted hover:text-fg transition-colors cursor-pointer"
+        className="flex items-center gap-1 text-sm font-bold text-fg-strong hover:underline underline-offset-4 cursor-pointer"
         aria-expanded={open}
       >
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         {open ? "Hide" : "Show"} {videos!.length} {plural(videos!.length, "video")}
       </button>
       {open && (
-        <ul className="mt-2 divide-y divide-border-subtle rounded-lg border border-border-subtle overflow-hidden">
+        <ul className="mt-2 divide-y divide-border-subtle border-2 border-border-strong overflow-hidden">
           {videos!.map(v => (
             <li key={v.videoId} className="flex items-center justify-between gap-3 px-3 py-1.5 text-xs">
               <span className="truncate text-fg">{v.title || v.videoId}</span>
@@ -129,8 +130,8 @@ export function CompletionReceipt({
   )
 
   const overshootStrip = isOvershoot && (
-    <div className="mt-3 flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-subtle px-3 py-2 text-xs text-fg-muted">
-      <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent-fg" />
+    <div className={cn("mt-3 flex items-start gap-2", noticeCompact("info"))}>
+      <Info className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", NOTICE_ICON.info)} />
       <span>{overshootCopy(reserved!, used, back)}</span>
     </div>
   )
@@ -163,17 +164,17 @@ export function CompletionReceipt({
       header={
         <div className="flex items-start gap-2 min-w-0">
           {isError
-            ? <Info className="h-4 w-4 shrink-0 mt-0.5 text-fg-muted" />
-            : <CheckCircle className="h-4 w-4 shrink-0 mt-0.5 text-success" />}
+            ? <Info className={cn("h-4 w-4 shrink-0 mt-0.5", NOTICE_ICON.error)} />
+            : <CheckCircle className={cn("h-4 w-4 shrink-0 mt-0.5", NOTICE_ICON.success)} />}
           <div className="min-w-0">
-            <p className={cn("font-semibold text-sm", isError ? "text-fg" : "text-success-fg dark:text-success")}>
+            <p className={cn("text-sm", NOTICE_TITLE)}>
               {isError ? "Not charged — the transcription didn't complete." : headline}
             </p>
             {isError
               ? (hasRefund && (
-                  <p className="text-xs text-fg-muted mt-0.5">{back} {plural(back, "credit")} {REFUND_TAIL}.</p>
+                  <p className="text-xs text-fg mt-0.5">{back} {plural(back, "credit")} {REFUND_TAIL}.</p>
                 ))
-              : <p className="text-xs text-fg-muted mt-0.5 tabular-nums">{creditLine}</p>}
+              : <p className="text-xs text-fg mt-0.5 tabular-nums">{creditLine}</p>}
           </div>
         </div>
       }
@@ -181,7 +182,7 @@ export function CompletionReceipt({
         !isError && libraryHref ? (
           <a
             href={libraryHref}
-            className="rounded-lg border border-success/40 px-2.5 py-1 text-xs font-medium text-success-fg dark:text-success hover:bg-success-subtle transition-colors"
+            className="inline-flex items-center border-2 border-border-strong bg-bg px-2.5 py-1 text-xs font-bold text-fg-strong hover:bg-bg-subtle transition-colors"
           >
             View in Library
           </a>

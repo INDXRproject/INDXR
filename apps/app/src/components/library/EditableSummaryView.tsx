@@ -9,6 +9,7 @@ import { Button } from "@indxr/shared/components/ui/button";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { cn } from "@indxr/shared/lib/utils";
+import { noticeCompact } from "@indxr/shared/lib/notice";
 import { summaryToTiptapDoc, type TNode } from "@indxr/shared/utils/summaryDoc";
 
 interface SummarySection {
@@ -118,7 +119,7 @@ export function EditableSummaryView({ id, generatedSummary, editedContent, edite
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8">
-              {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+              {copied ? <Check className="mr-2 h-3.5 w-3.5 text-success-fg" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
               {copied ? "Copied!" : "Copy"}
             </Button>
             <Button variant="ghost" size="sm" onClick={handleRevert} className="h-8" title="Restore the generated summary">
@@ -132,11 +133,11 @@ export function EditableSummaryView({ id, generatedSummary, editedContent, edite
 
         {/* Stale notice — the summary was regenerated after this edit. Mirrors ADR-085's stale-summary UI. */}
         {isStale && (
-          <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
+          <div role="status" className={cn("flex items-center gap-2", noticeCompact("warning"))}>
             <span className="flex-1">This edited summary was written before the summary was last regenerated.</span>
             <button
               onClick={() => router.replace(`/dashboard/library/${id}?tab=summary`)}
-              className="font-medium underline hover:no-underline shrink-0 cursor-pointer"
+              className="font-bold text-fg-strong underline hover:no-underline shrink-0 cursor-pointer"
             >
               View current
             </button>
@@ -144,7 +145,7 @@ export function EditableSummaryView({ id, generatedSummary, editedContent, edite
         )}
 
         {feedback && (
-          <div className={cn("rounded-lg px-3 py-2 text-sm", feedback.type === "error" ? "border border-error/20 bg-error/10 text-error" : "border border-success/20 bg-success/10 text-success")}>
+          <div role={feedback.type === "error" ? "alert" : "status"} className={noticeCompact(feedback.type)}>
             {feedback.message}
           </div>
         )}

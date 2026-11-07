@@ -56,7 +56,7 @@ export function CostBreakdown({
     <div className={cn("overflow-hidden border-2 border-border-strong bg-bg", className)}>
       <div className="p-4">
         {shown.length > 0 && (
-          <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-surface-sunken">
+          <div className="mb-3 flex h-2.5 overflow-hidden border-2 border-border-strong bg-bg">
             {shown.map((s) => (
               <div key={s.key} className={barClass(s.tone)} style={{ width: `${(s.count / total) * 100}%` }} />
             ))}
@@ -68,7 +68,7 @@ export function CostBreakdown({
               key={s.key}
               className={cn(
                 "flex items-center justify-between gap-3 text-[13px]",
-                s.refund ? "text-error" : "text-fg-subtle"
+                s.refund ? "font-medium text-error" : "text-fg-subtle"
               )}
             >
               <span className="flex min-w-0 items-center gap-2">
@@ -117,7 +117,7 @@ export function BalanceLine({ have, cost, className }: { have: number | null; co
     )
   }
   return (
-    <span className={cn("text-[13px] text-error", className)}>
+    <span className={cn("text-[13px] font-medium text-error", className)}>
       {cost - have} credit{cost - have === 1 ? "" : "s"} short — you have {have}
     </span>
   )

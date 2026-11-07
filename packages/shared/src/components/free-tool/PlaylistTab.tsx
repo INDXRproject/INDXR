@@ -6,6 +6,7 @@ import { PlaylistManager, VideoStatus } from "../PlaylistManager"
 import { Loader2 } from "lucide-react"
 import { Button } from "../ui/button"
 import { ErrorCard } from "../transcribe/ErrorCard"
+import { NOTICE_TITLE, notice } from "../../lib/notice"
 import { resolveErrorCopy, type ErrorCtx } from "../transcribe/errorCopy"
 import { appHref } from "../../lib/cross-host-links"
 import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
@@ -694,15 +695,15 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       {resumeData && !loading && (
         <div
           aria-live="polite"
-          className="mb-6 p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
+          className={`mb-6 ${notice("info")} flex items-center justify-between animate-in fade-in slide-in-from-top-2`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg text-accent-fg shrink-0">
+            <div className="shrink-0 text-fg-strong">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">Playlist extraction in progress</p>
-              <p className="text-xs text-fg-muted">
+              <p className={`text-sm ${NOTICE_TITLE}`}>Playlist extraction in progress</p>
+              <p className="text-xs text-fg">
                 {resumeData.title ? `"${resumeData.title}"` : 'A playlist'} is still being processed
                 {resumeData.total > 0 ? ` (${resumeData.completed} / ${resumeData.total} videos done)` : ''}
               </p>
@@ -761,8 +762,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
 
       {/* Progress Message — hidden during a run; the progress card is the single status surface (ADR-080) */}
       {progressMessage && !loading && (
-        <div className="mb-4 p-3 bg-surface-sunken border border-border rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="mb-4 p-3 bg-bg border-2 border-border-strong flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-fg-strong" />
             <span className="text-sm text-fg font-medium">{progressMessage}</span>
         </div>
       )}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { UploadCloud, FileAudio, X, Loader2, AlertCircle } from "lucide-react"
+import { UploadCloud, FileAudio, X, Loader2 } from "lucide-react"
 import { Button } from "../ui/button"
 import { Progress } from "../ui/progress"
 import { useAuth } from "../../hooks/useAuth"
@@ -26,6 +26,8 @@ import { CREDIT_COSTS } from "../../lib/pricing"
 import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
 import { QuickCheckoutPanel } from "./QuickCheckoutPanel"
+import { Notice } from "../ui/notice"
+import { NOTICE_BAR, NOTICE_TITLE, notice } from "../../lib/notice"
 
 const AUDIO_JOB_KEY = 'indxr-active-audio-job'
 // ADR-071 — DEEL 4: mirrors the server's AssemblyAI cap (backend/main.py MAX_TRANSCRIPTION_SECONDS).
@@ -522,23 +524,10 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     <div className="space-y-6">
       {/* Watchdog permanent failure notice — credits already refunded */}
       {watchdogRefundNotice && (
-        <div
-          aria-live="polite"
-          className="p-4 bg-surface border border-border rounded-xl flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2"
-        >
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-4 w-4 text-fg-muted shrink-0 mt-0.5" />
-            <p className="text-sm text-fg-muted">
-              We couldn&apos;t process this file after several attempts. The credits held for it have been refunded to your balance.
-            </p>
-          </div>
-          <button
-            aria-label="Close"
-            onClick={() => setWatchdogRefundNotice(false)}
-            className="text-fg-muted hover:text-fg shrink-0 text-xs leading-none"
-          >
-            ✕
-          </button>
+        <div aria-live="polite" className="animate-in fade-in slide-in-from-top-2">
+          <Notice tone="warning" onDismiss={() => setWatchdogRefundNotice(false)}>
+            We couldn&apos;t process this file after several attempts. The credits held for it have been refunded to your balance.
+          </Notice>
         </div>
       )}
       {error && (
@@ -569,15 +558,15 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       {resumeData && !isTranscribing && (
         <div
           aria-live="polite"
-          className="p-4 bg-accent/5 border border-primary/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2"
+          className={`${notice("info")} flex items-center justify-between animate-in fade-in slide-in-from-top-2`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg text-accent-fg shrink-0">
+            <div className="shrink-0 text-fg-strong">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">Transcription in progress</p>
-              <p className="text-xs text-fg-muted">
+              <p className={`text-sm ${NOTICE_TITLE}`}>Transcription in progress</p>
+              <p className="text-xs text-fg">
                 &ldquo;{resumeData.filename}&rdquo; is still being transcribed
               </p>
             </div>
@@ -610,12 +599,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          ${file ? 'p-5' : 'p-12'} rounded-2xl border-2 border-dashed transition-all
+          ${file ? 'p-5' : 'p-12'} border-2 transition-all
           ${isDragging
-            ? 'border-primary bg-accent/10 scale-105'
+            ? 'border-dashed border-border-strong bg-accent'
             : file
-              ? 'border-green-500/50 bg-success-subtle'
-              : 'border-border bg-surface-elevated/10 hover:bg-surface-elevated/20 hover:border-border'
+              ? `border-border-strong bg-bg ${NOTICE_BAR.success}`
+              : 'border-dashed border-border-strong bg-bg hover:bg-bg-subtle'
           }
           ${isUploading ? 'opacity-50 cursor-wait' : ''}
         `}
@@ -642,19 +631,19 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
         <div className="flex flex-col items-center justify-center text-center">
           {isUploading ? (
             <>
-              <div className="p-4 bg-accent/10 rounded-full mb-4">
-                <Loader2 className="h-8 w-8 text-accent-fg animate-spin" />
+              <div className="flex h-14 w-14 items-center justify-center border-2 border-border-strong bg-bg mb-4">
+                <Loader2 className="h-8 w-8 text-fg-strong animate-spin" />
               </div>
-              <h3 className="text-xl font-semibold text-fg mb-2">Processing file...</h3>
-              <p className="text-fg-muted">Reading duration</p>
+              <h3 className="text-xl font-bold text-fg-strong mb-2">Processing file...</h3>
+              <p className="text-fg">Reading duration</p>
             </>
           ) : file ? (
             <>
-              <div className="p-4 bg-success-subtle rounded-full mb-4">
-                <FileAudio className="h-8 w-8 text-success" />
+              <div className="flex h-14 w-14 items-center justify-center border-2 border-border-strong bg-bg mb-4">
+                <FileAudio className="h-8 w-8 text-success-fg" />
               </div>
-              <h3 className="text-xl font-semibold text-fg mb-2">{file.name}</h3>
-              <div className="flex gap-4 text-sm text-fg-muted mb-4">
+              <h3 className="text-xl font-bold text-fg-strong mb-2">{file.name}</h3>
+              <div className="flex gap-4 text-sm text-fg mb-4">
                 <span>{formatFileSize(file.size)}</span>
                 <span>•</span>
                 <span>{formatDuration(audioDuration)}</span>
@@ -666,7 +655,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                   e.stopPropagation()
                   handleRemoveFile()
                 }}
-                className="text-fg-muted hover:text-fg"
+                className="font-bold text-fg-strong hover:text-fg"
               >
                 <X className="h-4 w-4 mr-2" />
                 Remove file
@@ -675,12 +664,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
           ) : (
             // Native label opens the picker on a real user gesture — iOS-safe (no JS .click()).
             <label htmlFor="audio-upload-input" className="flex flex-col items-center justify-center text-center cursor-pointer">
-              <div className="p-4 bg-surface-elevated rounded-full mb-4 group-hover:scale-110 transition-transform">
-                <UploadCloud className="h-8 w-8 text-fg-muted" />
+              <div className="flex h-14 w-14 items-center justify-center border-2 border-border-strong bg-bg mb-4">
+                <UploadCloud className="h-8 w-8 text-fg-strong" />
               </div>
-              <h3 className="text-xl font-semibold text-fg mb-2">Upload a file</h3>
-              <p className="text-fg-muted mb-2">Drag and drop your file here, or tap to choose a file</p>
-              <p className="text-sm text-fg-muted">Supported: {UPLOAD_FORMATS_LIST} (max {UPLOAD_MAX_FILE_MB}MB)</p>
+              <h3 className="text-xl font-bold text-fg-strong mb-2">Upload a file</h3>
+              <p className="text-fg mb-2">Drag and drop your file here, or tap to choose a file</p>
+              <p className="text-sm text-fg">Supported: {UPLOAD_FORMATS_LIST} (max {UPLOAD_MAX_FILE_MB}MB)</p>
             </label>
           )}
         </div>
@@ -692,12 +681,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
       {/* Duration cap — AssemblyAI supports up to 10 hours per file (ADR-071 DEEL 4) */}
       {file && !transcript && isOverDurationCap && audioDuration !== null && (
-        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span className="flex-1">
-            This audio is {(audioDuration / 3600).toFixed(1)} hours long. AI transcription supports up to 10 hours per file. Split it into shorter parts.
-          </span>
-        </div>
+        <Notice tone="error">
+          This audio is {(audioDuration / 3600).toFixed(1)} hours long. AI transcription supports up to 10 hours per file. Split it into shorter parts.
+        </Notice>
       )}
 
       {/* Credit cost (ADR-080) — indigo AI method (uploads always go via AssemblyAI), the
@@ -753,7 +739,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                 value={uploadProgress ? Math.round((uploadProgress.loaded / uploadProgress.total) * 100) : 0}
                 className="h-2"
               />
-              <div className="flex justify-between text-xs text-fg-muted">
+              <div className="flex justify-between text-xs text-fg">
                 <span>
                   {uploadProgress
                     ? `Uploading ${formatBytes(uploadProgress.loaded)} / ${formatBytes(uploadProgress.total)}`
@@ -763,7 +749,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
                   {uploadProgress ? `${Math.round((uploadProgress.loaded / uploadProgress.total) * 100)}%` : ''}
                 </span>
               </div>
-              <p className="text-xs text-amber-500 text-center">Don&apos;t close this tab while uploading</p>
+              <p className="text-xs font-medium text-warning-fg text-center">Don&apos;t close this tab while uploading</p>
             </div>
           )}
 
@@ -828,11 +814,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
 
       {/* Auth Required Message */}
       {!user && (
-        <div className="p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
-          <p className="text-sm text-amber-200">
-            Please <a href={marketingHref('/login')} className="underline font-semibold">sign in</a> to transcribe your files.
-          </p>
-        </div>
+        <Notice tone="warning">
+          Please <a href={marketingHref('/login')} className="underline font-bold text-fg-strong">sign in</a> to transcribe your files.
+        </Notice>
       )}
     </div>
   )

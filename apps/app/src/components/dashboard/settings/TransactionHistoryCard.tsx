@@ -58,7 +58,7 @@ export function TransactionHistoryCard({ transactions }: { transactions: RawCred
             <TableBody>
               {displayed.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center text-fg-muted">
+                  <TableCell colSpan={3} className="h-24 text-center font-bold text-fg-strong">
                     No activity yet.
                   </TableCell>
                 </TableRow>
@@ -72,7 +72,7 @@ export function TransactionHistoryCard({ transactions }: { transactions: RawCred
                       <span className="inline-flex items-center gap-2">
                         {row.label}
                         {row.pending && (
-                          <span className="rounded-full bg-warning-subtle px-2 py-0.5 text-[11px] font-medium text-warning">
+                          <span className="border-2 border-border-strong bg-accent px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.04em] text-fg-on-accent">
                             Pending
                           </span>
                         )}
@@ -82,9 +82,9 @@ export function TransactionHistoryCard({ transactions }: { transactions: RawCred
                       <span
                         className={`flex items-center justify-end gap-1 font-mono ${
                           row.pending
-                            ? "text-warning"
+                            ? "text-warning-fg"
                             : row.direction === "in"
-                              ? "text-success"
+                              ? "text-success-fg"
                               : "text-fg-muted"
                         }`}
                       >

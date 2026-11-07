@@ -3,6 +3,7 @@
 import { Button } from "@indxr/shared/components/ui/button"
 import { Input } from "@indxr/shared/components/ui/input"
 import { Label } from "@indxr/shared/components/ui/label"
+import { Notice } from "@indxr/shared/components/ui/notice"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@indxr/shared/components/ui/select"
 import { useState, useEffect } from "react"
@@ -101,10 +102,10 @@ export default function OnboardingPage() {
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-6 w-6 text-[var(--success)] mt-0.5 shrink-0" />
+                <CheckCircle2 className="h-6 w-6 text-success-fg mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="font-medium text-[var(--fg)]">Account created</h3>
-                  <p className="text-sm text-[var(--fg-muted)]">You&apos;re signed in and your {FREE_TIER.WELCOME_CREDITS} welcome credits are in your account.</p>
+                  <h3 className="font-bold text-fg-strong">Account created</h3>
+                  <p className="text-sm text-fg">You&apos;re signed in and your {FREE_TIER.WELCOME_CREDITS} welcome credits are in your account.</p>
                 </div>
               </div>
 
@@ -171,9 +172,9 @@ export default function OnboardingPage() {
                 </div>
 
                 {error && (
-                  <div className="text-error text-sm font-medium bg-error/10 border border-error/20 rounded-lg p-3">
+                  <Notice tone="error">
                     {error}
-                  </div>
+                  </Notice>
                 )}
                 <Button type="submit" className="w-full mt-2" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : "Start transcribing →"}

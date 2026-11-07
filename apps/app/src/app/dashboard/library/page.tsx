@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@indxr/shared/components/ui/button";
+import { Notice } from "@indxr/shared/components/ui/notice";
 import { Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
 import { DashboardBackdrop } from "@indxr/shared/components/DashboardBackdrop";
@@ -349,21 +350,15 @@ function LibraryContent() {
           )}
 
           {listError && (
-            <div className="flex items-center gap-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-sm text-error mb-4">
+            <Notice tone="error" className="mb-4" onDismiss={() => setListError(null)}>
               {listError}
-              <button
-                onClick={() => setListError(null)}
-                className="ml-auto opacity-60 hover:opacity-100 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
+            </Notice>
           )}
 
           {/* List */}
           {loading ? (
             <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-fg-muted" />
+              <Loader2 className="h-8 w-8 animate-spin text-fg-strong" />
             </div>
           ) : (
             <>
@@ -440,7 +435,7 @@ export default function LibraryPage() {
     <Suspense
       fallback={
         <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-fg-muted" />
+          <Loader2 className="h-8 w-8 animate-spin text-fg-strong" />
         </div>
       }
     >
