@@ -119,13 +119,13 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 ---
 
-## [~] Google-login staat op "Testing" — nieuwe gebruikers waarschijnlijk geblokkeerd (gevonden 2026-11-07)
+## [~] Google-login stond op "Testing" — nieuwe gebruikers waarschijnlijk geblokkeerd (gevonden + gepubliceerd 2026-11-07)
 
 **Bevinding (Claude, 7-11):** OAuth-toestemmingsscherm van de INDXR-client (`498368709963-1o8b…`, Google Cloud-project `obsidian-api-gemini`, dezelfde client-id als `external_google_client_id` in Supabase Auth) staat op publicatiestatus **Testing** met **0 testgebruikers** (user type External). In Testing laat Google alleen testgebruikers (en projecteigenaren) door; ieder ander krijgt "access blocked". Bewijs in `auth.identities`: laatste `google`-identity 2026-09-16 (24 in totaal), terwijl `email`-identities doorlopen tot 2026-10-29. Inloggen met Khidr's eigen Google-account werkt (eigenaar), waardoor het niet opviel.
 
 **Gedaan 7-11:** app-naam op het scherm was "Obsidian Copilot" → nu **INDXR.AI**; L2-logo (120×120) geüpload; home/privacy/terms-links ingevuld; geautoriseerde domeinen `indxr.ai` + `uivlvwcplcaixkzuiwsv.supabase.co` ongewijzigd.
 
-**Open:** Audience → **Publish app** (Testing → In production). Wacht op Khidr (Claude mocht die klik niet zelf doen). Daarna merkverificatie bij Google voor het logo; die kan haken op het `supabase.co`-domein (niet van ons te verifiëren). Inloggen werkt tijdens de verificatie gewoon (alleen basis-scopes email/profile/openid). Na publiceren verifiëren: een Google-account dat geen eigenaar is moet kunnen aanmelden, en er moet een nieuwe `google`-rij in `auth.identities` verschijnen.
+**Update 7-11:** Khidr heeft gepubliceerd → status **In production**. Merkverificatie door Claude aangevraagd en goedgekeurd (automatische check, ~1 min), branding gepubliceerd: 'Your branding has been verified and is being shown to users' (naam INDXR.AI + logo). **Nog te bewijzen:** de eerste nieuwe `google`-rij in `auth.identities` na 7-11 (laatste was 16-9). Oorspronkelijk open punt: Wacht op Khidr (Claude mocht die klik niet zelf doen). Daarna merkverificatie bij Google voor het logo; die kan haken op het `supabase.co`-domein (niet van ons te verifiëren). Inloggen werkt tijdens de verificatie gewoon (alleen basis-scopes email/profile/openid). Na publiceren verifiëren: een Google-account dat geen eigenaar is moet kunnen aanmelden, en er moet een nieuwe `google`-rij in `auth.identities` verschijnen.
 
 ## [x] YouTube 'Extract' slikte de eerste klik na plakken (opgelost 2026-11-07)
 
