@@ -143,6 +143,8 @@ interface TranscriptListProps {
   collections: Collection[];
   narrowed: boolean;
   onClearFilters: () => void;
+  /** The collection being viewed, if any — its badge is redundant on every row there. */
+  activeCollectionId?: string | null;
 }
 
 export function TranscriptList({
@@ -154,6 +156,7 @@ export function TranscriptList({
   collections,
   narrowed,
   onClearFilters,
+  activeCollectionId = null,
 }: TranscriptListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false); // mobile
@@ -699,7 +702,7 @@ export function TranscriptList({
                   {!compact && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       {badges.map((b) => <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />)}
-                      {colName && <CollectionBadge name={colName} />}
+                      {colName && t.collection_id !== activeCollectionId && <CollectionBadge name={colName} />}
                     </div>
                   )}
 

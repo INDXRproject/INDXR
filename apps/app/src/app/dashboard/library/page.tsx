@@ -376,6 +376,7 @@ function LibraryContent() {
                 collections={collections}
                 narrowed={narrowed}
                 onClearFilters={clearAllFilters}
+                activeCollectionId={selectedCollectionId}
               />
 
               {filteredCount > pageSize && (
