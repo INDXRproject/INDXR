@@ -11,10 +11,8 @@ import { VideoModeIcon, PlaylistModeIcon, AudioModeIcon } from "../icons/Transcr
  * arrow-key navigation for free; styled as a segmented control per ADR-079.
  *
  * The active cell is NEVER solid amber — there is exactly one amber element per
- * card and that is the action button. Active = raised --surface cell with a
- * hairline + --fg-strong label + --accent icon; inactive = transparent + --fg-muted.
- * A transparent border on the inactive state keeps the box size identical so the
- * active hairline causes no layout shift.
+ * card and that is the action button. Stijl B (2026-11-07): three joined cells with
+ * 2px ink rules; active = ink fill with paper text, inactive = paper with ink text.
  *
  * Must be rendered inside a <Tabs> (TabsPrimitive.Root) — it only supplies the List.
  */
@@ -33,7 +31,7 @@ export function ModeStrip({ className }: { className?: string }) {
   return (
     <TabsPrimitive.List
       className={cn(
-        "flex w-full items-center gap-1 rounded-lg bg-[var(--surface-sunken)] p-1",
+        "grid w-full grid-cols-3 border-b-2 border-[var(--fg-strong)]",
         className
       )}
     >
@@ -42,16 +40,15 @@ export function ModeStrip({ className }: { className?: string }) {
           key={value}
           value={value}
           className={cn(
-            "group flex flex-1 items-center justify-center gap-2 rounded-md h-11 min-h-[44px] px-2",
-            "text-sm font-medium whitespace-nowrap cursor-pointer select-none",
-            "border border-transparent text-[var(--fg-muted)] transition-colors duration-150",
-            "hover:text-[var(--fg)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
-            "data-[state=active]:bg-[var(--surface)] data-[state=active]:border-[var(--border)]",
-            "data-[state=active]:text-[var(--fg-strong)] data-[state=active]:shadow-xs"
+            "group flex items-center justify-center gap-2 h-12 min-h-[44px] px-2",
+            "text-sm font-bold whitespace-nowrap cursor-pointer select-none",
+            "border-r-2 border-[var(--fg-strong)] last:border-r-0 text-[var(--fg-strong)] bg-[var(--bg)] transition-colors duration-150",
+            "hover:bg-[var(--bg-subtle)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent-ring)]",
+            "data-[state=active]:bg-[var(--fg-strong)] data-[state=active]:text-[var(--bg)]"
           )}
         >
-          <Icon className="size-[18px] text-[var(--fg-muted)] group-hover:text-[var(--fg)] group-data-[state=active]:text-[var(--accent-fg)] transition-colors duration-150" />
+          <Icon className="size-[18px] text-current" />
           {label}
         </TabsPrimitive.Trigger>
       ))}

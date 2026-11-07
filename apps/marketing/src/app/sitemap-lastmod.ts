@@ -24,9 +24,9 @@
 
 export const SITEMAP_LASTMOD: Record<string, string> = {
   // Marketing
-  "": "2026-08-26",
-  "/pricing": "2026-08-01",
-  "/transcribe": "2026-08-01",
+  "": "2026-11-07",
+  "/pricing": "2026-11-07",
+  "/transcribe": "2026-11-07",
   "/about": "2026-05-03",
   "/contact": "2026-07-24",
   // Legal-pagina's tracken de legal-versie, niet cosmetische wording. /terms:

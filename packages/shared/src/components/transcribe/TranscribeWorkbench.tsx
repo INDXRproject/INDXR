@@ -94,15 +94,15 @@ function TranscribeWorkbenchInner({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-[640px] rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 shadow-sm",
+        "mx-auto w-full max-w-[640px] border-2 border-[var(--fg-strong)] bg-[var(--bg)]",
         className
       )}
     >
       <Tabs value={mode} onValueChange={handleChange} className="gap-0">
-        <ModeStrip className="mb-6" />
-        <TabsContent value="video" className="mt-0">{renderVideo({ mode, switchMode: handleChange })}</TabsContent>
-        <TabsContent value="playlist" className="mt-0">{renderPlaylist({ mode, switchMode: handleChange })}</TabsContent>
-        <TabsContent value="audio" className="mt-0">{renderAudio({ mode, switchMode: handleChange })}</TabsContent>
+        <ModeStrip />
+        <TabsContent value="video" className="mt-0 p-4 sm:p-6">{renderVideo({ mode, switchMode: handleChange })}</TabsContent>
+        <TabsContent value="playlist" className="mt-0 p-4 sm:p-6">{renderPlaylist({ mode, switchMode: handleChange })}</TabsContent>
+        <TabsContent value="audio" className="mt-0 p-4 sm:p-6">{renderAudio({ mode, switchMode: handleChange })}</TabsContent>
       </Tabs>
     </div>
   )

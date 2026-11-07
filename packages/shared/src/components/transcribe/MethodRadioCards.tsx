@@ -87,7 +87,7 @@ export function MethodRadioCards({
                 <span className="min-w-0">
                   <span className={cn("flex items-center gap-1.5 font-medium", selected ? "text-fg-on-accent font-bold" : "text-fg-strong")}>
                     YouTube captions
-                    <span className="rounded-sm bg-success-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success">
+                    <span className="border border-current px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide">
                       Free
                     </span>
                   </span>

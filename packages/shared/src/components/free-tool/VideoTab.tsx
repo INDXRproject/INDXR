@@ -1077,7 +1077,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <Input
               placeholder="https://www.youtube.com/watch?v=..."
               className={cn(
-                "h-12 bg-bg border-border text-fg transition-all duration-200",
+                "h-12 bg-bg border-border-strong text-fg transition-all duration-200",
                 "focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary",
                 error && "border-error focus-visible:ring-destructive"
               )}

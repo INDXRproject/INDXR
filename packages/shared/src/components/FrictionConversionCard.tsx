@@ -25,13 +25,10 @@ interface FrictionConversionCardProps {
 
 const isAbsolute = (href: string) => /^https?:\/\//.test(href)
 
-function PrimaryButton({ label }: { label: string }) {
-  return (
-    <button className="px-5 py-2.5 h-10 rounded-lg font-semibold text-sm bg-[var(--accent)] text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)] transition-all cursor-pointer w-full sm:w-auto">
-      {label}
-    </button>
-  )
-}
+// One class for the primary CTA, applied to the real element (Link / a / button) — never a <button>
+// nested inside a link or another button (invalid HTML, broken keyboard focus).
+const PRIMARY =
+  "inline-flex h-11 w-full items-center justify-center border-2 border-[var(--fg-strong)] bg-[var(--accent)] px-5 text-sm font-bold text-[var(--fg-on-accent)] transition-colors hover:bg-[var(--accent-hover)] cursor-pointer sm:w-auto"
 
 export function FrictionConversionCard({
   headline,
@@ -45,24 +42,24 @@ export function FrictionConversionCard({
   className,
 }: FrictionConversionCardProps) {
   const secondaryClass =
-    "text-sm text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors flex items-center justify-center sm:justify-start cursor-pointer bg-transparent border-0"
+    "text-sm text-[var(--fg-subtle)] hover:text-[var(--fg-strong)] hover:underline underline-offset-4 transition-colors flex items-center justify-center sm:justify-start cursor-pointer bg-transparent border-0"
 
   return (
-    <div className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 text-left space-y-4 ${className ?? ""}`}>
-      <h3 className="font-semibold text-[var(--fg)]">{headline}</h3>
+    <div className={`border-2 border-[var(--fg-strong)] bg-[var(--bg)] p-6 text-left space-y-4 ${className ?? ""}`}>
+      <h3 className="text-lg font-bold text-[var(--fg-strong)]">{headline}</h3>
       <p className="text-sm text-[var(--fg-subtle)] leading-relaxed">{body}</p>
       <div className="flex flex-col sm:flex-row gap-3">
         {primaryCtaOnClick ? (
-          <button type="button" onClick={primaryCtaOnClick}>
-            <PrimaryButton label={primaryCtaLabel} />
+          <button type="button" onClick={primaryCtaOnClick} className={PRIMARY}>
+            {primaryCtaLabel}
           </button>
         ) : primaryCtaHref && isAbsolute(primaryCtaHref) ? (
-          <a href={primaryCtaHref}>
-            <PrimaryButton label={primaryCtaLabel} />
+          <a href={primaryCtaHref} className={PRIMARY}>
+            {primaryCtaLabel}
           </a>
         ) : primaryCtaHref ? (
-          <Link href={primaryCtaHref}>
-            <PrimaryButton label={primaryCtaLabel} />
+          <Link href={primaryCtaHref} className={PRIMARY}>
+            {primaryCtaLabel}
           </Link>
         ) : null}
 
