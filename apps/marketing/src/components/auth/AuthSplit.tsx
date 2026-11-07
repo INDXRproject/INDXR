@@ -46,8 +46,7 @@ export function AuthSplit({ variant, children }: { variant: "signup" | "login"; 
             <p className="border-b-2 border-bg px-4 py-2 font-mono text-[11px] uppercase tracking-[0.06em]">Speeches · Rice University, 1962</p>
             <p className="px-4 py-4 text-sm leading-relaxed">
               <span className="mr-3 font-mono text-xs opacity-60">¶3</span>
-              We choose to go to the{" "}
-              <mark className="bg-accent px-0.5 text-fg-on-accent">Moon</mark> in this decade and do the other things.
+              We choose to go to the Moon in this decade and do the other things.
             </p>
           </div>
           <p className="mt-8 hidden font-mono text-xs opacity-60 lg:block">

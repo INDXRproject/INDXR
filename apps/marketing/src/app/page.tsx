@@ -75,7 +75,7 @@ const SHEET = [
 ]
 
 /** The hero visual: a transcript sheet as the app renders it — title bar, tabs, ¶ marks, speaker,
- *  one highlighted search hit. Static HTML, no screenshot, so it never goes stale. */
+ *  no fake search UI (Khidr 7-11: the highlighted hit read as odd). Static HTML, no screenshot, so it never goes stale. */
 function TranscriptSheet() {
   return (
     <div className={`border-2 ${INK} bg-[var(--bg)] shadow-[8px_8px_0_0_var(--fg-strong)]`}>
@@ -87,10 +87,6 @@ function TranscriptSheet() {
         <span className={`border-r-2 ${INK} bg-[var(--accent)] px-3 py-2 font-bold text-[var(--fg-on-accent)]`}>Transcript</span>
         <span className={`border-r-2 ${INK} px-3 py-2 text-[var(--fg-subtle)]`}>Summary</span>
         <span className="px-3 py-2 text-[var(--fg-subtle)]">Export</span>
-        <span className="ml-auto hidden items-center gap-2 px-3 py-2 text-[var(--fg-subtle)] sm:flex">
-          <span className={`border ${INK} px-1.5 py-0.5 normal-case tracking-normal text-[var(--fg-strong)]`}>moon</span>
-          2 hits
-        </span>
       </div>
       <ol className="divide-y divide-[var(--border)]">
         {SHEET.map((l) => (
@@ -99,15 +95,7 @@ function TranscriptSheet() {
             <div>
               <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--fg)]">{l.who}</p>
               <p className="text-[15px] leading-relaxed text-[var(--fg-strong)] sm:text-base">
-                {l.text.split(/(Moon)/).map((part, i) =>
-                  part === "Moon" ? (
-                    <mark key={i} className="bg-[var(--accent)] px-0.5 text-[var(--fg-on-accent)]">
-                      Moon
-                    </mark>
-                  ) : (
-                    <span key={i}>{part}</span>
-                  ),
-                )}
+                {l.text}
               </p>
             </div>
           </li>

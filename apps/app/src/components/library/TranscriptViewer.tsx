@@ -757,12 +757,12 @@ export function TranscriptViewer({
   return (
     <>
       <div className="bg-bg">
-        <div className="max-w-3xl mx-auto px-6 lg:px-12 pb-20 pt-2 space-y-4">
+        <div className="max-w-3xl mx-auto px-0 sm:px-6 lg:px-12 pb-20 pt-2 space-y-4">
           {/* Toolbar (stijl B, 2026-11-07) — two zones in one bar. Left = how you READ (view, find, text
               size). Right = what you DO (copy, export, edit) as three equal ink buttons, then ONE overflow
               menu for the rare rest. Desktop: one row. Mobile: the read zone on top, the three actions as
               an even grid below — never a wrapped jumble. */}
-          <div className="sticky top-0 z-10 -mx-6 lg:-mx-12 px-6 lg:px-12 bg-bg py-3 border-b-2 border-border-strong flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="sticky top-0 z-10 sm:-mx-6 lg:-mx-12 sm:px-6 lg:px-12 bg-bg py-3 border-b-2 border-border-strong flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               {/* View — Paragraphs | Timestamps: same content, two readings. */}
               <div className="inline-flex h-9 items-stretch border-2 border-border-strong text-xs font-bold" role="group" aria-label="View">
