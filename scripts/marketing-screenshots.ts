@@ -102,20 +102,25 @@ async function main() {
   await desktop.getByText("Justice 01", { exact: false }).first().click();
   await desktop.waitForURL(/\/dashboard\/library\/[0-9a-f-]+/);
 
-  // 4. Transcript — Timestamps view.
+  // 4. Source card (desktop right column). Wait for the published-date lookup (fires once, on
+  // first view) so the citation shows a real year instead of "n.d.".
+  await desktop.getByText("Published").waitFor({ timeout: 15_000 }).catch(() => {});
+  await shoot(desktop, "transcript-source-card.png");
+
+  // 5. Transcript — Timestamps view.
   await desktop.getByRole("button", { name: "Timestamps" }).click();
   await shoot(desktop, "transcript-timestamps.png");
 
-  // 5. Transcript — Paragraphs view.
+  // 6. Transcript — Paragraphs view.
   await desktop.getByRole("button", { name: "Paragraphs" }).click();
   await shoot(desktop, "transcript-paragraphs.png");
 
-  // 6. Summary tab.
+  // 7. Summary tab.
   await desktop.getByRole("tab", { name: "Summary" }).click();
   await desktop.waitForURL(/tab=summary/);
   await shoot(desktop, "summary.png");
 
-  // 7. Export menu open (on the transcript view).
+  // 8. Export menu open (on the transcript view).
   await desktop.getByRole("tab", { name: "Transcript" }).click();
   await desktop.waitForURL(/tab=original|\/dashboard\/library\/[0-9a-f-]+$/);
   await desktop.getByRole("button", { name: "Export" }).click();
@@ -123,11 +128,11 @@ async function main() {
   await shoot(desktop, "export-menu.png");
   await desktop.keyboard.press("Escape");
 
-  // 8. Dashboard home.
+  // 9. Dashboard home.
   await desktop.goto(`${BASE_URL}/dashboard`);
   await shoot(desktop, "dashboard-home.png");
 
-  // 9. Transcribe → YouTube, URL filled, not submitted.
+  // 10. Transcribe → YouTube, URL filled, not submitted.
   await desktop.goto(`${BASE_URL}/dashboard/transcribe?mode=video`);
   await desktop.fill('input[placeholder="https://www.youtube.com/watch?v=..."]', "https://www.youtube.com/watch?v=KqzW0eHzDSQ");
   await shoot(desktop, "transcribe-youtube.png");
@@ -146,6 +151,22 @@ async function main() {
   await mobile.getByText("Justice 01", { exact: false }).first().click();
   await mobile.waitForURL(/\/dashboard\/library\/[0-9a-f-]+/);
   await shoot(mobile, "mobile-transcript.png");
+
+  // 12. Mobile — zoomed crop on title + compact source row + sticky toolbar (the three things a
+  // screenshot needs to sell "mobile works too"), not the full scrollable page.
+  await mobile.waitForLoadState("networkidle");
+  const toolbar = mobile.locator(".sticky.top-0.z-10").first();
+  const toolbarBox = await toolbar.boundingBox();
+  const viewport = mobile.viewportSize()!;
+  if (toolbarBox) {
+    await mobile.screenshot({
+      path: path.join(OUT_DIR, "mobile-transcript-toolbar.png"),
+      clip: { x: 0, y: 0, width: viewport.width, height: Math.min(viewport.height, toolbarBox.y + toolbarBox.height + 8) },
+    });
+    console.log("saved mobile-transcript-toolbar.png");
+  } else {
+    await shoot(mobile, "mobile-transcript-toolbar.png");
+  }
 
   await mobileCtx.close();
   await browser.close();
