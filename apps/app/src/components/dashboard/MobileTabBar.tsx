@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AudioLines, House, Library, MessageSquare } from "lucide-react"
 import { cn } from "@indxr/shared/lib/utils"
 
 // TODO: Account + Settings via avatar-tap rechtsboven → drawer slide van rechts (Claude Design fase)
@@ -10,15 +9,14 @@ import { cn } from "@indxr/shared/lib/utils"
 interface Tab {
   href: string
   label: string
-  icon: React.ElementType
   matchPrefix?: string
 }
 
 const TABS: Tab[] = [
-  { href: "/dashboard",            label: "Home",      icon: House,      matchPrefix: undefined },
-  { href: "/dashboard/transcribe", label: "Transcribe", icon: AudioLines  },
-  { href: "/dashboard/library",    label: "Library",   icon: Library,    matchPrefix: "/dashboard/library" },
-  { href: "/dashboard/messages",   label: "Messages",  icon: MessageSquare },
+  { href: "/dashboard",            label: "Home" },
+  { href: "/dashboard/transcribe", label: "Transcribe" },
+  { href: "/dashboard/library",    label: "Library",   matchPrefix: "/dashboard/library" },
+  { href: "/dashboard/messages",   label: "Messages" },
 ]
 
 interface MobileTabBarProps {
@@ -42,13 +40,12 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
       <div className="flex h-[var(--tabbar-h)]">
         {TABS.map((tab) => {
           const active = isActive(tab)
-          const Icon = tab.icon
           return (
             <Link
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-0.5 relative transition-colors",
+                "flex-1 flex items-center justify-center relative transition-colors border-r-2 border-border-strong last:border-r-0",
                 // Stijl B (2026-11-07): active tab = amber block with ink, like the desktop sidebar.
                 active
                   ? "bg-accent text-fg-on-accent font-bold"
@@ -56,15 +53,13 @@ export function MobileTabBar({ messagesUnread = 0 }: MobileTabBarProps) {
               )}
               aria-current={active ? "page" : undefined}
             >
-              <div className="relative">
-                <Icon className="h-5 w-5" />
-                {tab.label === "Messages" && messagesUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 px-0.5 border border-fg-strong bg-accent text-fg-on-accent text-[10px] font-medium flex items-center justify-center leading-none">
-                    {messagesUnread > 9 ? "9+" : messagesUnread}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] font-medium leading-none">{tab.label}</span>
+              {/* Stijl B (2026-11-07): words, no stock icons — four tabs fit as plain labels. */}
+              <span className="text-[13px] font-bold leading-none tracking-[-0.01em]">{tab.label}</span>
+              {tab.label === "Messages" && messagesUnread > 0 && (
+                <span className="absolute top-2 right-2 min-w-[16px] h-4 px-1 border-2 border-fg-strong bg-accent text-fg-on-accent font-mono text-[10px] font-bold flex items-center justify-center leading-none">
+                  {messagesUnread > 9 ? "9+" : messagesUnread}
+                </span>
+              )}
             </Link>
           )
         })}

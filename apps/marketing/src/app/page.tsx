@@ -116,7 +116,7 @@ const SOURCES = ["Lectures", "Podcasts", "YouTube videos", "Whole playlists", "I
 
 const PIPELINE = [
   { k: "In", t: "A source", b: `A YouTube link, a playlist, or your own file up to ${maxHours} hours.` },
-  { k: "Out", t: "A transcript", b: "Paragraphs, punctuation, speakers and timestamps. Captions are free; AI when there are none." },
+  { k: "Out", t: "A transcript", b: "YouTube captions for free when a video has them. AI transcription when it has none: punctuation, speakers, timestamps." },
   { k: "Kept", t: "An archive", b: "Filed with its source — channel, link, length — in collections, searchable down to the word." },
   { k: "Used", t: "A quote, a note", b: `A ready citation, or ${EXPORT_FORMAT_COUNT} export formats: notes, subtitles, spreadsheets, RAG.` },
 ]
@@ -154,9 +154,9 @@ export default async function LandingPage() {
               All your sources. One searchable archive.
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
-              Paste a YouTube link or a whole playlist, or upload your own recordings. Each becomes a clean
-              transcript — speakers, punctuation, timestamps — filed with its source in one archive you can search
-              word for word, quote and cite.
+              Paste a YouTube link or a whole playlist, or upload your own recordings. Each becomes a
+              transcript with timestamps, filed with its source in one archive you can search word for word,
+              quote and cite.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row">
               <Link href="#try" className={BTN_PRIMARY}>
@@ -183,87 +183,8 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* §01 — the proof, as an annotated diff */}
-      <IndexSection n="01" label="The difference">
-        <h2 className={`${H2} mb-10 max-w-3xl`}>Captions give you words. You need sentences.</h2>
-        <div className={`grid border-2 ${INK} md:grid-cols-2`}>
-          <div className={`border-b-2 ${INK} bg-[var(--bg-subtle)] p-6 md:border-b-0 md:border-r-2 sm:p-8`}>
-            <p className={`${MONO} mb-5 text-[var(--fg-muted)]`}>− YouTube captions</p>
-            <p className="font-mono text-base leading-[1.9] text-[var(--fg-muted)] line-through decoration-[var(--fg-muted)]/30 sm:text-lg">
-              we choose to go to the
-              <br />
-              moon in this decade and do
-              <br />
-              the other things not because
-              <br />
-              they are easy but because
-              <br />
-              they are hard
-            </p>
-          </div>
-          <div className="p-6 sm:p-8">
-            <p className={`${MONO} mb-5 text-[var(--fg)]`}>+ INDXR</p>
-            <p className="mb-3 font-mono text-sm text-[var(--fg)]">
-              <span className={`mr-2 border-2 ${INK} bg-[var(--accent)] px-1.5 py-0.5 text-[var(--fg-on-accent)]`}>Speaker</span>
-              John F. Kennedy
-            </p>
-            <p className="text-2xl font-medium leading-snug tracking-[-0.01em] text-[var(--fg-strong)] sm:text-3xl">
-              We choose to go to the Moon in this decade and do the other things, not because they are easy, but
-              because they are hard.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
-              {["+ punctuation", "+ capitals", "+ speaker", "+ timestamp", "+ paragraphs"].map((t) => (
-                <span key={t} className={`border-2 ${INK} px-2 py-1 text-[var(--fg-strong)]`}>
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </IndexSection>
-
-      {/* §02 — the live tool */}
-      <IndexSection n="02" label="Try it" id="try">
-        <h2 className={`${H2} mb-4`}>Your own file or link.</h2>
-        <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
-          {loggedIn ? (
-            <>Upload an audio or video file, or paste a link, and see the transcript for yourself. Playlists and file uploads open in the app.</>
-          ) : (
-            <>
-              No account, no card. Upload an audio or video file, or paste a link. A free account comes with{" "}
-              {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI transcription.
-            </>
-          )}
-        </p>
-        <FreeToolEmbed />
-      </IndexSection>
-
-      {/* §03 — the pipeline */}
-      <IndexSection n="03" label="How it works">
-        <h2 className={`${H2} mb-10 max-w-3xl`}>One source in. Something you can use out.</h2>
-        <ol className={`grid border-2 ${INK} sm:grid-cols-2 lg:grid-cols-4`}>
-          {PIPELINE.map((s, i) => (
-            <li
-              key={s.k}
-              className={`relative p-6 ${i < PIPELINE.length - 1 ? `border-b-2 ${INK} lg:border-b-0 lg:border-r-2` : ""} ${i === 1 ? "sm:border-r-0 lg:border-r-2" : ""} ${i === 0 ? "sm:border-r-2" : ""} ${i === 2 ? "sm:border-r-2 sm:border-b-0" : ""} ${i === PIPELINE.length - 1 ? "bg-[var(--accent)]" : ""}`}
-            >
-              <p className={`${MONO} ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>
-                {String(i + 1).padStart(2, "0")} · {s.k}
-              </p>
-              <p className={`mt-6 text-2xl font-bold ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-strong)]"}`}>{s.t}</p>
-              <p className={`mt-2 leading-relaxed ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>{s.b}</p>
-              {i < PIPELINE.length - 1 && (
-                <span aria-hidden="true" className="absolute -right-[13px] top-6 z-10 hidden h-6 w-6 items-center justify-center border-2 border-[var(--fg-strong)] bg-[var(--bg)] text-xs font-bold text-[var(--fg-strong)] lg:flex">
-                  →
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
-      </IndexSection>
-
-      {/* §04 — the library, as a search with a hit */}
-      <IndexSection n="04" label="Your library" tone="ink">
+      {/* §01 — the promise first: the archive, as a search with a hit (Khidr 7-11: lead with the library) */}
+      <IndexSection n="01" label="Your archive" tone="ink">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
             <h2 className="text-4xl font-bold leading-[0.98] tracking-[-0.04em] sm:text-6xl">Find the sentence. In any source.</h2>
@@ -297,6 +218,86 @@ export default async function LandingPage() {
               <span className="border-2 border-[var(--fg-strong)] bg-[var(--accent)] px-2 py-0.5 text-[var(--fg-on-accent)]">Speeches</span>
               <span className="border-2 border-[var(--fg-strong)] px-2 py-0.5">Thesis interviews</span>
               <span className="border-2 border-[var(--fg-strong)] px-2 py-0.5">History 101</span>
+            </div>
+          </div>
+        </div>
+      </IndexSection>
+
+      {/* §02 — the pipeline */}
+      <IndexSection n="02" label="How it works">
+        <h2 className={`${H2} mb-10 max-w-3xl`}>Add a source. Search it in minutes.</h2>
+        <ol className={`grid border-2 ${INK} sm:grid-cols-2 lg:grid-cols-4`}>
+          {PIPELINE.map((s, i) => (
+            <li
+              key={s.k}
+              className={`relative p-6 ${i < PIPELINE.length - 1 ? `border-b-2 ${INK} lg:border-b-0 lg:border-r-2` : ""} ${i === 1 ? "sm:border-r-0 lg:border-r-2" : ""} ${i === 0 ? "sm:border-r-2" : ""} ${i === 2 ? "sm:border-r-2 sm:border-b-0" : ""} ${i === PIPELINE.length - 1 ? "bg-[var(--accent)]" : ""}`}
+            >
+              <p className={`${MONO} ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>
+                {String(i + 1).padStart(2, "0")} · {s.k}
+              </p>
+              <p className={`mt-6 text-2xl font-bold ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-strong)]"}`}>{s.t}</p>
+              <p className={`mt-2 leading-relaxed ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>{s.b}</p>
+              {i < PIPELINE.length - 1 && (
+                <span aria-hidden="true" className="absolute -right-[13px] top-6 z-10 hidden h-6 w-6 items-center justify-center border-2 border-[var(--fg-strong)] bg-[var(--bg)] text-xs font-bold text-[var(--fg-strong)] lg:flex">
+                  →
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </IndexSection>
+
+      {/* §03 — the live tool */}
+      <IndexSection n="03" label="Try it" id="try">
+        <h2 className={`${H2} mb-4`}>Try it on one of yours.</h2>
+        <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
+          {loggedIn ? (
+            <>Upload an audio or video file, or paste a link, and see the transcript for yourself. Playlists and file uploads open in the app.</>
+          ) : (
+            <>
+              No account, no card. Upload an audio or video file, or paste a link. A free account comes with{" "}
+              {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI transcription.
+            </>
+          )}
+        </p>
+        <FreeToolEmbed />
+      </IndexSection>
+
+      {/* §04 — AI transcription vs raw auto-captions, as an annotated diff. Honest: captions are kept as
+          YouTube gives them; the punctuation/speakers come from AI transcription (Khidr 7-11). */}
+      <IndexSection n="04" label="No captions?">
+        <h2 className={`${H2} mb-10 max-w-3xl`}>No captions, or bad ones? AI writes it out properly.</h2>
+        <div className={`grid border-2 ${INK} md:grid-cols-2`}>
+          <div className={`border-b-2 ${INK} bg-[var(--bg-subtle)] p-6 md:border-b-0 md:border-r-2 sm:p-8`}>
+            <p className={`${MONO} mb-5 text-[var(--fg-muted)]`}>− YouTube auto-captions</p>
+            <p className="font-mono text-base leading-[1.9] text-[var(--fg-muted)] line-through decoration-[var(--fg-muted)]/30 sm:text-lg">
+              we choose to go to the
+              <br />
+              moon in this decade and do
+              <br />
+              the other things not because
+              <br />
+              they are easy but because
+              <br />
+              they are hard
+            </p>
+          </div>
+          <div className="p-6 sm:p-8">
+            <p className={`${MONO} mb-5 text-[var(--fg)]`}>+ INDXR AI transcription</p>
+            <p className="mb-3 font-mono text-sm text-[var(--fg)]">
+              <span className={`mr-2 border-2 ${INK} bg-[var(--accent)] px-1.5 py-0.5 text-[var(--fg-on-accent)]`}>Speaker</span>
+              John F. Kennedy
+            </p>
+            <p className="text-2xl font-medium leading-snug tracking-[-0.01em] text-[var(--fg-strong)] sm:text-3xl">
+              We choose to go to the Moon in this decade and do the other things, not because they are easy, but
+              because they are hard.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
+              {["+ punctuation", "+ capitals", "+ speaker", "+ timestamp", "+ paragraphs"].map((t) => (
+                <span key={t} className={`border-2 ${INK} px-2 py-1 text-[var(--fg-strong)]`}>
+                  {t}
+                </span>
+              ))}
             </div>
           </div>
         </div>

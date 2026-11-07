@@ -100,7 +100,7 @@ export default async function DashboardPage() {
         <PageHeader compact eyebrow="Dashboard" title="Home" />
 
         {/* ── Desk: start something (left) + balance (right) ── */}
-        <section className="mb-12 grid border-2 border-border-strong lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <section className="mb-12 grid grid-cols-1 border-2 border-border-strong lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="border-b-2 border-border-strong p-6 lg:border-b-0 lg:border-r-2">
             <p className="font-mono text-xs font-bold uppercase tracking-[0.08em] text-fg-strong">New transcript</p>
             <div className="mt-4 grid border-2 border-border-strong sm:grid-cols-3">
@@ -138,7 +138,7 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           {/* ── Recent transcripts ── */}
           <section>
             <SectionLabel label="Recent transcripts" action={linkAction("Library", "/dashboard/library")} />

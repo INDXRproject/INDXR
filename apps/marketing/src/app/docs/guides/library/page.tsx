@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Your library — INDXR.AI Docs",
   // 155-char budget (Ahrefs crawl 2026-10-27: was 245 chars). Keyword first.
   description:
-    "Every transcript you make while signed in is saved to your library — edit, group into collections, search by title, and delete what you don't need.",
+    "Every transcript you make while signed in is saved to your library — edit, group into collections, search the text, copy a citation.",
   robots: { index: true, follow: true },
   ...pageOg("/docs/guides/library"),
 }
@@ -63,12 +63,28 @@ export default function DocsLibraryPage() {
           just that collection.
         </p>
 
-        <AnchorHeading as="h2">Search finds a transcript by title</AnchorHeading>
+        <AnchorHeading as="h2">Search looks inside the text</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
-          Search matches on the transcript&apos;s title and its video ID — the string of characters that
-          identifies a YouTube video — not the body text. It&apos;s for
-          finding the right transcript quickly, not searching inside them — type a few letters of the
-          title and the list narrows as you go.
+          Search matches titles and the transcript text itself, so you can find a lecture by a sentence
+          you remember from it. Combine it with a collection to search one course or project at a time.
+        </p>
+
+        <AnchorHeading as="h2">Every transcript keeps its source</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Each transcript page shows where the text came from: the channel, a link to the video, its
+          length, word count, language, the date it was published on YouTube, and when you added it. It
+          also gives a ready reference in APA style (7th edition), the format most universities accept for
+          online video, which you can copy with one click:
+        </p>
+        <p className="mt-3 border-l-2 border-[var(--fg-strong)] pl-4 font-mono text-sm text-[var(--fg)]">
+          Harvard University. (2009, September 4). Justice: What&apos;s the right thing to do? Episode 01
+          [Video]. YouTube. https://youtu.be/kBdfcR-8hEY
+        </p>
+        <p className="mt-3 text-[var(--fg-subtle)] leading-relaxed">
+          The publication date is looked up on YouTube the first time you open a transcript. When there is
+          none (your own uploads, or a video that has since been removed), the reference says
+          &quot;n.d.&quot;, which is how APA writes a source without a date. For your own files the reference
+          uses the title and marks it as an audio recording; check the author before you use it in a paper.
         </p>
 
         <AnchorHeading as="h2">Deleting, and how much space you use</AnchorHeading>
@@ -83,7 +99,8 @@ export default function DocsLibraryPage() {
         <SourcesBlock
           sources={[
             { publisher: "INDXR (own code)", supports: "original vs edited stored separately; reset to original", verifiedAgainst: "supabase/migrations/20260630155944_baseline.sql:41,52 (transcript / edited_content); apps/app/src/components/library/TranscriptViewer.tsx:440-443,618-647" },
-            { publisher: "INDXR (own code)", supports: "collections, search by title/video_id, single + bulk delete", verifiedAgainst: "supabase/migrations/20260630155944_baseline.sql:64-70 (collections); apps/app/src/app/dashboard/library/page.tsx:79-82; apps/app/src/components/library/TranscriptList.tsx:252-264,355-356" },
+            { publisher: "INDXR (own code)", supports: "collections, title + full-text search, single + bulk delete", verifiedAgainst: "supabase/migrations/20260630155944_baseline.sql:64-70 (collections); apps/app/src/app/dashboard/library/page.tsx; apps/app/src/components/library/TranscriptList.tsx" },
+            { publisher: "INDXR (own code)", supports: "source card, APA 7 reference, publication date lookup", verifiedAgainst: "apps/app/src/components/library/SourceCard.tsx (buildCitation); apps/app/src/app/api/transcripts/[id]/published-at/route.ts" },
             { publisher: "INDXR (own code)", supports: "account-page storage meter (real library_bytes)", verifiedAgainst: "apps/app/src/components/dashboard/account/StorageMeterCard.tsx; apps/app/src/app/dashboard/account/page.tsx" },
           ]}
         />

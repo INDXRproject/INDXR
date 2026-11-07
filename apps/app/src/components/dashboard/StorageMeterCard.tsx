@@ -122,9 +122,8 @@ export function StorageMeterCard({
           </span>
           <Button
             onClick={() => { setMsg(null); setConfirming(true) }}
-            variant={over ? "default" : "outline"}
             size="sm"
-            className="h-8 shrink-0 gap-1.5"
+            className="h-9 shrink-0 gap-1.5 border-2 border-border-strong"
           >
             +{STORAGE_BLOCK_MB} MB
             <span className="font-mono text-[11px] font-normal opacity-70">{STORAGE_BLOCK_COST_CREDITS} cr</span>

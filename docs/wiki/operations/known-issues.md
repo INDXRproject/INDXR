@@ -645,3 +645,6 @@ dekt). Reserve/settle/refund ongewijzigd.
 job + één reservering + hetzelfde job_id; verschillende sleutels → twee jobs; retry na vastgelopen job
 (nieuwe sleutel) → niet geblokkeerd; zelfde sleutel + andere inhoud → 422. Bestaande dubbele niet-terminale
 rijen bij aanvang: geen (0 op alle paden). Zie ADR-019 + `backend/idempotency.py`.
+
+## YouTube-captions zonder interpunctie → alinea's breken midden in een zin (2026-11-07)
+Oude/automatische YouTube-captions (bv. Harvard Justice, 2009) hebben geen punten. INDXR neemt captions over zoals YouTube ze levert en breekt alinea's dan op pauzes, die soms midden in een zin vallen. **Besluit Khidr 7-11: zo laten** — wie nette zinnen wil, gebruikt AI-transcriptie (zet interpunctie + sprekers). Marketing claimt daarom geen interpunctie voor captions (home §02/§04 gelabeld "AI transcription").
