@@ -10,9 +10,9 @@ import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
 import { EXPORT_FORMAT_COUNT } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
-  title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
+  title: "INDXR.AI — A searchable archive of everything you learn from",
   description:
-    "Upload a recording or paste a link. Get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
+    "Lectures, podcasts, YouTube videos and your own recordings, as clean transcripts with speakers and timestamps. Each keeps its source and a citation, in one archive you can search word for word. Pay per minute, no subscription.",
   alternates: { canonical: "/" },
 }
 
@@ -30,7 +30,7 @@ const homeSchemas: Record<string, unknown>[] = [
     url: "https://indxr.ai",
     logo: "https://indxr.ai/apple-touch-icon.png",
     description:
-      "INDXR.AI turns audio, video and YouTube links into accurate, speaker-labelled transcripts you can edit, search and export.",
+      "INDXR.AI turns lectures, podcasts, YouTube videos and your own recordings into accurate, speaker-labelled transcripts, kept with their source in one searchable archive.",
     email: "support@indxr.ai",
     contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "support@indxr.ai" },
     sameAs: ["https://alternativeto.net/software/indxr-ai/about/"],
@@ -41,7 +41,7 @@ const homeSchemas: Record<string, unknown>[] = [
     name: "INDXR.AI",
     url: "https://indxr.ai",
     description:
-      "Upload a recording or paste a link and get an accurate, speaker-labelled transcript you can edit, search and export. Credits, no subscription — they never expire.",
+      "A searchable archive of transcripts from lectures, podcasts, YouTube and your own recordings — each with its source and a citation. Credits, no subscription — they never expire.",
     publisher: { "@type": "Organization", name: "INDXR.AI", url: "https://indxr.ai" },
   },
 ]
@@ -113,23 +113,30 @@ function TranscriptSheet() {
           </li>
         ))}
       </ol>
+      {/* The source travels with the text — the archive keeps where every transcript came from. */}
+      <div className={`flex items-center justify-between gap-3 border-t-2 ${INK} px-4 py-2.5 font-mono text-[11px]`}>
+        <span className="truncate text-[var(--fg)]">
+          <span className="font-bold uppercase text-[var(--fg-strong)]">Source</span> · John F. Kennedy · Rice University, 12 Sep 1962
+        </span>
+        <span className={`shrink-0 border-2 ${INK} px-2 py-0.5 font-bold text-[var(--fg-strong)]`}>Copy citation</span>
+      </div>
     </div>
   )
 }
 
-const SOURCES = ["YouTube video", "Whole playlist", "MP3", "MP4", "WAV", "M4A", "MOV", "Lecture recording", "Interview", "Podcast", "Meeting"]
+const SOURCES = ["Lectures", "Podcasts", "YouTube videos", "Whole playlists", "Interviews", "Talks", "Your own recordings", "MP3 · MP4 · WAV · M4A · MOV"]
 
 const PIPELINE = [
   { k: "In", t: "A source", b: `A YouTube link, a playlist, or your own file up to ${maxHours} hours.` },
   { k: "Out", t: "A transcript", b: "Paragraphs, punctuation, speakers and timestamps. Captions are free; AI when there are none." },
-  { k: "Kept", t: "A library", b: "Every transcript stays, in collections, searchable down to the word." },
-  { k: "Used", t: "An export", b: `${EXPORT_FORMAT_COUNT} formats: notes, subtitles, spreadsheets, RAG.` },
+  { k: "Kept", t: "An archive", b: "Filed with its source — channel, link, length — in collections, searchable down to the word." },
+  { k: "Used", t: "A quote, a note", b: `A ready citation, or ${EXPORT_FORMAT_COUNT} export formats: notes, subtitles, spreadsheets, RAG.` },
 ]
 
 const CARDS = [
   { call: "COURSE · 01", t: "A course you want to read", b: "Drop in a playlist and get every lecture as text, each with a chapter summary to skim before you reread." },
-  { call: "RESEARCH · 02", t: "Interviews and sources", b: "Speakers separated and renamed to who they are. Every quote one click from the second it was said." },
-  { call: "VIDEO · 03", t: "Subtitles for your video", b: "SRT and VTT built to the broadcast standard, not chopped on character count." },
+  { call: "RESEARCH · 02", t: "Interviews and sources", b: "Speakers separated and renamed to who they are. Every quote one click from the second it was said, with a citation to paste." },
+  { call: "PODCAST · 03", t: "Podcasts and talks worth keeping", b: "The episode you half-remember is a search away: find the sentence, jump to the minute it was said." },
   { call: "BUILD · 04", t: "Text you build on", b: "Chunked JSON with timestamps and deep links, ready for a vector database." },
 ]
 
@@ -154,13 +161,14 @@ export default async function LandingPage() {
       <section className="w-full bg-[var(--bg)] pt-[96px] lg:pt-[112px]">
         <div className={`${WRAP} grid items-center gap-12 pb-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-20`}>
           <div>
-            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Transcripts, done properly.</p>
-            <h1 className="text-[2.75rem] font-bold leading-[0.94] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl lg:text-[5.25rem]">
-              Every lecture, interview and video you learn from. As&nbsp;text.
+            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Your archive of everything you learn from</p>
+            <h1 className="text-[2.6rem] font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-6xl lg:text-[4.25rem]">
+              Every lecture, podcast and video you learn from. Searchable.
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
-              Paste a YouTube link or a playlist, or upload your own recording. Get speakers, punctuation and
-              timestamps, in one library you can search word for word.
+              Paste a YouTube link or a whole playlist, or upload your own recordings. Each becomes a clean
+              transcript — speakers, punctuation, timestamps — filed with its source in one archive you can search
+              word for word, quote and cite.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row">
               <Link href="#try" className={BTN_PRIMARY}>
@@ -270,11 +278,11 @@ export default async function LandingPage() {
       <IndexSection n="04" label="Your library" tone="ink">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
-            <h2 className="text-4xl font-bold leading-[0.98] tracking-[-0.04em] sm:text-6xl">Search every word you have collected.</h2>
+            <h2 className="text-4xl font-bold leading-[0.98] tracking-[-0.04em] sm:text-6xl">Find the sentence. In any source.</h2>
             <p className="mt-6 text-lg leading-relaxed opacity-80">
-              Everything you transcribe stays: grouped in collections per course or project, searchable in the
-              text itself, exportable a whole collection at once. The transcript you made in March is still there
-              in September.
+              Everything you transcribe stays, with where it came from: channel, link, length, and a citation you
+              can copy. Grouped per course or project, searchable in the text itself, exportable a whole collection
+              at once. The lecture you heard in March is still there in September.
             </p>
           </div>
           <div className="border-2 border-[var(--bg)] bg-[var(--bg)] text-[var(--fg-strong)]">
