@@ -125,4 +125,12 @@ test("punctuated AI transcript: paragraphs end at sentence boundaries (no mid-se
   for (const p of paras) assert.ok(p.text.length <= READING_PARAGRAPH_CONFIG.maxChars + 80, `paragraph ${p.text.length} chars over guardrail`);
 });
 
+// ── Caption cues with hard line breaks read as one line (2026-11-07) ──────────
+test("line breaks inside caption segments collapse to single spaces", () => {
+  const segs = [seg(0, 3, "this is a course about Justice and we begin\nwith a story"), seg(3, 3, "suppose you're the driver\n of a trolley car")];
+  const paras = buildReadingParagraphs(segs, { isAi: false });
+  for (const p of paras) assert.ok(!/\n/.test(p.text), `newline left in: ${JSON.stringify(p.text)}`);
+  assert.ok(paras[0].text.includes("we begin with a story"));
+});
+
 console.log(`\n${passed} passed`);

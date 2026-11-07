@@ -197,7 +197,9 @@ export function buildReadingParagraphs(
 
   const segs: Seg[] = [];
   for (const it of transcript) {
-    const t = decodeEntities(it.text).trim();
+    // Caption segments carry hard line breaks (YouTube splits a cue over two lines); inside a reading
+    // paragraph those rendered as broken lines mid-sentence. Collapse all whitespace to one space.
+    const t = decodeEntities(it.text).replace(/\s+/g, " ").trim();
     if (t) segs.push({ text: t, offset: it.offset, duration: it.duration, speaker: it.speaker });
   }
   if (segs.length === 0) return [];
