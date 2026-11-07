@@ -434,6 +434,25 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     return () => clearTimeout(timer)
   }, [url, supabase, useWhisper])
 
+  // A click (or Enter) that lands while the duplicate check is still running is remembered and
+  // replayed once the check settles. Before (2026-11-07) the button was disabled during the ~1s
+  // check, so paste-then-click did nothing and the user had to click a second time.
+  const pendingExtractRef = useRef(false)
+  const requestExtract = () => {
+    if (isCheckingDuplicate) {
+      pendingExtractRef.current = true
+      return
+    }
+    handleExtract()
+  }
+  useEffect(() => {
+    if (!isCheckingDuplicate && pendingExtractRef.current) {
+      pendingExtractRef.current = false
+      handleExtract()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- replay only when the check settles
+  }, [isCheckingDuplicate])
+
   // Reset Whisper toggle when URL changes
   useEffect(() => {
     setUseWhisper(false)
@@ -1083,7 +1102,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               )}
               value={url}
               onChange={(e) => handleUrlChange(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !showDuplicateChoices && handleExtract()}
+              onKeyDown={(e) => e.key === 'Enter' && !showDuplicateChoices && requestExtract()}
             />
            </div>
 
@@ -1091,10 +1110,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
             <Button
               size="lg"
               className="h-12 px-6 shrink-0 min-w-[132px] justify-center disabled:bg-[var(--surface-sunken)] disabled:text-[var(--fg-muted)] disabled:opacity-100"
-              onClick={() => handleExtract()}
+              onClick={requestExtract}
               // Enabled on an empty field on purpose: a click then surfaces the inline "enter a URL"
-              // validation (point 1) instead of a silent no-op (the app bug). loading/checking still gate.
-              disabled={loading || isCheckingDuplicate}
+              // validation (point 1) instead of a silent no-op (the app bug). Only loading gates; a
+              // click during the duplicate check is queued (requestExtract).
+              disabled={loading}
             >
               {loading || isCheckingDuplicate ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {loading && isFetchingMeta ? "Checking…" : loading ? "Extracting…" : isCheckingDuplicate ? "Checking…" : "Extract"}

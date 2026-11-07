@@ -127,6 +127,10 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 **Open:** Audience → **Publish app** (Testing → In production). Wacht op Khidr (Claude mocht die klik niet zelf doen). Daarna merkverificatie bij Google voor het logo; die kan haken op het `supabase.co`-domein (niet van ons te verifiëren). Inloggen werkt tijdens de verificatie gewoon (alleen basis-scopes email/profile/openid). Na publiceren verifiëren: een Google-account dat geen eigenaar is moet kunnen aanmelden, en er moet een nieuwe `google`-rij in `auth.identities` verschijnen.
 
+## [x] YouTube 'Extract' slikte de eerste klik na plakken (opgelost 2026-11-07)
+
+Gevonden bij het vullen van de demo-bibliotheek: na plakken van een URL is de Extract-knop ~1 s `disabled` (duplicaatcheck: 600 ms debounce + Supabase-query). Wie meteen klikt, klikt op een uitgeschakelde knop: geen extractie, geen foutmelding; pas de tweede klik werkt. Fix in `VideoTab.tsx`: knop alleen nog uitgeschakeld tijdens `loading`; een klik of Enter tijdens de check wordt onthouden (`pendingExtractRef`) en uitgevoerd zodra de check klaar is, dus de duplicaat-onderschepping blijft werken. Geverifieerd in productie (zie LOG 7-11).
+
 ## Kritieke TODO's (blokkeren live launch)
 
 ### [~] HIBP-lekwachtwoordcontrole inschakelen (Supabase-instelling — vraag voor Khidr)
