@@ -2,18 +2,18 @@ import { Pencil, Folder } from "lucide-react";
 import { cn } from "@indxr/shared/lib/utils";
 import type { Transcript } from "./TranscriptList";
 
-/** Badge variant → OKLCH family classes (see tokens.css "Badge families").
- *  Hue = family, "-soft" = edited variant (same hue, higher L). The edited state
- *  carries BOTH the -soft tint AND a pencil glyph (the tint alone is not perceptible
- *  on an 18px pill; the pencil makes the difference legible). */
+/** Badge variant → stijl B classes (2026-11-07). The old hue families (sky/indigo/violet/teal)
+ *  are replaced by four ink treatments that stay distinct without colour: captions = ink outline,
+ *  AI = ink fill, summary = amber fill, RAG = dashed outline. The edited state keeps the pencil
+ *  glyph (that is what makes it legible; the old tint difference was not). */
 export const BADGE_CLASSES = {
-  auto: "bg-sky-subtle text-sky",
-  "auto-edit": "bg-sky-soft-subtle text-sky-soft",
-  ai: "bg-indigo-subtle text-indigo",
-  "ai-edit": "bg-indigo-soft-subtle text-indigo-soft",
-  summary: "bg-violet-subtle text-violet",
-  "summary-edit": "bg-violet-soft-subtle text-violet-soft",
-  rag: "bg-teal-subtle text-teal",
+  auto: "border border-fg-strong text-fg-strong",
+  "auto-edit": "border border-fg-strong text-fg-strong",
+  ai: "border border-fg-strong bg-fg-strong text-bg",
+  "ai-edit": "border border-fg-strong bg-fg-strong text-bg",
+  summary: "border border-fg-strong bg-accent text-fg-on-accent",
+  "summary-edit": "border border-fg-strong bg-accent text-fg-on-accent",
+  rag: "border border-dashed border-fg-strong text-fg-strong",
 } as const;
 
 export type BadgeVariant = keyof typeof BADGE_CLASSES;
@@ -70,7 +70,7 @@ export function Badge({ label, variant, pencil, title }: BadgeSpec) {
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-[3px] px-2 py-0.5 text-[10px] font-mono font-medium tracking-tight whitespace-nowrap",
+        "inline-flex items-center gap-0.5 px-1.5 py-px text-[10px] font-mono font-bold uppercase tracking-tight whitespace-nowrap",
         BADGE_CLASSES[variant],
       )}
     >
@@ -82,7 +82,7 @@ export function Badge({ label, variant, pencil, title }: BadgeSpec) {
 
 export function CollectionBadge({ name }: { name: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-[3px] border border-border px-2 py-0.5 text-[10px] font-medium text-fg-subtle whitespace-nowrap max-w-[10rem]">
+    <span className="inline-flex items-center gap-1 border border-border-strong px-1.5 py-px text-[10px] font-medium text-fg whitespace-nowrap max-w-[10rem]">
       <Folder className="h-2.5 w-2.5 shrink-0" />
       <span className="truncate" dir="auto">
         {name}

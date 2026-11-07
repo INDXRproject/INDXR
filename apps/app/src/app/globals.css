@@ -70,7 +70,7 @@
 }
 /* The stored paragraph text starts with a space after the (hidden) timestamp; pull it back so
    Paragraphs mode starts flush left. */
-.transcript-sheet.hide-timestamps .ProseMirror.read-only-mode p {
+.transcript-sheet .ProseMirror.read-only-mode p {
   text-indent: -0.28em;
 }
 .transcript-sheet.with-gutter .ProseMirror.read-only-mode p {
