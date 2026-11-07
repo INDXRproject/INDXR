@@ -202,6 +202,9 @@ export function AppSidebar() {
         .from("collections").insert({ name, user_id: user.id }).select().single()
       if (error) throw error
       setCollections(prev => [...prev, data as Collection])
+      // Tell the library page too: its Move menu keeps its own collections list and otherwise
+      // only showed the new collection after a reload (found 2026-11-07).
+      window.dispatchEvent(new CustomEvent("transcripts-updated"))
       setNewName("")
       setCreating(false)
       setSidebarFeedback({ type: 'success', message: `Collection "${name}" created` })

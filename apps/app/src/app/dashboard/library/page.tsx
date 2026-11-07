@@ -290,10 +290,14 @@ function LibraryContent() {
           <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
             <h1 className="text-4xl font-bold tracking-[-0.04em] text-fg-strong wrap-break-word sm:text-5xl">
               {pageTitle}
-              <span className="font-mono text-fg-muted font-normal text-sm tracking-normal ml-3 whitespace-nowrap tabular-nums">
-                · {narrowed ? `${filteredCount} of ${totalCount}` : totalCount}
-                {" "}transcript{(narrowed ? totalCount : totalCount) !== 1 ? "s" : ""}
-              </span>
+              {/* Hidden on the first load: it used to read "· 0 transcripts" for a moment before the
+                  count arrived. */}
+              {!(loading && totalCount === 0) && (
+                <span className="font-mono text-fg-muted font-normal text-sm tracking-normal ml-3 whitespace-nowrap tabular-nums">
+                  · {narrowed ? `${filteredCount} of ${totalCount}` : totalCount}
+                  {" "}transcript{(narrowed ? totalCount : totalCount) !== 1 ? "s" : ""}
+                </span>
+              )}
             </h1>
           </div>
 

@@ -33,22 +33,24 @@ export const METHOD_META: Record<
   captions: {
     label: "YouTube captions",
     short: "Captions",
-    badge: "bg-sky-subtle text-sky",
-    bar: "bg-sky",
-    dot: "bg-sky",
-    tint: "bg-sky-subtle",
-    border: "border-sky",
-    indicator: "bg-sky",
+    badge: "border border-fg-strong text-fg-strong", // stijl B (2026-11-07): ink, matches library badges
+    // Stijl B (2026-11-07): no hue families. Captions = mid grey, AI = ink — still two clearly
+    // different segments in the cost bars, without colour carrying the meaning alone (labels do).
+    bar: "bg-fg-muted",
+    dot: "bg-fg-muted",
+    tint: "bg-bg-subtle",
+    border: "border-fg-strong",
+    indicator: "bg-fg-strong",
   },
   ai: {
     label: "AI transcription",
     short: "AI",
-    badge: "bg-indigo-subtle text-indigo",
-    bar: "bg-indigo",
-    dot: "bg-indigo",
-    tint: "bg-indigo-subtle",
-    border: "border-indigo",
-    indicator: "bg-indigo",
+    badge: "border border-fg-strong bg-fg-strong text-bg", // stijl B: ink fill, matches library AI badge
+    bar: "bg-fg-strong",
+    dot: "bg-fg-strong",
+    tint: "bg-bg-subtle",
+    border: "border-fg-strong",
+    indicator: "bg-fg-strong",
   },
 }
 

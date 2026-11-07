@@ -865,7 +865,7 @@ export function TranscriptViewer({
                 <DropdownMenuItem onClick={handleRagMenuClick}>
                   RAG JSON
                   {(localRagExports?.length ?? 0) > 0 ? (
-                    <span className="ml-auto text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+                    <span className="ml-auto text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
                   ) : (
                     <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
                   )}

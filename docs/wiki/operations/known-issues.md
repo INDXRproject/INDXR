@@ -131,6 +131,10 @@ Gedocumenteerd zodat toekomstige sessies dit niet opnieuw afwegen:
 
 Gevonden bij het vullen van de demo-bibliotheek: na plakken van een URL is de Extract-knop ~1 s `disabled` (duplicaatcheck: 600 ms debounce + Supabase-query). Wie meteen klikt, klikt op een uitgeschakelde knop: geen extractie, geen foutmelding; pas de tweede klik werkt. Fix in `VideoTab.tsx`: knop alleen nog uitgeschakeld tijdens `loading`; een klik of Enter tijdens de check wordt onthouden (`pendingExtractRef`) en uitgevoerd zodra de check klaar is, dus de duplicaat-onderschepping blijft werken. Geverifieerd in productie (zie LOG 7-11).
 
+## [x] Bibliotheek: nieuwe collectie ontbrak in het Verplaats-menu tot herladen (opgelost 2026-11-07)
+
+Collectie aangemaakt via de zijbalk → het Move-menu van de bibliotheek (eigen `collections`-state) toonde 'No collections' tot een reload. De zijbalk stuurt na aanmaken nu ook `transcripts-updated` (zoals al bij hernoemen/verwijderen), waarop de bibliotheek `loadCollections()` doet. Ook: rij-checkboxes hebben nu een eigen aria-label ('Select <titel>'), en de teller '· 0 transcripts' flitst niet meer tijdens de eerste lading.
+
 ## Kritieke TODO's (blokkeren live launch)
 
 ### [~] HIBP-lekwachtwoordcontrole inschakelen (Supabase-instelling — vraag voor Khidr)

@@ -834,7 +834,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
                                        href={appHref(`/dashboard/library/${whisperEntry.transcriptId}`)}
                                        target="_blank"
                                        onClick={(e) => e.stopPropagation()}
-                                       className="text-[10px] uppercase font-bold text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-violet-500/20 transition-colors"
+                                       className="text-[10px] uppercase font-bold font-mono text-fg-on-accent bg-accent border border-fg-strong px-1.5 py-0.5 flex items-center gap-1 hover:bg-accent-hover transition-colors"
                                        title="View existing AI transcript"
                                      >
                                        AI transcript in library <ExternalLink className="h-2.5 w-2.5" />

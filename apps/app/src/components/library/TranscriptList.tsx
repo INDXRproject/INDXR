@@ -503,7 +503,7 @@ export function TranscriptList({
       <DropdownMenuItem onClick={() => openRag(ids)}>
         RAG JSON
         {rowRag ? (
-          <span className="ml-auto text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+          <span className="ml-auto text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
         ) : (
           <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
         )}
@@ -652,6 +652,7 @@ export function TranscriptList({
                     className="data-[state=unchecked]:border-border-strong data-[state=unchecked]:bg-surface-sunken"
                     checked={selectedIds.has(t.id)}
                     onCheckedChange={() => toggleSelect(t.id)}
+                    aria-label={`Select ${t.title ?? "transcript"}`}
                   />
                 </div>
 
@@ -740,7 +741,7 @@ export function TranscriptList({
                       <DropdownMenuItem onClick={() => openRag([t.id])}>
                         RAG JSON
                         {t.has_rag ? (
-                          <span className="ml-auto text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+                          <span className="ml-auto text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
                         ) : (
                           <span className="ml-auto text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>
                         )}
@@ -954,7 +955,7 @@ export function TranscriptList({
                     icon={<Download className="h-4 w-4" />}
                     label="RAG JSON"
                     trailing={rowSheet.has_rag
-                      ? <span className="text-[9px] font-bold rounded-full bg-teal-subtle text-teal px-1.5 py-0.5">PURCHASED</span>
+                      ? <span className="text-[9px] font-bold border border-fg-strong text-fg-strong font-mono px-1 py-px">PURCHASED</span>
                       : <span className="text-[9px] font-bold rounded-full bg-warning-subtle text-warning px-1.5 py-0.5">PAID</span>}
                     onClick={() => { const id = rowSheet.id; setRowSheet(null); openRag([id]); }}
                   />
