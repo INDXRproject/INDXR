@@ -6,6 +6,7 @@ import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
+import { AuthSplit } from "@/components/auth/AuthSplit"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import posthog from "posthog-js"
@@ -77,8 +78,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-shell relative flex items-center justify-center min-h-screen bg-bg px-4 overflow-hidden">
-      <Card className="relative w-full max-w-sm">
+    <AuthSplit variant="login">
+      <Card className="relative w-full">
         <CardHeader>
           {/* Ahrefs crawl 2026-10-27: page had no H1 — CardTitle renders a <div>, not a heading.
               Native h1 here, same classes CardTitle would apply, instead of touching the shared
@@ -160,6 +161,6 @@ export default function LoginPage() {
           </div>
         </CardFooter>
       </Card>
-    </div>
+    </AuthSplit>
   )
 }

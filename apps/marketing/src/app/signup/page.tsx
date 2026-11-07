@@ -6,6 +6,7 @@ import { PasswordInput } from "@indxr/shared/components/ui/PasswordInput"
 import { Label } from "@indxr/shared/components/ui/label"
 import { Card, CardContent } from "@indxr/shared/components/ui/card"
 import Link from "next/link"
+import { AuthSplit } from "@/components/auth/AuthSplit"
 import { useState } from "react"
 import { validatePassword } from "@indxr/shared/utils/validation"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -81,8 +82,8 @@ export default function SignupPage() {
   // enough to overflow common viewports, so it pins near the top rather than centering, and py-12 alone
   // left the logo only ~16px below the navbar. Bottom stays pb-12 for scroll clearance.
   return (
-    <div className="auth-shell relative min-h-screen flex items-center justify-center px-4 pt-20 pb-12 bg-bg overflow-hidden">
-      <Card className="relative w-full max-w-md p-8">
+    <AuthSplit variant="signup">
+      <Card className="relative w-full p-8">
 
         {/* Logo + Title */}
         <div className="text-center mb-8">
@@ -192,6 +193,6 @@ export default function SignupPage() {
             </Link>
         </p>
       </Card>
-    </div>
+    </AuthSplit>
   )
 }
