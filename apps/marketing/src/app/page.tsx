@@ -10,7 +10,7 @@ import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
 import { EXPORT_FORMAT_COUNT } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
-  title: "INDXR.AI — A searchable archive of everything you learn from",
+  title: "INDXR.AI — All your sources. One searchable archive.",
   description:
     "Lectures, podcasts, YouTube videos and your own recordings, as clean transcripts with speakers and timestamps. Each keeps its source and a citation, in one archive you can search word for word. Pay per minute, no subscription.",
   alternates: { canonical: "/" },
@@ -161,9 +161,9 @@ export default async function LandingPage() {
       <section className="w-full bg-[var(--bg)] pt-[96px] lg:pt-[112px]">
         <div className={`${WRAP} grid items-center gap-12 pb-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-20`}>
           <div>
-            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Your archive of everything you learn from</p>
+            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Podcasts · lectures · interviews · videos · your own files</p>
             <h1 className="text-[2.6rem] font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-6xl lg:text-[4.25rem]">
-              Every lecture, podcast and video you learn from. Searchable.
+              All your sources. One searchable archive.
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
               Paste a YouTube link or a whole playlist, or upload your own recordings. Each becomes a clean

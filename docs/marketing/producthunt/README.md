@@ -3,10 +3,10 @@
 **Status:** draft, er staat niets ingepland of gepubliceerd. PH toont nu "Schedule launch" omdat alle verplichte velden gevuld zijn. **Inplannen alleen na akkoord van Khidr.**
 
 ## Copy (bijgewerkt 6-11 naar de positionering van 4-11; de draft slaat automatisch op)
-- **Tagline (7-11):** **"A searchable archive of everything you learn from"** (49 tekens). Eerder: "Lectures, interviews & YouTube as text you can search".
+- **Tagline (7-11):** **"All your sources. One searchable archive."** (41 tekens). Eerder: "A searchable archive of everything you learn from".
 - **Description (7-11, 488/500), in de draft gezet:** "INDXR turns lectures, podcasts, YouTube videos and your own recordings into clean transcripts (speakers, punctuation, timestamps) and keeps them in one archive you can search word for word. / Every transcript keeps its source: channel, link, length, and a citation you can copy. Organise by course or project, jump to the minute a sentence was said, export to Markdown, SRT or RAG JSON. / YouTube captions are free. AI transcription is pay-per-minute: credits never expire, no subscription." De vorige versie hieronder is vervangen.
 - **Description** (max. 500 tekens, nu 464), leidend met de positionering, gevolgd door de bibliotheek met full-text search (live sinds 5-11), de exports en de prijs:
-  > Every lecture, interview and video you learn from, as text you can search, quote and use. Paste a YouTube link or playlist, or upload a recording: you get a transcript with speakers and timestamps, plus a summary, so you see the core in minutes and decide what deserves your hours.
+  > Podcasts, lectures, interviews, videos and your own recordings: all your sources as text, in one archive you can search, quote and cite. Paste a YouTube link or playlist, or upload a recording: you get a transcript with speakers and timestamps, plus a summary, so you see the core in minutes and decide what deserves your hours.
   >
   > All of it lands in one library with full-text search and collections, or export it: Markdown, SRT/VTT, JSON for RAG.
   >
@@ -17,7 +17,7 @@
 - **Pricing-veld:** "Free Options". Laten staan of "Freemium" kiezen.
 
 ## Galerij (1270×760, stijl B): `gallery/01–05.png`
-1. Titelkaart met logo, "Every lecture, interview and video you learn from. As text." en "Transcripts, done properly."
+1. Titelkaart met logo, "All your sources. One searchable archive." en "Transcripts, done properly."
 2. Captions tegenover INDXR (JFK, Rice 1962, publiek domein).
 3. De bibliotheek met zoeken in titels en transcripttekst. **Mockup in stijl B met verzonnen titels.** Na de redesign vervangen door een echte screenshot.
 4. Zeven exportformaten.

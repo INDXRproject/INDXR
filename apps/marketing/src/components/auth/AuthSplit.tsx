@@ -22,7 +22,7 @@ const LOGIN_POINTS: Array<[string, string]> = [
 
 export function AuthSplit({ variant, children }: { variant: "signup" | "login"; children: React.ReactNode }) {
   const points = variant === "signup" ? SIGNUP_POINTS : LOGIN_POINTS
-  const heading = variant === "signup" ? "Everything you learn from, as text." : "Welcome back."
+  const heading = variant === "signup" ? "Everything you've heard, on record." : "Welcome back."
   return (
     <div className="auth-shell min-h-screen bg-bg pt-16">
       <div className="grid lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

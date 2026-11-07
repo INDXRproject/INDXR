@@ -28,7 +28,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://indxr.ai'),
-  title: "INDXR.AI — A searchable archive of everything you learn from",
+  title: "INDXR.AI — All your sources. One searchable archive.",
   description: "Lectures, podcasts, YouTube videos and your own recordings, as clean transcripts with speakers and timestamps — each with its source, in one archive you can search word for word. No subscription.",
   // Default OG/Twitter card (Ahrefs crawl 2026-10-27: 27 pages had neither). A page that sets its
   // own `openGraph`/`twitter` REPLACES this wholesale (Next.js metadata merge is shallow per key,
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://indxr.ai",
     siteName: "INDXR.AI",
-    title: "INDXR.AI — A searchable archive of everything you learn from",
+    title: "INDXR.AI — All your sources. One searchable archive.",
     description: "Lectures, podcasts, YouTube videos and your own recordings, as clean transcripts with speakers and timestamps — each with its source, in one archive you can search word for word. No subscription.",
     images: [{ url: "https://indxr.ai/og-default.jpg", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "INDXR.AI — A searchable archive of everything you learn from",
+    title: "INDXR.AI — All your sources. One searchable archive.",
     description: "Lectures, podcasts, YouTube videos and your own recordings, as clean transcripts with speakers and timestamps — each with its source, in one archive you can search word for word. No subscription.",
     images: ["https://indxr.ai/og-default.jpg"],
   },
