@@ -1,4 +1,3 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
 // Client island: tier-selector toggles cost column.
 
 "use client"
@@ -33,10 +32,7 @@ export function CreditCostTable() {
   const selectedPkg = PACKAGES.find((p) => p.id === selectedId) ?? defaultPkg
 
   return (
-    <div className="max-w-5xl mx-auto mt-20">
-      <h2 className="text-3xl font-bold tracking-[-0.035em] text-[var(--fg-strong)] mb-5 sm:text-4xl">
-        What does it actually cost?
-      </h2>
+    <div>
 
       {/* Tier selector */}
       <div className="flex flex-wrap mb-6">

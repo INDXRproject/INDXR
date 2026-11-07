@@ -9,8 +9,10 @@ import { PricingTiers } from "@indxr/shared/components/pricing/PricingTiers"
 import { BuyButton } from "@/components/pricing/BuyButton"
 import { CreditCostTable } from "@/components/pricing/CreditCostTable"
 import { TrustRowCards } from "@/components/pricing/TrustRowCards"
-import { VatLine } from "@/components/pricing/VatLine"
-import { PACKAGES, tierPriceCredits } from "@indxr/shared/lib/pricing"
+import { PACKAGES, CREDIT_COSTS, tierPriceCredits } from "@indxr/shared/lib/pricing"
+import { LIBRARY_STORAGE_BASE_MB } from "@indxr/shared/lib/storage"
+import { MonthPlanner } from "@/components/pricing/MonthPlanner"
+import { IndexSection, INK, WRAP, MONO, H2 } from "@/components/marketing/IndexSection"
 import { pageOg } from "@/lib/pageOg"
 
 export const metadata: Metadata = {
@@ -112,102 +114,108 @@ const cheapestPerMin = Math.min(...PACKAGES.map((p) => pricePerMinute(p)))
 const SUBSCRIPTION_EUR = 10
 const breakEvenHours = Math.round(SUBSCRIPTION_EUR / cheapestPerMin / 60)
 
-const INK = "border-[var(--fg-strong)]"
-const MONO_LABEL = "font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]"
+// What never costs a credit — the hero's "free column". Each line derives from a constant.
+const ALWAYS_FREE: Array<[string, string]> = [
+  ["YouTube with captions", "every video"],
+  ["Playlists with captions", `first ${FREE_TIER.PLAYLIST_FREE_VIDEOS} videos`],
+  ["Every export except RAG JSON", "always"],
+  ["Library storage", `${LIBRARY_STORAGE_BASE_MB} MB`],
+  ["New account", `${FREE_TIER.WELCOME_CREDITS} credits`],
+]
 
 export default function PricingPage() {
   return (
     <>
       <JsonLd schemas={[aggregateOfferSchema, faqSchema]} />
 
-      <div className="min-h-screen bg-[var(--bg)]">
-        <div className="container px-4 sm:px-6 lg:px-8 mx-auto pb-24">
-
-          {/* Hero — stijl B: mono label + big type, left-aligned on the same max-w-5xl as the grid. */}
-          <div className="max-w-5xl mx-auto pt-[104px] lg:pt-[120px] pb-12">
-            <p className={`${MONO_LABEL} mb-5`}>Pricing</p>
-            <h1 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl lg:text-[5.5rem]">
+      {/* Hero: the promise left, everything that is free right — before any price. */}
+      <section className="w-full bg-[var(--bg)] pt-[96px] lg:pt-[112px]">
+        <div className={`${WRAP} grid items-end gap-12 pb-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:pb-20`}>
+          <div>
+            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Pricing</p>
+            <h1 className="text-[2.75rem] font-bold leading-[0.94] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl lg:text-[5.25rem]">
               Pay for minutes. Not months.
             </h1>
-            <p className="mt-8 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">
-              YouTube caption extraction is always free. Credits apply only when you use AI transcription,
-              playlist caption processing beyond the first three videos, AI summaries, or RAG JSON export.
-              1 credit is 1 minute, and credits never expire.
+            <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
+              Buy credits once, spend them when you need them. {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit is 1 minute of AI
+              transcription, and credits never expire.
             </p>
           </div>
-
-          {/* Tier grid (shared with app billing). CTA = auth-aware marketing BuyButton. */}
-          <PricingTiers
-            renderCta={(pkg, opts) => (
-              <BuyButton pkg={pkg} featured={pkg.mostPopular} compact={opts?.compact} />
-            )}
-          />
-
-          {/* Credits vs a subscription + the single-file side door */}
-          <div className={`max-w-5xl mx-auto mt-16 grid md:grid-cols-2 border-2 ${INK}`}>
-            <div className={`p-6 sm:p-8 border-b-2 md:border-b-0 md:border-r-2 ${INK}`}>
-              <p className={`${MONO_LABEL} mb-3`}>Credits or a subscription?</p>
-              <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--fg-strong)] sm:text-3xl">
-                Cheaper unless you transcribe more than about {breakEvenHours} hours a month.
-              </h2>
-              <p className="mt-4 leading-relaxed text-[var(--fg-subtle)]">
-                Unlimited transcription subscriptions typically cost around ${SUBSCRIPTION_EUR} a month when
-                billed yearly. At {formatEurExact(cheapestPerMin)} a minute, the same amount buys about{" "}
-                {breakEvenHours} hours of AI transcription here, and whatever you don&apos;t use this month is
-                still yours next year.
-              </p>
-            </div>
-            <div className="p-6 sm:p-8 bg-[var(--bg-subtle)]">
-              <p className={`${MONO_LABEL} mb-3`}>Just one file?</p>
-              <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--fg-strong)] sm:text-3xl">
-                {formatEurExact(PER_FILE_EUR_PER_MIN)} a minute, no account.
-              </h2>
-              <p className="mt-4 leading-relaxed text-[var(--fg-subtle)]">
-                Upload a single recording, see the price and a free preview of the first minutes, then pay for
-                that file only (minimum {formatEurExact(PER_FILE_MIN_EUR)} per file). No account, no credits.
-              </p>
-              <a
-                href={marketingHref("/transcribe")}
-                className={`mt-6 inline-flex items-center border-2 ${INK} bg-[var(--bg)] px-5 py-3 text-sm font-bold text-[var(--fg-strong)] hover:bg-[var(--bg-subtle)]`}
-              >
-                Transcribe one file →
-              </a>
-            </div>
+          <div className={`border-2 ${INK} bg-[var(--bg)]`}>
+            <p className={`${MONO} border-b-2 ${INK} bg-[var(--accent)] px-5 py-3 font-bold text-[var(--fg-on-accent)]`}>
+              Free, without credits
+            </p>
+            <dl className="px-5 py-3 font-mono text-sm">
+              {ALWAYS_FREE.map(([k, v]) => (
+                <div key={k} className="flex items-baseline gap-2 py-1.5">
+                  <dt className="text-[var(--fg)]">{k}</dt>
+                  <span aria-hidden="true" className="min-w-4 flex-1 border-b border-dotted border-[var(--fg-muted)]" />
+                  <dd className="whitespace-nowrap font-bold text-[var(--fg-strong)]">{v}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-
-          {/* Credit-cost table with tier toggle */}
-          <CreditCostTable />
-
-          {/* Trust row */}
-          <TrustRowCards />
-
-          {/* VAT line */}
-          <VatLine />
-
-          {/* Country availability — surfaced BEFORE checkout so nobody runs the whole funnel only to be
-              declined at the till (ADR-062: a Stripe Radar rule blocks a few countries pre-charge). */}
-          <p className="mt-4 max-w-5xl mx-auto text-sm text-[var(--fg-muted)]">
-            Payment isn&apos;t available in every country yet.{" "}
-            <a href="#faq" className="text-[var(--link)] hover:underline">See who can buy</a>.
-          </p>
-
-          {/* Comparison landing page — surfaced for people weighing INDXR against another tool (ADR-105). */}
-          <p className="mt-2 max-w-5xl mx-auto text-sm text-[var(--fg-muted)]">
-            Coming from another tool?{" "}
-            <Link href="/alternatives/otter-ai" className="text-[var(--link)] hover:underline">
-              INDXR vs Otter.ai
-            </Link>
-            .
-          </p>
-
-          {/* FAQ */}
-          <div id="faq" className={`mt-20 max-w-5xl mx-auto border-t-2 ${INK} pt-12`}>
-            <h2 className="text-3xl font-bold tracking-[-0.035em] text-[var(--fg-strong)] mb-6 sm:text-4xl">Frequently asked questions</h2>
-            <FAQAccordion items={faqItems} />
-          </div>
-
         </div>
-      </div>
+      </section>
+
+      <IndexSection n="01" label="Credit packs" id="packs">
+        <h2 className={`${H2} mb-10`}>Pick a pack. Keep it forever.</h2>
+        {/* Tier grid (shared with app billing). CTA = auth-aware marketing BuyButton. */}
+        <PricingTiers
+          renderCta={(pkg, opts) => <BuyButton pkg={pkg} featured={pkg.mostPopular} compact={opts?.compact} />}
+        />
+        <p className="mt-6 text-sm text-[var(--fg-muted)]">
+          All prices include VAT. Every purchase comes with a VAT invoice you can download from your account.
+          Payment isn&apos;t available in every country yet:{" "}
+          <a href="#faq" className="text-[var(--link)] underline-offset-4 hover:underline">see who can buy</a>.
+        </p>
+      </IndexSection>
+
+      <IndexSection n="02" label="Your month" tone="subtle">
+        <h2 className={`${H2} mb-4`}>How far does a pack go?</h2>
+        <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
+          Slide to the hours you expect to transcribe with AI each month. Compared with an unlimited
+          subscription at about ${SUBSCRIPTION_EUR} a month (billed yearly), credits are cheaper up to roughly{" "}
+          {breakEvenHours} hours a month at {formatEurExact(cheapestPerMin)} a minute.
+        </p>
+        <MonthPlanner subscriptionPerMonth={SUBSCRIPTION_EUR} />
+      </IndexSection>
+
+      <IndexSection n="03" label="Per task">
+        <h2 className={`${H2} mb-8`}>What one job costs.</h2>
+        <CreditCostTable />
+      </IndexSection>
+
+      <IndexSection n="04" label="No account">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div>
+            <h2 className={H2}>Just one file? {formatEurExact(PER_FILE_EUR_PER_MIN)} a minute.</h2>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">
+              Upload a single recording, see the price and a free preview of the first minutes, then pay for
+              that file only (minimum {formatEurExact(PER_FILE_MIN_EUR)}). No account, no credits.
+            </p>
+          </div>
+          <a
+            href={marketingHref("/transcribe")}
+            className={`inline-flex h-14 items-center justify-center border-2 ${INK} bg-[var(--accent)] px-6 font-bold text-[var(--fg-on-accent)] hover:bg-[var(--accent-hover)]`}
+          >
+            Transcribe one file →
+          </a>
+        </div>
+      </IndexSection>
+
+      <IndexSection n="05" label="Questions" id="faq">
+        <h2 className={`${H2} mb-10`}>Before you buy.</h2>
+        <TrustRowCards />
+        <FAQAccordion items={faqItems} className="mt-12" />
+        <p className="mt-8 text-sm text-[var(--fg-muted)]">
+          Coming from another tool?{" "}
+          <Link href="/alternatives/otter-ai" className="text-[var(--link)] underline-offset-4 hover:underline">
+            INDXR vs Otter.ai
+          </Link>
+          .
+        </p>
+      </IndexSection>
     </>
   )
 }

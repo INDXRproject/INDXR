@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { FreeToolEmbed } from "@/components/marketing/FreeToolEmbed"
+import { IndexSection, INK, WRAP, MONO, H2 } from "@/components/marketing/IndexSection"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { CREDIT_COSTS, FREE_TIER, PACKAGES, pricePerMinute } from "@indxr/shared/lib/pricing"
@@ -64,46 +65,8 @@ const eur = (n: number) => `€${n.toFixed(n < 1 ? 2 : 0)}`
 // (public domain). The sheet uses paragraph marks (¶), not timestamps; the SRT/MD/JSON snippets are format samples.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-const INK = "border-[var(--fg-strong)]"
-const WRAP = "mx-auto w-full max-w-6xl px-4 sm:px-6"
-const MONO = "font-mono text-xs uppercase tracking-[0.08em]"
-const H2 = "text-4xl font-bold leading-[0.98] tracking-[-0.04em] text-[var(--fg-strong)] sm:text-6xl"
 const BTN_PRIMARY = `inline-flex h-14 w-full cursor-pointer items-center justify-center border-2 ${INK} bg-[var(--accent)] px-6 text-base font-bold text-[var(--fg-on-accent)] transition-colors hover:bg-[var(--accent-hover)] sm:w-auto`
 const BTN_SECONDARY = `inline-flex h-14 w-full cursor-pointer items-center justify-center border-2 ${INK} bg-[var(--bg)] px-6 text-base font-bold text-[var(--fg-strong)] transition-colors hover:bg-[var(--bg-subtle)] sm:w-auto`
-
-/** Section frame: index mark + label in a left margin column on desktop, above on mobile. */
-function Section({
-  n,
-  label,
-  id,
-  children,
-  tone = "paper",
-}: {
-  n: string
-  label: string
-  id?: string
-  children: React.ReactNode
-  tone?: "paper" | "ink" | "amber"
-}) {
-  const toneCls =
-    tone === "ink"
-      ? "bg-[var(--fg-strong)] text-[var(--bg)]"
-      : tone === "amber"
-        ? "bg-[var(--accent)] text-[var(--fg-on-accent)]"
-        : "bg-[var(--bg)]"
-  const markCls = tone === "paper" ? "text-[var(--fg-subtle)]" : ""
-  return (
-    <section id={id} className={`w-full scroll-mt-20 border-t-2 ${INK} ${toneCls}`}>
-      <div className={`${WRAP} grid gap-6 py-16 lg:grid-cols-[140px_minmax(0,1fr)] lg:gap-10 lg:py-24`}>
-        <div className={`${MONO} ${markCls} lg:pt-3`}>
-          <span className="mr-3 lg:mr-0 lg:block lg:text-2xl lg:font-bold lg:tracking-[-0.02em] lg:normal-case">§{n}</span>
-          <span className="lg:mt-2 lg:block">{label}</span>
-        </div>
-        <div className="min-w-0">{children}</div>
-      </div>
-    </section>
-  )
-}
 
 const SHEET = [
   { p: 1, who: "John F. Kennedy", text: "We set sail on this new sea because there is new knowledge to be gained, and new rights to be won." },
@@ -225,7 +188,7 @@ export default async function LandingPage() {
       </section>
 
       {/* §01 — the proof, as an annotated diff */}
-      <Section n="01" label="The difference">
+      <IndexSection n="01" label="The difference">
         <h2 className={`${H2} mb-10 max-w-3xl`}>Captions give you words. You need sentences.</h2>
         <div className={`grid border-2 ${INK} md:grid-cols-2`}>
           <div className={`border-b-2 ${INK} bg-[var(--bg-subtle)] p-6 md:border-b-0 md:border-r-2 sm:p-8`}>
@@ -261,10 +224,10 @@ export default async function LandingPage() {
             </div>
           </div>
         </div>
-      </Section>
+      </IndexSection>
 
       {/* §02 — the live tool */}
-      <Section n="02" label="Try it" id="try">
+      <IndexSection n="02" label="Try it" id="try">
         <h2 className={`${H2} mb-4`}>Your own file or link.</h2>
         <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
           {loggedIn ? (
@@ -277,10 +240,10 @@ export default async function LandingPage() {
           )}
         </p>
         <FreeToolEmbed />
-      </Section>
+      </IndexSection>
 
       {/* §03 — the pipeline */}
-      <Section n="03" label="How it works">
+      <IndexSection n="03" label="How it works">
         <h2 className={`${H2} mb-10 max-w-3xl`}>One source in. Something you can use out.</h2>
         <ol className={`grid border-2 ${INK} sm:grid-cols-2 lg:grid-cols-4`}>
           {PIPELINE.map((s, i) => (
@@ -301,10 +264,10 @@ export default async function LandingPage() {
             </li>
           ))}
         </ol>
-      </Section>
+      </IndexSection>
 
       {/* §04 — the library, as a search with a hit */}
-      <Section n="04" label="Your library" tone="ink">
+      <IndexSection n="04" label="Your library" tone="ink">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
             <h2 className="text-4xl font-bold leading-[0.98] tracking-[-0.04em] sm:text-6xl">Search every word you have collected.</h2>
@@ -341,10 +304,10 @@ export default async function LandingPage() {
             </div>
           </div>
         </div>
-      </Section>
+      </IndexSection>
 
       {/* §05 — who brings what: catalogue cards */}
-      <Section n="05" label="Who it is for">
+      <IndexSection n="05" label="Who it is for">
         <h2 className={`${H2} mb-10`}>What people bring to it.</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           {CARDS.map((c) => (
@@ -358,10 +321,10 @@ export default async function LandingPage() {
             </div>
           ))}
         </div>
-      </Section>
+      </IndexSection>
 
       {/* §06 — exports, shown as the files themselves */}
-      <Section n="06" label="Exports">
+      <IndexSection n="06" label="Exports">
         <h2 className={`${H2} mb-4`}>Take it anywhere.</h2>
         <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
           {EXPORT_FORMAT_COUNT} formats, every one included: plain text, Markdown with front matter, CSV, JSON,
@@ -378,10 +341,10 @@ export default async function LandingPage() {
             </figure>
           ))}
         </div>
-      </Section>
+      </IndexSection>
 
       {/* §07 — the price, as a receipt */}
-      <Section n="07" label="Pricing">
+      <IndexSection n="07" label="Pricing">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
             <h2 className="text-5xl font-bold leading-[0.94] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
@@ -430,7 +393,7 @@ export default async function LandingPage() {
           <Link href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</Link>, and{" "}
           <Link href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">SRT subtitle generation</Link>.
         </p>
-      </Section>
+      </IndexSection>
 
       {/* Closing band */}
       <section className={`w-full border-t-2 ${INK} bg-[var(--accent)]`}>

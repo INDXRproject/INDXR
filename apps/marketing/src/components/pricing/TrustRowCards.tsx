@@ -1,4 +1,3 @@
-// Skeleton component — visual polish in Claude Design rondje na alle Batch 1 pages
 import { CreditCard, Clock, Gift } from "lucide-react"
 import { FREE_TIER, CREDIT_COSTS, summaryCreditCost } from "@indxr/shared/lib/pricing"
 
@@ -30,7 +29,7 @@ const trustItems = [
 
 export function TrustRowCards() {
   return (
-    <div className="grid sm:grid-cols-3 max-w-5xl mx-auto mt-16 border-2 border-[var(--fg-strong)]">
+    <div className="grid sm:grid-cols-3 border-2 border-[var(--fg-strong)]">
       {trustItems.map(({ Icon, heading, body }, i) => (
         <div
           key={heading}
