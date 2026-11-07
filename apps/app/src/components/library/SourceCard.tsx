@@ -90,27 +90,36 @@ export function SourceCard(p: SourceCardProps) {
   );
 
   if (p.compact) {
+    // One row: thumbnail · channel + facts · a small Cite button. Kept to one line of height so it
+    // doesn't push the transcript down on a phone.
     return (
-      <div className="mb-6 border-2 border-fg-strong">
-        <div className="flex items-center gap-3 p-3">
-          {thumb ? (
-            <a href={href ?? undefined} target="_blank" rel="noopener noreferrer" className="shrink-0" aria-label="Open on YouTube">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={thumb} alt="" className="h-14 w-24 border-2 border-fg-strong object-cover" />
-            </a>
-          ) : (
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-fg-strong">
-              <FileAudio className="h-6 w-6 text-fg-strong" />
-            </span>
-          )}
-          <div className="min-w-0 font-mono text-xs text-fg">
-            <p className="truncate font-sans text-sm font-bold text-fg-strong" dir="auto">{p.channel || (p.videoId ? "YouTube" : "Uploaded file")}</p>
-            <p className="mt-0.5">
-              {[p.duration != null ? fmtDuration(p.duration) : null, words ? `${words} words` : null, lang].filter(Boolean).join(" · ")}
-            </p>
-          </div>
+      <div className="mb-6 flex items-center gap-3 border-2 border-fg-strong p-2.5">
+        {thumb ? (
+          <a href={href ?? undefined} target="_blank" rel="noopener noreferrer" className="shrink-0" aria-label="Open on YouTube">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumb} alt="" className="h-12 w-20 border-2 border-fg-strong object-cover" />
+          </a>
+        ) : (
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-fg-strong">
+            <FileAudio className="h-5 w-5 text-fg-strong" />
+          </span>
+        )}
+        <div className="min-w-0 flex-1 font-mono text-[11px] text-fg">
+          <p className="truncate font-sans text-sm font-bold text-fg-strong" dir="auto">{p.channel || (p.videoId ? "YouTube" : "Uploaded file")}</p>
+          <p className="mt-0.5 truncate">
+            {[p.duration != null ? fmtDuration(p.duration) : null, words ? `${words} words` : null, lang, p.collectionName].filter(Boolean).join(" · ")}
+          </p>
         </div>
-        <div className="border-t-2 border-fg-strong p-3">{CopyBtn}</div>
+        <button
+          type="button"
+          onClick={copy}
+          aria-label="Copy citation"
+          title={citation}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 border-2 border-fg-strong px-2.5 text-xs font-bold text-fg-strong hover:bg-accent hover:text-fg-on-accent"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Copied" : "Cite"}
+        </button>
       </div>
     );
   }

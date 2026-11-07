@@ -84,7 +84,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-x-10 overflow-x-hidden lg:grid-cols-[minmax(0,1fr)_288px]">
+    <div className="mx-auto grid w-full max-w-7xl gap-x-10 overflow-x-hidden xl:grid-cols-[minmax(0,1fr)_288px]">
       <div className="flex min-w-0 flex-col">
       <TranscriptHeader
         id={transcript.id}
@@ -101,7 +101,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         createdAt={transcript.created_at}
         language={transcript.language ?? null}
       />
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <SourceCard {...sourceProps} compact />
       </div>
       <div className="mb-6">
@@ -164,7 +164,9 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
       ) : null}
       <AlternativeToNudge />
       </div>
-      <aside className="hidden lg:block">
+      {/* Card column only from xl (≥1280px): below that it would squeeze the reading column under
+          ~60 characters per line, so smaller screens get the compact row instead. */}
+      <aside className="hidden xl:block">
         <div className="sticky top-6 pt-8">
           <SourceCard {...sourceProps} />
         </div>

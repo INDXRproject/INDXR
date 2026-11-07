@@ -530,9 +530,13 @@ export function AppSidebar() {
                                 ) : (
                                   /* ── Normal row ── */
                                   <>
+                                    {/* Names wrap to two lines instead of truncating, and the rename/delete
+                                        icons take no space until hover — "PHIL 101 · Justice (Sandel)"
+                                        used to read "PHIL 101 · Justice (San…". */}
                                     <button
-                                      className="flex-1 text-left truncate cursor-pointer"
+                                      className="flex-1 min-w-0 text-left line-clamp-2 break-words leading-snug cursor-pointer"
                                       onClick={() => navigateToCollection(col.id)}
+                                      title={col.name}
                                     >
                                       {col.name}
                                     </button>
@@ -540,14 +544,14 @@ export function AppSidebar() {
                                     {/* Action icons — only visible on hover */}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRenameStart(col) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-fg-muted hover:text-fg shrink-0 cursor-pointer"
+                                      className="h-4 w-4 hidden group-hover/col:flex items-center justify-center text-fg-muted hover:text-fg shrink-0 cursor-pointer"
                                       title="Rename"
                                     >
                                       <Pencil className="h-2.5 w-2.5" />
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(isConfirmDelete ? null : col.id); setEditingId(null) }}
-                                      className="h-4 w-4 flex items-center justify-center opacity-0 group-hover/col:opacity-100 transition-opacity text-fg-muted hover:text-fg shrink-0 cursor-pointer"
+                                      className="h-4 w-4 hidden group-hover/col:flex items-center justify-center text-fg-muted hover:text-fg shrink-0 cursor-pointer"
                                       title="Delete collection"
                                     >
                                       <Trash2 className="h-2.5 w-2.5" />
