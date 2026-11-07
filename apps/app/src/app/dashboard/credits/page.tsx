@@ -58,11 +58,11 @@ export default async function CreditsPage() {
       {/* Balance */}
       <section className="mb-12">
         <SectionLabel label="Credits balance" />
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-6 py-5">
+        <div className="flex items-center gap-3 border-2 border-border-strong bg-fg-strong px-6 py-5 text-bg">
           <HexagonCreditIcon className="size-9 shrink-0" />
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl sm:text-5xl font-bold tracking-tight text-fg tabular-nums">{credits}</span>
-            <span className="text-sm text-fg-subtle font-medium">credits available</span>
+            <span className="text-5xl sm:text-6xl font-bold tracking-[-0.04em] tabular-nums">{credits}</span>
+            <span className="font-mono text-sm opacity-80">credits available · never expire</span>
           </div>
         </div>
       </section>
@@ -79,13 +79,13 @@ export default async function CreditsPage() {
       {/* Credit activity (full ledger) */}
       <section className="mb-12">
         <SectionLabel label="Credit activity" />
-        <TransactionHistoryCard transactions={transactions || []} credits={credits} />
+        <TransactionHistoryCard transactions={transactions || []} />
       </section>
 
       {/* Payments + invoices */}
       <section>
         <SectionLabel label="Payment history" />
-        <PurchaseHistoryCard purchases={purchases} />
+        <PurchaseHistoryCard purchases={purchases} bare />
       </section>
     </div>
   )

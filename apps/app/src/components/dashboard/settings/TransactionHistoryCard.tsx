@@ -1,6 +1,5 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@indxr/shared/components/ui/card"
 import {
   Table,
   TableBody,
@@ -11,7 +10,6 @@ import {
 } from "@indxr/shared/components/ui/table"
 import { useState } from "react"
 import { Button } from "@indxr/shared/components/ui/button"
-import { HexagonCreditIcon } from "@indxr/shared/components/icons/HexagonCreditIcon"
 import { buildCreditActivity, type RawCreditTx } from "@indxr/shared/lib/creditHistory"
 
 function timeAgo(dateString: string) {
@@ -35,38 +33,26 @@ function timeAgo(dateString: string) {
 // Renders the user-facing "Credit activity" list. The raw append-only ledger is collapsed to one net
 // line per operation by buildCreditActivity (shared, read-only) — see that module for the why. The
 // admin panel keeps the full, ungrouped rows via /api/admin/user-detail; this view is deliberately the
-// netted one. `credits` is the authoritative balance (user_credits.credits via get_user_credits).
-export function TransactionHistoryCard({ transactions, credits = 0 }: { transactions: RawCreditTx[]; credits?: number }) {
+// netted one. The balance itself is shown by the page (user_credits.credits via get_user_credits).
+export function TransactionHistoryCard({ transactions }: { transactions: RawCreditTx[] }) {
   const [showAll, setShowAll] = useState(false)
 
   const activity = buildCreditActivity(transactions)
   const displayed = showAll ? activity : activity.slice(0, 10)
 
   return (
-    <Card className="bg-surface border-border">
-      <CardHeader>
-        <CardTitle className="text-lg text-fg">Credit activity</CardTitle>
-        <CardDescription className="text-fg-muted">Your balance and history — purchases, usage and refunds</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Credits Display */}
-        <div className="mb-6 p-4 bg-surface-elevated/50 rounded-lg border border-border flex items-center justify-between">
-            <span className="text-sm text-fg-muted">Current Balance</span>
-            <span className="flex items-center gap-2 text-2xl font-semibold text-fg">
-              <HexagonCreditIcon className="size-6" />
-              {credits} credits
-            </span>
-        </div>
-
+    // Stijl B (2026-11-07): no card or second title — the page's SectionLabel heads this, and the
+    // balance is already the first thing on the page, so the duplicate "Current Balance" row is gone.
+    <div>
         {/* Responsive Table Container */}
-        <div className="rounded-md border border-border overflow-hidden">
+        <div className="border-2 border-border-strong overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-border hover:bg-surface-elevated/50 bg-surface-elevated/30">
-                <TableHead className="text-fg-muted w-[120px]">Date</TableHead>
-                <TableHead className="text-fg-muted">Activity</TableHead>
-                <TableHead className="text-fg-muted text-right w-[100px]">Amount</TableHead>
+              <TableRow className="border-b-2 border-border-strong bg-fg-strong hover:bg-fg-strong">
+                <TableHead className="font-mono text-xs uppercase text-bg w-[120px]">Date</TableHead>
+                <TableHead className="font-mono text-xs uppercase text-bg">Activity</TableHead>
+                <TableHead className="font-mono text-xs uppercase text-bg text-right w-[100px]">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -125,7 +111,6 @@ export function TransactionHistoryCard({ transactions, credits = 0 }: { transact
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }
