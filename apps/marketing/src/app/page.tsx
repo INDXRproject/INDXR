@@ -2,13 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { FreeToolEmbed } from "@/components/marketing/FreeToolEmbed"
-import { HomeClipVideo } from "@/components/marketing/HomeClipVideo"
-import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { createClient } from "@indxr/shared/utils/supabase/server"
 import { CREDIT_COSTS, FREE_TIER, PACKAGES, pricePerMinute } from "@indxr/shared/lib/pricing"
 import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
-import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT } from "@indxr/shared/lib/exportFormats"
+import { EXPORT_FORMAT_COUNT } from "@indxr/shared/lib/exportFormats"
 
 export const metadata: Metadata = {
   title: "INDXR.AI — Accurate transcripts from audio, video and YouTube",
@@ -58,71 +56,129 @@ const cheapestPerMin = Math.min(...PACKAGES.map((p) => pricePerMinute(p)))
 const cheapestPack = Math.min(...PACKAGES.map((p) => p.priceEur))
 const eur = (n: number) => `€${n.toFixed(n < 1 ? 2 : 0)}`
 
-// Stijl B (besluit Khidr 2026-11-05, mockup "Drie stijlen" B): white paper, ink, amber blocks,
-// hard 2px rules, no photo. Every section shares one container and one rule weight.
-const RULE = "border-[var(--fg-strong)]"
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Home, stijl B — creative pass (2026-11-07). The page reads like a well-made transcript: every
+// section carries an index mark in the margin (§01…), the hero *is* a transcript sheet, the
+// before/after is an annotated diff, the library is a search with a hit, exports show real
+// snippets, and the price is a receipt. All example text is the 1962 Rice University address
+// (public domain). The sheet uses paragraph marks (¶), not timestamps; the SRT/MD/JSON snippets are format samples.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+const INK = "border-[var(--fg-strong)]"
 const WRAP = "mx-auto w-full max-w-6xl px-4 sm:px-6"
-const MONO_LABEL = "font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]"
-const H2 = "text-3xl font-bold leading-[1.02] tracking-[-0.035em] text-[var(--fg-strong)] sm:text-5xl"
-const BTN_PRIMARY =
-  "inline-flex h-14 w-full cursor-pointer items-center justify-center border-2 border-[var(--fg-strong)] bg-[var(--accent)] px-6 text-base font-bold text-[var(--fg-on-accent)] transition-colors duration-150 hover:bg-[var(--accent-hover)] sm:w-auto"
-const BTN_SECONDARY =
-  "inline-flex h-14 w-full cursor-pointer items-center justify-center border-2 border-[var(--fg-strong)] bg-[var(--bg)] px-6 text-base font-bold text-[var(--fg-strong)] transition-colors duration-150 hover:bg-[var(--bg-subtle)] sm:w-auto"
+const MONO = "font-mono text-xs uppercase tracking-[0.08em]"
+const H2 = "text-4xl font-bold leading-[0.98] tracking-[-0.04em] text-[var(--fg-strong)] sm:text-6xl"
+const BTN_PRIMARY = `inline-flex h-14 w-full cursor-pointer items-center justify-center border-2 ${INK} bg-[var(--accent)] px-6 text-base font-bold text-[var(--fg-on-accent)] transition-colors hover:bg-[var(--accent-hover)] sm:w-auto`
+const BTN_SECONDARY = `inline-flex h-14 w-full cursor-pointer items-center justify-center border-2 ${INK} bg-[var(--bg)] px-6 text-base font-bold text-[var(--fg-strong)] transition-colors hover:bg-[var(--bg-subtle)] sm:w-auto`
 
-const QUOTE =
-  "We choose to go to the Moon in this decade and do the other things, not because they are easy, but because they are hard."
+/** Section frame: index mark + label in a left margin column on desktop, above on mobile. */
+function Section({
+  n,
+  label,
+  id,
+  children,
+  tone = "paper",
+}: {
+  n: string
+  label: string
+  id?: string
+  children: React.ReactNode
+  tone?: "paper" | "ink" | "amber"
+}) {
+  const toneCls =
+    tone === "ink"
+      ? "bg-[var(--fg-strong)] text-[var(--bg)]"
+      : tone === "amber"
+        ? "bg-[var(--accent)] text-[var(--fg-on-accent)]"
+        : "bg-[var(--bg)]"
+  const markCls = tone === "paper" ? "text-[var(--fg-subtle)]" : ""
+  return (
+    <section id={id} className={`w-full scroll-mt-20 border-t-2 ${INK} ${toneCls}`}>
+      <div className={`${WRAP} grid gap-6 py-16 lg:grid-cols-[140px_minmax(0,1fr)] lg:gap-10 lg:py-24`}>
+        <div className={`${MONO} ${markCls} lg:pt-3`}>
+          <span className="mr-3 lg:mr-0 lg:block lg:text-2xl lg:font-bold lg:tracking-[-0.02em] lg:normal-case">§{n}</span>
+          <span className="lg:mt-2 lg:block">{label}</span>
+        </div>
+        <div className="min-w-0">{children}</div>
+      </div>
+    </section>
+  )
+}
 
-const pillars = [
-  {
-    n: "01",
-    heading: "YouTube",
-    body: "One video or a whole playlist. Captions are free; videos without them are transcribed with AI.",
-  },
-  {
-    n: "02",
-    heading: "Your recordings",
-    body: `Lectures, interviews, podcasts, meetings. Files up to ${maxHours} hours, processed in the EU.`,
-  },
-  {
-    n: "03",
-    heading: "One library",
-    body: "Search the text of every transcript, group them in collections, export to whatever you use next.",
-  },
+const SHEET = [
+  { p: 1, who: "John F. Kennedy", text: "We set sail on this new sea because there is new knowledge to be gained, and new rights to be won." },
+  { p: 2, who: "John F. Kennedy", text: "But why, some say, the Moon? Why choose this as our goal?" },
+  { p: 3, who: "John F. Kennedy", text: "We choose to go to the Moon in this decade and do the other things, not because they are easy, but because they are hard." },
 ]
 
-const uses = [
-  {
-    t: "A course you want to read.",
-    b: "Drop in a playlist and get every lecture as text, each with a chapter summary you can skim before deciding what to reread. Export the lot as Markdown and your notes app has the whole course in it.",
-  },
-  {
-    t: "Research interviews and source material.",
-    b: "Speakers are separated automatically and you rename them to who they actually are. Timestamps link back to the second something was said, so every quote is one click from its source.",
-  },
-  {
-    t: "A video that needs subtitles.",
-    b: "SRT and VTT built to the broadcast standard rather than chopped on character count, ready to drop into any editor.",
-  },
-  {
-    t: "Text you want to build on.",
-    b: "Chunked JSON with timestamps and deep links, made for feeding a vector database instead of reformatting by hand.",
-  },
+/** The hero visual: a transcript sheet as the app renders it — title bar, tabs, ¶ marks, speaker,
+ *  one highlighted search hit. Static HTML, no screenshot, so it never goes stale. */
+function TranscriptSheet() {
+  return (
+    <div className={`border-2 ${INK} bg-[var(--bg)] shadow-[8px_8px_0_0_var(--fg-strong)]`}>
+      <div className={`flex items-center justify-between gap-3 border-b-2 ${INK} bg-[var(--fg-strong)] px-4 py-2.5 text-[var(--bg)]`}>
+        <span className="truncate text-sm font-bold">Address at Rice University</span>
+        <span className="shrink-0 font-mono text-[11px] opacity-80">1962 · public domain</span>
+      </div>
+      <div className={`flex border-b-2 ${INK} font-mono text-[11px] uppercase tracking-[0.06em]`}>
+        <span className={`border-r-2 ${INK} bg-[var(--accent)] px-3 py-2 font-bold text-[var(--fg-on-accent)]`}>Transcript</span>
+        <span className={`border-r-2 ${INK} px-3 py-2 text-[var(--fg-subtle)]`}>Summary</span>
+        <span className="px-3 py-2 text-[var(--fg-subtle)]">Export</span>
+        <span className="ml-auto hidden items-center gap-2 px-3 py-2 text-[var(--fg-subtle)] sm:flex">
+          <span className={`border ${INK} px-1.5 py-0.5 normal-case tracking-normal text-[var(--fg-strong)]`}>moon</span>
+          2 hits
+        </span>
+      </div>
+      <ol className="divide-y divide-[var(--border)]">
+        {SHEET.map((l) => (
+          <li key={l.p} className="grid grid-cols-[44px_minmax(0,1fr)] gap-3 px-4 py-4">
+            <span className="pt-0.5 font-mono text-xs text-[var(--fg-muted)]">¶{l.p}</span>
+            <div>
+              <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--fg)]">{l.who}</p>
+              <p className="text-[15px] leading-relaxed text-[var(--fg-strong)] sm:text-base">
+                {l.text.split(/(Moon)/).map((part, i) =>
+                  part === "Moon" ? (
+                    <mark key={i} className="bg-[var(--accent)] px-0.5 text-[var(--fg-on-accent)]">
+                      Moon
+                    </mark>
+                  ) : (
+                    <span key={i}>{part}</span>
+                  ),
+                )}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+const SOURCES = ["YouTube video", "Whole playlist", "MP3", "MP4", "WAV", "M4A", "MOV", "Lecture recording", "Interview", "Podcast", "Meeting"]
+
+const PIPELINE = [
+  { k: "In", t: "A source", b: `A YouTube link, a playlist, or your own file up to ${maxHours} hours.` },
+  { k: "Out", t: "A transcript", b: "Paragraphs, punctuation, speakers and timestamps. Captions are free; AI when there are none." },
+  { k: "Kept", t: "A library", b: "Every transcript stays, in collections, searchable down to the word." },
+  { k: "Used", t: "An export", b: `${EXPORT_FORMAT_COUNT} formats: notes, subtitles, spreadsheets, RAG.` },
 ]
 
-const gets = [
-  { t: "Read it properly.", b: "Real paragraphs instead of two-second fragments, with timestamps on or off." },
-  { t: "Know who said what.", b: "Automatic speaker separation, with names you set yourself." },
-  { t: "Get the shape of it.", b: "A summary broken into chapters, each with its own timestamp and worked-out notes." },
-  { t: "Edit either of them.", b: "Your edited version is kept alongside the original rather than replacing it." },
-  {
-    t: "Take it anywhere.",
-    b: `${EXPORT_FORMAT_COUNT} formats, ${EXPORT_DOWNLOAD_COUNT} downloads: plain text, Markdown with front matter, CSV, JSON, SRT, VTT. All included.`,
-  },
+const CARDS = [
+  { call: "COURSE · 01", t: "A course you want to read", b: "Drop in a playlist and get every lecture as text, each with a chapter summary to skim before you reread." },
+  { call: "RESEARCH · 02", t: "Interviews and sources", b: "Speakers separated and renamed to who they are. Every quote one click from the second it was said." },
+  { call: "VIDEO · 03", t: "Subtitles for your video", b: "SRT and VTT built to the broadcast standard, not chopped on character count." },
+  { call: "BUILD · 04", t: "Text you build on", b: "Chunked JSON with timestamps and deep links, ready for a vector database." },
+]
+
+const EXPORTS: Array<{ f: string; note: string; sample: string }> = [
+  { f: "Markdown", note: "Obsidian · Notion", sample: "---\ntitle: Address at Rice University\nsource: youtube\n---\n## The new sea\nWe set sail on this new sea…" },
+  { f: "SRT", note: "Subtitles", sample: "12\n00:08:41,200 --> 00:08:44,900\nWe choose to go to the Moon\nin this decade" },
+  { f: "RAG JSON", note: "LangChain · LlamaIndex", sample: '{\n  "chunk_id": 14,\n  "text": "We choose to go…",\n  "speaker": "John F. Kennedy"\n}' },
 ]
 
 export default async function LandingPage() {
   // Auth-aware copy: a logged-in visitor already has an account, so the welcome-credit promise
-  // would be wrong for them; only that sentence differs.
+  // would be wrong for them; only those sentences differ.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const loggedIn = !!user
@@ -131,19 +187,19 @@ export default async function LandingPage() {
     <>
       <JsonLd schemas={homeSchemas} />
 
-      {/* Hero — big type, no photo. pt clears the fixed header. */}
-      <section className="w-full bg-[var(--bg)] pt-[104px] lg:pt-[120px]">
-        <div className={`${WRAP} pb-12 lg:pb-16`}>
-          <p className={`${MONO_LABEL} mb-6`}>Transcripts, done properly.</p>
-          <h1 className="max-w-5xl text-[2.75rem] font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl lg:text-[6.25rem]">
-            Every lecture, interview and video you learn from. As text.
-          </h1>
-          <div className="mt-10 grid items-end gap-8 lg:grid-cols-[1fr_auto]">
-            <p className="max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
-              YouTube videos and playlists, and your own recordings. Speakers, punctuation and timestamps,
-              in one library you can search and export.
+      {/* Hero — headline left, the product itself (a transcript sheet) right. */}
+      <section className="w-full bg-[var(--bg)] pt-[96px] lg:pt-[112px]">
+        <div className={`${WRAP} grid items-center gap-12 pb-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-20`}>
+          <div>
+            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Transcripts, done properly.</p>
+            <h1 className="text-[2.75rem] font-bold leading-[0.94] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl lg:text-[5.25rem]">
+              Every lecture, interview and video you learn from. As&nbsp;text.
+            </h1>
+            <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
+              Paste a YouTube link or a playlist, or upload your own recording. Get speakers, punctuation and
+              timestamps, in one library you can search word for word.
             </p>
-            <div className="flex flex-col sm:flex-row">
+            <div className="mt-8 flex flex-col sm:flex-row">
               <Link href="#try" className={BTN_PRIMARY}>
                 Try it now, no account <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Link>
@@ -151,19 +207,30 @@ export default async function LandingPage() {
                 See pricing
               </Link>
             </div>
+            <p className="mt-5 font-mono text-sm text-[var(--fg-subtle)]">
+              Captions free · AI from {eur(cheapestPerMin)}/min · no subscription
+            </p>
           </div>
-          <p className="mt-6 font-mono text-sm text-[var(--fg-subtle)]">
-            Captions free · AI from {eur(cheapestPerMin)}/min · no subscription, credits never expire
-          </p>
+          <TranscriptSheet />
+        </div>
+        {/* Source ticker — everything that goes in, set as a mono rule. */}
+        <div className={`border-y-2 ${INK} bg-[var(--bg-subtle)]`}>
+          <div className={`${WRAP} flex flex-wrap gap-x-6 gap-y-2 py-4 font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]`}>
+            <span className="font-bold text-[var(--fg-strong)]">Goes in →</span>
+            {SOURCES.map((x) => (
+              <span key={x}>{x}</span>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Before / after — the proof, in the product's own words */}
-      <section className={`w-full border-y-2 ${RULE} bg-[var(--bg)]`}>
-        <div className="mx-auto grid w-full max-w-6xl md:grid-cols-2">
-          <div className={`border-b-2 ${RULE} bg-[var(--bg-subtle)] px-4 py-10 sm:px-6 md:border-b-0 md:border-r-2`}>
-            <p className={`${MONO_LABEL} mb-4`}>Before — YouTube captions</p>
-            <p className="font-mono text-base leading-[1.9] text-[var(--fg-muted)] sm:text-lg">
+      {/* §01 — the proof, as an annotated diff */}
+      <Section n="01" label="The difference">
+        <h2 className={`${H2} mb-10 max-w-3xl`}>Captions give you words. You need sentences.</h2>
+        <div className={`grid border-2 ${INK} md:grid-cols-2`}>
+          <div className={`border-b-2 ${INK} bg-[var(--bg-subtle)] p-6 md:border-b-0 md:border-r-2 sm:p-8`}>
+            <p className={`${MONO} mb-5 text-[var(--fg-muted)]`}>− YouTube captions</p>
+            <p className="font-mono text-base leading-[1.9] text-[var(--fg-muted)] line-through decoration-[var(--fg-muted)]/30 sm:text-lg">
               we choose to go to the
               <br />
               moon in this decade and do
@@ -175,205 +242,215 @@ export default async function LandingPage() {
               they are hard
             </p>
           </div>
-          <div className="px-4 py-10 sm:px-6">
-            <p className={`${MONO_LABEL} mb-4`}>After — INDXR</p>
+          <div className="p-6 sm:p-8">
+            <p className={`${MONO} mb-5 text-[var(--fg)]`}>+ INDXR</p>
             <p className="mb-3 font-mono text-sm text-[var(--fg)]">
-              <span className={`mr-2 border-2 ${RULE} bg-[var(--accent)] px-1.5 py-0.5 text-[var(--fg-on-accent)]`}>Speaker</span>
+              <span className={`mr-2 border-2 ${INK} bg-[var(--accent)] px-1.5 py-0.5 text-[var(--fg-on-accent)]`}>Speaker</span>
               John F. Kennedy
             </p>
             <p className="text-2xl font-medium leading-snug tracking-[-0.01em] text-[var(--fg-strong)] sm:text-3xl">
-              {QUOTE}
+              We choose to go to the Moon in this decade and do the other things, not because they are easy, but
+              because they are hard.
             </p>
-            <p className="mt-4 text-sm text-[var(--fg-muted)]">Address at Rice University, 1962 · public domain</p>
+            <div className="mt-6 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-[0.06em]">
+              {["+ punctuation", "+ capitals", "+ speaker", "+ timestamp", "+ paragraphs"].map((t) => (
+                <span key={t} className={`border-2 ${INK} px-2 py-1 text-[var(--fg-strong)]`}>
+                  {t}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </section>
+      </Section>
 
-      {/* Try it — the live tool */}
-      <section id="try" className="w-full scroll-mt-24 bg-[var(--bg)]">
-        <div className={`${WRAP} py-16 lg:py-20`}>
-          <p className={`${MONO_LABEL} mb-3`}>Try it</p>
-          <h2 className={`${H2} mb-4`}>Your own file or link.</h2>
-          <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
-            {loggedIn ? (
-              <>Upload an audio or video file, or paste a link, and see the transcript for yourself. Playlists and file uploads open in the app.</>
-            ) : (
-              <>
-                No account, no card. Upload an audio or video file, or paste a link, and see the transcript for
-                yourself. A free account comes with {welcomeCredits} credits, enough for {welcomeMinutes} minutes
-                of AI transcription.
-              </>
-            )}
-          </p>
-          <FreeToolEmbed />
-        </div>
-      </section>
+      {/* §02 — the live tool */}
+      <Section n="02" label="Try it" id="try">
+        <h2 className={`${H2} mb-4`}>Your own file or link.</h2>
+        <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
+          {loggedIn ? (
+            <>Upload an audio or video file, or paste a link, and see the transcript for yourself. Playlists and file uploads open in the app.</>
+          ) : (
+            <>
+              No account, no card. Upload an audio or video file, or paste a link. A free account comes with{" "}
+              {welcomeCredits} credits, enough for {welcomeMinutes} minutes of AI transcription.
+            </>
+          )}
+        </p>
+        <FreeToolEmbed />
+      </Section>
 
-      {/* Three pillars — 01 / 02 / 03 */}
-      <section className={`w-full border-y-2 ${RULE} bg-[var(--bg)]`}>
-        <div className="mx-auto grid w-full max-w-6xl md:grid-cols-3">
-          {pillars.map((p, i) => (
-            <div
-              key={p.n}
-              className={`px-4 py-10 sm:px-6 ${i < pillars.length - 1 ? `border-b-2 md:border-b-0 md:border-r-2 ${RULE}` : ""} ${i === 2 ? "bg-[var(--accent)] text-[var(--fg-on-accent)]" : ""}`}
+      {/* §03 — the pipeline */}
+      <Section n="03" label="How it works">
+        <h2 className={`${H2} mb-10 max-w-3xl`}>One source in. Something you can use out.</h2>
+        <ol className={`grid border-2 ${INK} sm:grid-cols-2 lg:grid-cols-4`}>
+          {PIPELINE.map((s, i) => (
+            <li
+              key={s.k}
+              className={`relative p-6 ${i < PIPELINE.length - 1 ? `border-b-2 ${INK} lg:border-b-0 lg:border-r-2` : ""} ${i === 1 ? "sm:border-r-0 lg:border-r-2" : ""} ${i === 0 ? "sm:border-r-2" : ""} ${i === 2 ? "sm:border-r-2 sm:border-b-0" : ""} ${i === PIPELINE.length - 1 ? "bg-[var(--accent)]" : ""}`}
             >
-              <p className={`text-5xl font-bold tracking-[-0.04em] ${i === 2 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-strong)]"}`}>{p.n}</p>
-              <h3 className={`mt-3 mb-2 text-2xl font-bold ${i === 2 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-strong)]"}`}>{p.heading}</h3>
-              <p className={`leading-relaxed ${i === 2 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>{p.body}</p>
+              <p className={`${MONO} ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>
+                {String(i + 1).padStart(2, "0")} · {s.k}
+              </p>
+              <p className={`mt-6 text-2xl font-bold ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-strong)]"}`}>{s.t}</p>
+              <p className={`mt-2 leading-relaxed ${i === PIPELINE.length - 1 ? "text-[var(--fg-on-accent)]" : "text-[var(--fg-subtle)]"}`}>{s.b}</p>
+              {i < PIPELINE.length - 1 && (
+                <span aria-hidden="true" className="absolute -right-[13px] top-6 z-10 hidden h-6 w-6 items-center justify-center border-2 border-[var(--fg-strong)] bg-[var(--bg)] text-xs font-bold text-[var(--fg-strong)] lg:flex">
+                  →
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      {/* §04 — the library, as a search with a hit */}
+      <Section n="04" label="Your library" tone="ink">
+        <div className="grid items-start gap-12 lg:grid-cols-2">
+          <div>
+            <h2 className="text-4xl font-bold leading-[0.98] tracking-[-0.04em] sm:text-6xl">Search every word you have collected.</h2>
+            <p className="mt-6 text-lg leading-relaxed opacity-80">
+              Everything you transcribe stays: grouped in collections per course or project, searchable in the
+              text itself, exportable a whole collection at once. The transcript you made in March is still there
+              in September.
+            </p>
+          </div>
+          <div className="border-2 border-[var(--bg)] bg-[var(--bg)] text-[var(--fg-strong)]">
+            <div className="flex border-b-2 border-[var(--fg-strong)]">
+              <span className="border-r-2 border-[var(--fg-strong)] px-4 py-3 text-sm font-bold">Search</span>
+              <span className="flex-1 px-4 py-3 font-mono text-sm">new sea</span>
+              <span className="hidden px-4 py-3 font-mono text-[11px] text-[var(--fg-muted)] sm:block">titles + transcript text</span>
+            </div>
+            {[
+              { c: "Speeches", t: "Address at Rice University", hit: "We set sail on this ", mark: "new sea", rest: " because there is new knowledge…" },
+              { c: "Speeches", t: "Inaugural Address, 1961", hit: "…let us begin anew…", mark: "", rest: "" },
+            ].map((r, i) => (
+              <div key={r.t} className={`px-4 py-4 ${i === 0 ? "border-b-2 border-[var(--fg-strong)]" : "opacity-50"}`}>
+                <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--fg-muted)]">{r.c}</p>
+                <p className="mt-1 font-bold">{r.t}</p>
+                <p className="mt-1 text-sm text-[var(--fg-subtle)]">
+                  {r.hit}
+                  {r.mark && <mark className="bg-[var(--accent)] px-0.5 text-[var(--fg-on-accent)]">{r.mark}</mark>}
+                  {r.rest}
+                </p>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-2 border-t-2 border-[var(--fg-strong)] px-4 py-3 font-mono text-[11px] uppercase">
+              <span className="border-2 border-[var(--fg-strong)] bg-[var(--accent)] px-2 py-0.5 text-[var(--fg-on-accent)]">Speeches</span>
+              <span className="border-2 border-[var(--fg-strong)] px-2 py-0.5">Thesis interviews</span>
+              <span className="border-2 border-[var(--fg-strong)] px-2 py-0.5">History 101</span>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* §05 — who brings what: catalogue cards */}
+      <Section n="05" label="Who it is for">
+        <h2 className={`${H2} mb-10`}>What people bring to it.</h2>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {CARDS.map((c) => (
+            <div key={c.call} className={`border-2 ${INK} bg-[var(--bg)] p-6 transition-transform hover:-translate-y-0.5`}>
+              <div className={`mb-5 flex items-center justify-between border-b-2 ${INK} pb-3`}>
+                <span className={`${MONO} text-[var(--fg)]`}>{c.call}</span>
+                <span className="font-mono text-[11px] text-[var(--fg-muted)]">INDXR</span>
+              </div>
+              <h3 className="text-2xl font-bold tracking-[-0.02em] text-[var(--fg-strong)]">{c.t}</h3>
+              <p className="mt-2 leading-relaxed text-[var(--fg-subtle)]">{c.b}</p>
             </div>
           ))}
         </div>
-      </section>
+      </Section>
 
-      {/* See it in action */}
-      <section className="w-full bg-[var(--bg)]">
-        <div className={`${WRAP} py-16 lg:py-20`}>
-          <p className={`${MONO_LABEL} mb-3`}>See it in action</p>
-          <h2 className={`${H2} mb-8`}>One minute, link to export.</h2>
-          <div className={`border-2 ${RULE}`}>
-            <HomeClipVideo />
-          </div>
+      {/* §06 — exports, shown as the files themselves */}
+      <Section n="06" label="Exports">
+        <h2 className={`${H2} mb-4`}>Take it anywhere.</h2>
+        <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
+          {EXPORT_FORMAT_COUNT} formats, every one included: plain text, Markdown with front matter, CSV, JSON,
+          SRT, VTT, and chunked RAG JSON.
+        </p>
+        <div className="grid gap-5 lg:grid-cols-3">
+          {EXPORTS.map((e) => (
+            <figure key={e.f} className={`flex flex-col border-2 ${INK} bg-[var(--bg)]`}>
+              <figcaption className={`flex items-baseline justify-between border-b-2 ${INK} px-4 py-2.5`}>
+                <span className="font-bold text-[var(--fg-strong)]">{e.f}</span>
+                <span className="font-mono text-[11px] text-[var(--fg-muted)]">{e.note}</span>
+              </figcaption>
+              <pre className="flex-1 overflow-x-auto bg-[var(--bg-subtle)] p-4 font-mono text-[12px] leading-relaxed text-[var(--fg)]">{e.sample}</pre>
+            </figure>
+          ))}
         </div>
-      </section>
+      </Section>
 
-      {/* What people bring to it */}
-      <section className={`w-full border-t-2 ${RULE} bg-[var(--bg)]`}>
-        <div className={`${WRAP} grid items-start gap-12 py-16 lg:grid-cols-2 lg:py-20`}>
+      {/* §07 — the price, as a receipt */}
+      <Section n="07" label="Pricing">
+        <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
-            <p className={`${MONO_LABEL} mb-3`}>Who it is for</p>
-            <h2 className={`${H2} mb-8`}>What people bring to it.</h2>
-            <div className={`border-t-2 ${RULE}`}>
-              {uses.map((u) => (
-                <div key={u.t} className={`border-b-2 ${RULE} py-5`}>
-                  <h3 className="mb-1.5 text-lg font-bold text-[var(--fg-strong)]">{u.t}</h3>
-                  <p className="leading-relaxed text-[var(--fg-subtle)]">{u.b}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <DocsFigure
-            src="/docs/screenshots/justice-summary.png"
-            alt="A lecture open on its Summary tab: an AI summary of the Harvard 'Justice' lecture, with an overview paragraph beneath the heading, inside the app with its sidebar."
-            caption="A playlist becomes lectures you can skim: each one gets a chapter summary."
-          />
-        </div>
-      </section>
-
-      {/* What you get from a single transcript */}
-      <section className={`w-full border-t-2 ${RULE} bg-[var(--bg)]`}>
-        <div className={`${WRAP} grid items-start gap-12 py-16 lg:grid-cols-2 lg:py-20`}>
-          <div>
-            <p className={`${MONO_LABEL} mb-3`}>One transcript</p>
-            <h2 className={`${H2} mb-8`}>More than the words.</h2>
-            <div className={`border-t-2 ${RULE}`}>
-              {gets.map((g) => (
-                <div key={g.t} className={`border-b-2 ${RULE} py-5`}>
-                  <h3 className="mb-1.5 text-lg font-bold text-[var(--fg-strong)]">{g.t}</h3>
-                  <p className="leading-relaxed text-[var(--fg-subtle)]">{g.b}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-6">
-            <DocsFigure
-              src="/docs/screenshots/justice-viewer.png"
-              alt="An open transcript in reading view: the Harvard 'Justice' lecture in clean paragraphs, each labelled with its speaker, inside the app with its sidebar and toolbar."
-              caption="A transcript opens in a clean reading view, in real paragraphs with speaker labels."
-            />
-            <DocsFigure
-              src="/docs/screenshots/justice-export.png"
-              alt="The export menu open on a transcript: the full list of formats — plain text, Markdown, JSON, CSV, SRT, VTT — with and without timestamps."
-              caption="Take it anywhere: the export menu, every format included, one click away."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Your library */}
-      <section className={`w-full border-t-2 ${RULE} bg-[var(--bg)]`}>
-        <div className={`${WRAP} grid items-start gap-12 py-16 lg:grid-cols-2 lg:py-20`}>
-          <div>
-            <p className={`${MONO_LABEL} mb-3`}>Your library</p>
-            <h2 className={`${H2} mb-6`}>Search every word you have collected.</h2>
-            <p className="mb-4 text-lg leading-relaxed text-[var(--fg-subtle)]">
-              Everything you transcribe stays. Search the text of all of it, filter and sort it, and group it
-              into collections per project or course. Export a whole collection at once as a zip.
-            </p>
-            <p className="text-lg leading-relaxed text-[var(--fg-subtle)]">
-              The transcript you made in March is still there in September, in the same format as the one you
-              made today.
-            </p>
-          </div>
-          <DocsFigure
-            src="/docs/screenshots/justice-library.png"
-            alt="The library: a search box and filter controls above rows of saved transcripts, the Harvard 'Justice' lecture at the top, with named collections in the sidebar."
-            caption="Search, filter, and collections turn a list into an organised library."
-          />
-        </div>
-      </section>
-
-      {/* What it costs */}
-      <section className={`w-full border-t-2 ${RULE} bg-[var(--bg)]`}>
-        <div className={`${WRAP} grid items-start gap-12 py-16 lg:grid-cols-2 lg:py-24`}>
-          <div>
-            <p className={`${MONO_LABEL} mb-3`}>Pricing</p>
-            <h2 className="text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
+            <h2 className="text-5xl font-bold leading-[0.94] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
               Pay for minutes. Not months.
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-[var(--fg-subtle)]">
-              You buy credits, you spend them when you need them, and they never expire. Come back after six
-              months and they are still there.
-            </p>
-            <p className="mt-4 text-[var(--fg-subtle)]">
-              {loggedIn ? (
-                <>Extracting captions from a YouTube video that already has them is free, however many you do.</>
-              ) : (
-                <>
-                  A free account starts with {welcomeCredits} credits, and extracting captions from a YouTube
-                  video that already has them is free, however many you do.
-                </>
-              )}
+              You buy credits, spend them when you need them, and they never expire.{" "}
+              {loggedIn ? null : <>A free account starts with {welcomeCredits} credits.</>}
             </p>
           </div>
-          <div>
-            <div className={`border-2 ${RULE} text-base`}>
+          <div className={`relative border-2 ${INK} bg-[var(--bg)] font-mono text-sm shadow-[8px_8px_0_0_var(--fg-strong)]`}>
+            <div className={`border-b-2 border-dashed ${INK} px-5 py-3 text-center text-[11px] uppercase tracking-[0.1em] text-[var(--fg)]`}>
+              INDXR.AI · receipt
+            </div>
+            <dl className="px-5 py-4">
               {[
-                ["YouTube videos with captions", "Free"],
-                ["AI transcription", `${aiPerMin} credit / min · from ${eur(cheapestPerMin)}`],
-                ["Chapter summary", `${summaryPer10} credit / 10 min`],
-                ["RAG JSON, for vector databases", `${ragPer10} credit / 10 min`],
-                ["Every other export", "Included"],
-                ["Credit packs", `from ${eur(cheapestPack)}, never expire`],
-                ["Subscription", "None"],
-              ].map(([k, v], i, arr) => (
-                <div
-                  key={k}
-                  className={`flex flex-wrap items-baseline justify-between gap-2 px-5 py-4 ${i < arr.length - 1 ? `border-b-2 ${RULE}` : ""}`}
-                >
-                  <span className="text-[var(--fg)]">{k}</span>
-                  <strong className="font-bold text-[var(--fg-strong)]">{v}</strong>
+                ["YouTube with captions", "free"],
+                ["AI transcription", `${aiPerMin} cr / min`],
+                ["Chapter summary", `${summaryPer10} cr / 10 min`],
+                ["RAG JSON", `${ragPer10} cr / 10 min`],
+                ["All other exports", "incl."],
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-baseline gap-2 py-1.5">
+                  <dt className="text-[var(--fg)]">{k}</dt>
+                  <span aria-hidden="true" className="flex-1 border-b border-dotted border-[var(--fg-muted)]" />
+                  <dd className="font-bold text-[var(--fg-strong)]">{v}</dd>
                 </div>
               ))}
+            </dl>
+            <div className={`border-t-2 ${INK} px-5 py-4`}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="uppercase tracking-[0.08em]">From</span>
+                <span className="text-3xl font-bold text-[var(--fg-strong)]">{eur(cheapestPerMin)}/min</span>
+              </div>
+              <p className="mt-1 text-right text-[var(--fg)]">credit packs from {eur(cheapestPack)}</p>
             </div>
-            <div className="mt-6 flex flex-col sm:flex-row">
-              <Link href="/signup" className={BTN_PRIMARY}>
-                Start free <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link href="/pricing" className={`${BTN_SECONDARY} -mt-[2px] sm:mt-0 sm:-ml-[2px]`}>
-                See all packs
-              </Link>
+            <div className={`border-t-2 border-dashed ${INK} px-5 py-3 text-center text-[11px] uppercase tracking-[0.1em] text-[var(--fg)]`}>
+              Subscription: none · credits never expire
             </div>
-            <p className="mt-8 text-sm text-[var(--fg-muted)]">
-              Audio is deleted as soon as transcription finishes, everything runs and is stored in the EU, and
-              payment is handled by Stripe.
-            </p>
-            {/* growth-plan.md §6.2 Onderdeel E: internal links to the three commercial articles. */}
-            <p className="mt-2 text-sm text-[var(--fg-muted)]">
-              More on{" "}
-              <Link href="/articles/video-to-text" className="underline hover:text-[var(--fg)]">converting video to text</Link>,{" "}
-              <Link href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</Link>, and{" "}
-              <Link href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">SRT subtitle generation</Link>.
-            </p>
+          </div>
+        </div>
+        <p className="mt-10 text-sm text-[var(--fg-muted)]">
+          Audio is deleted as soon as transcription finishes, everything runs and is stored in the EU, and payment
+          is handled by Stripe. More on{" "}
+          <Link href="/articles/video-to-text" className="underline hover:text-[var(--fg)]">converting video to text</Link>,{" "}
+          <Link href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</Link>, and{" "}
+          <Link href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">SRT subtitle generation</Link>.
+        </p>
+      </Section>
+
+      {/* Closing band */}
+      <section className={`w-full border-t-2 ${INK} bg-[var(--accent)]`}>
+        <div className={`${WRAP} flex flex-col items-start justify-between gap-8 py-16 lg:flex-row lg:items-center lg:py-20`}>
+          <p className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.04em] text-[var(--fg-on-accent)] sm:text-6xl">
+            Start with one lecture.
+          </p>
+          <div className="flex w-full flex-col sm:w-auto sm:flex-row">
+            <Link
+              href="#try"
+              className={`inline-flex h-14 items-center justify-center border-2 ${INK} bg-[var(--fg-strong)] px-6 font-bold text-[var(--bg)] hover:opacity-90`}
+            >
+              Try it now <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/signup"
+              className={`-mt-[2px] inline-flex h-14 items-center justify-center border-2 ${INK} bg-[var(--bg)] px-6 font-bold text-[var(--fg-strong)] hover:bg-[var(--bg-subtle)] sm:mt-0 sm:-ml-[2px]`}
+            >
+              Create a free account
+            </Link>
           </div>
         </div>
       </section>
