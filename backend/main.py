@@ -769,8 +769,12 @@ async def get_playlist_info(request: ExtractRequest, _: None = Depends(verify_ba
         record_proxy_bytes("playlist_info", getattr(_pl_ydl, "egress_read", 0))
 
 @app.get("/api/video/metadata/{video_id}")
-async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_secret)):
-    """Fetch metadata for a single video using YouTube API (primary) or yt-dlp (fallback)."""
+async def get_video_metadata(video_id: str, api_only: bool = False, _: None = Depends(verify_backend_secret)):
+    """Fetch metadata for a single video using YouTube API (primary) or yt-dlp (fallback).
+
+    api_only=True (2026-11-07, used by the source card's published-date lookup): never fall back to
+    yt-dlp — that spends residential proxy egress, and a missing date is not worth it.
+    """
     
     # 1. Try YouTube Data API
     if youtube_client.youtube:
@@ -789,8 +793,13 @@ async def get_video_metadata(video_id: str, _: None = Depends(verify_backend_sec
         except Exception as e:
             # Transiente API-fout (quota/netwerk) — NIET permanent → val terug op yt-dlp (kan alsnog lukken).
             logger.warning(f"API Metadata Fetch failed for {video_id}: {e}")
+            if api_only:
+                return JSONResponse(status_code=503, content={"success": False, "code": "api_unavailable"})
             # Fallthrough
             
+    if api_only:
+        return JSONResponse(status_code=503, content={"success": False, "code": "api_unavailable"})
+
     # 2. Fallback: yt-dlp
     ydl_opts = {
         'quiet': True,

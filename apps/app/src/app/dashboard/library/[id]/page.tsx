@@ -71,6 +71,8 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
 
   // The source, shown as a citation card: sticky right column on desktop, one compact row on mobile.
   const sourceProps = {
+    transcriptId: transcript.id,
+    publishedAt: (transcript.published_at as string | null) ?? null,
     title: transcript.title || "Untitled Transcript",
     channel: transcript.channel ?? null,
     videoId: transcript.video_id ?? null,

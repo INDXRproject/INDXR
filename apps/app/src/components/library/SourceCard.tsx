@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, FileAudio } from "lucide-react";
 import { formatDetailDate } from "./TranscriptHeader";
 
@@ -26,17 +26,30 @@ function languageName(code: string | null | undefined): string | null {
   }
 }
 
-/** APA-7 style reference. The upload date of a YouTube video is not stored, so the date is "n.d." —
- *  correct APA for an undated source, and honest. */
-export function buildCitation(p: { title: string; channel?: string | null; videoId?: string | null }): string {
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "2005-04-23" → "2005, April 23" (APA date). Null/invalid → null. */
+function apaDate(iso: string | null | undefined): string | null {
+  const m = iso ? /^(\d{4})-(\d{2})-(\d{2})/.exec(iso) : null;
+  if (!m) return null;
+  return `${m[1]}, ${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}`;
+}
+
+/** APA-7 style reference. The YouTube upload date is filled in on first view (published_at); until
+ *  then, or when YouTube has none, the date is "n.d." — correct APA for an undated source. */
+export function buildCitation(p: { title: string; channel?: string | null; videoId?: string | null; publishedAt?: string | null }): string {
+  const date = apaDate(p.publishedAt) ?? "n.d.";
   if (p.videoId) {
     const author = p.channel?.trim() || "Unknown channel";
-    return `${author}. (n.d.). ${p.title} [Video]. YouTube. https://youtu.be/${p.videoId}`;
+    return `${author}. (${date}). ${p.title} [Video]. YouTube. https://youtu.be/${p.videoId}`;
   }
-  return `${p.title} [Audio recording]. (n.d.).`;
+  return `${p.title} [Audio recording]. (${date}).`;
 }
 
 export interface SourceCardProps {
+  transcriptId: string;
+  /** YouTube upload date (YYYY-MM-DD) when already stored; fetched once on first view otherwise. */
+  publishedAt?: string | null;
   title: string;
   channel?: string | null;
   videoId?: string | null;
@@ -52,7 +65,19 @@ export interface SourceCardProps {
 
 export function SourceCard(p: SourceCardProps) {
   const [copied, setCopied] = useState(false);
-  const citation = buildCitation(p);
+  const [publishedAt, setPublishedAt] = useState<string | null>(p.publishedAt ?? null);
+  // First view of an older (or just-extracted) YouTube transcript: look the upload date up once and
+  // store it (POST /api/transcripts/[id]/published-at — YouTube Data API only, no proxy fallback).
+  useEffect(() => {
+    if (publishedAt || !p.videoId) return;
+    let cancelled = false;
+    fetch(`/api/transcripts/${p.transcriptId}/published-at`, { method: "POST" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled && j?.published_at) setPublishedAt(j.published_at); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [publishedAt, p.videoId, p.transcriptId]);
+  const citation = buildCitation({ ...p, publishedAt });
   const words = p.characterCount ? Math.round(p.characterCount / 5).toLocaleString("en") : null;
   const lang = languageName(p.language);
   const thumb = p.thumbnailUrl || (p.videoId ? `https://i.ytimg.com/vi/${p.videoId}/hqdefault.jpg` : null);
@@ -73,6 +98,7 @@ export function SourceCard(p: SourceCardProps) {
     ...(p.duration != null ? ([["Length", fmtDuration(p.duration)]] as Array<[string, string]>) : []),
     ...(words ? ([["Words", words]] as Array<[string, string]>) : []),
     ...(lang ? ([["Language", lang]] as Array<[string, string]>) : []),
+    ...(publishedAt ? ([["Published", formatDetailDate(publishedAt)]] as Array<[string, string]>) : []),
     ["Transcript", p.isAi ? "AI transcription" : "YouTube captions"],
     ...(p.collectionName ? ([["Collection", p.collectionName]] as Array<[string, string]>) : []),
     ["Added", formatDetailDate(p.createdAt)],
