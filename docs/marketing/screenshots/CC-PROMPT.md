@@ -44,9 +44,11 @@ Maak een schone demo-bibliotheek in een apart intern account en maak daarvan mar
   10. `mobile-library.png` en `mobile-transcript.png`: mobiel, bibliotheek en "Justice 01".
 - Controleer elke afbeelding door hem te openen: geen cookiebanner, geen laadstatus, geen foutmelding.
 
-**4. Afronden**
+**4. Afronden — de cloud-Claude moet erbij kunnen**
+- De PNG's staan in `docs/marketing/screenshots/2026-11/` in de repo. Daar leest de cloud-sessie ze uit via `git pull`. Zet ze dus nergens anders neer, ook niet in `test-results/` of `/tmp`.
+- Geen PNG groter dan 5 MB. Comprimeer anders met `pngquant` of `sharp`.
 - Commit de PNG's plus dit script als `scripts/marketing-screenshots.ts`, zodat het later opnieuw kan draaien.
-- Push.
+- **Push naar `master`.** Zonder push ziet de cloud-Claude niets.
 - Rapporteer de commit-hash en de lijst met bestanden.
 
 ---
