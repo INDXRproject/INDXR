@@ -159,7 +159,7 @@ export default async function LandingPage() {
 
       {/* Hero — headline left, the product itself (a transcript sheet) right. */}
       <section className="w-full bg-[var(--bg)] pt-[96px] lg:pt-[112px]">
-        <div className={`${WRAP} grid items-center gap-12 pb-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-20`}>
+        <div className={`${WRAP} grid grid-cols-1 items-center gap-12 pb-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-20`}>
           <div>
             <p className={`${MONO} mb-6 text-[var(--fg)]`}>Podcasts · lectures · interviews · videos · your own files</p>
             <h1 className="text-[2.6rem] font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-6xl lg:text-[4.25rem]">
