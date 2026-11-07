@@ -20,15 +20,15 @@ export function PageHeader({
   compact?: boolean
 }) {
   return (
-    <header className={`${compact ? "pt-2" : "pt-24 sm:pt-28"} pb-8 mb-10 border-b border-[var(--border)]`}>
+    <header className={`${compact ? "pt-2" : "pt-24 sm:pt-28"} pb-8 mb-10 border-b-2 border-[var(--fg-strong)]`}>
       {eyebrow && (
-        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent-fg)] mb-3">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)] mb-4">
           {eyebrow}
         </p>
       )}
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fg)]">{title}</h1>
+      <h1 className="text-4xl sm:text-5xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)]">{title}</h1>
       {lead && (
-        <p className="mt-3 max-w-2xl text-lg leading-relaxed text-[var(--fg-muted)]">{lead}</p>
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">{lead}</p>
       )}
     </header>
   )

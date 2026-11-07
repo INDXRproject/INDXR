@@ -8,7 +8,7 @@ import { useAuth } from "@indxr/shared/hooks/useAuth"
  * so the number stays consistent and refreshes within a session, instead of a
  * one-shot server render against a non-existent RPC.
  */
-export function HomeCreditsBalance() {
+export function HomeCreditsBalance({ className = "text-4xl font-semibold text-fg tabular-nums" }: { className?: string }) {
   const { credits } = useAuth()
-  return <p className="text-4xl font-semibold text-fg tabular-nums">{credits ?? 0}</p>
+  return <p className={className}>{credits ?? 0}</p>
 }

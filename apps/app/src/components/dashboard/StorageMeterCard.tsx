@@ -57,7 +57,7 @@ export function StorageMeterCard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="border-2 border-border-strong bg-bg p-5">
       {!headless && (
         <>
           <h2 className="text-lg font-semibold text-fg mb-1">Library storage</h2>
@@ -71,9 +71,9 @@ export function StorageMeterCard({
         <span className="text-sm font-medium text-fg tabular-nums">{fmt(usedMB)} MB</span>
         <span className="text-xs text-fg-muted tabular-nums">of {fmt(capMB)} MB</span>
       </div>
-      <div className="h-2 w-full rounded-full bg-surface-sunken overflow-hidden">
+      <div className="h-3 w-full border-2 border-border-strong bg-bg overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all", over ? "bg-error" : near ? "bg-warning" : "bg-accent")}
+          className={cn("h-full transition-all", over ? "bg-error" : near ? "bg-warning" : "bg-accent")}
           style={{ width: `${pct}%` }}
         />
       </div>

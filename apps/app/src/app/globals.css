@@ -40,19 +40,48 @@
   font-size: 0.75rem;
   color: var(--fg-muted);
   text-decoration: none;
-  opacity: 0.6;
   margin-right: 0.25rem;
-  transition: opacity 0.15s;
+  padding: 0 0.15rem;
+  transition: background-color 0.15s, color 0.15s;
 }
 
 .ts-link:hover {
-  opacity: 1;
-  text-decoration: underline;
-  color: var(--accent);
+  color: var(--fg-on-accent);
+  background: var(--accent);
 }
 
 .hide-timestamps .ts-link {
   display: none !important;
+}
+
+/* Reading sheet (stijl B, 2026-11-07). Paragraph rhythm for every mode; the time gutter only in
+   read-only Timestamps mode (absolute positioning inside an editable doc would fight the caret). */
+.transcript-sheet .ProseMirror p {
+  margin: 0 0 1.15em;
+  line-height: 1.75;
+  color: var(--fg-strong);
+}
+.transcript-sheet .ProseMirror strong {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* The stored paragraph text starts with a space after the (hidden) timestamp; pull it back so
+   Paragraphs mode starts flush left. */
+.transcript-sheet.hide-timestamps .ProseMirror.read-only-mode p {
+  text-indent: -0.28em;
+}
+.transcript-sheet.with-gutter .ProseMirror.read-only-mode p {
+  position: relative;
+  padding-left: 5.75rem;
+}
+.transcript-sheet.with-gutter .ProseMirror.read-only-mode p > a.ts-link:first-child {
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  line-height: 1.4;
 }
 
 /* Uploaded audio has no player to seek — its timestamps are inert position markers,

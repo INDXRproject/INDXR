@@ -776,18 +776,18 @@ export function TranscriptViewer({
             {/* View option — Paragraphs | Timestamps. A display toggle for the SAME content, so it is a
                 visible segmented control near the transcript (not buried in a menu, not a tab, not an
                 action). Stays reachable on mobile (short labels, the row wraps). */}
-            <div className="inline-flex items-center rounded-md border border-border p-0.5 text-xs" role="group" aria-label="View">
+            <div className="inline-flex items-center border-2 border-border-strong text-xs font-bold" role="group" aria-label="View">
               <button
                 onClick={() => setShowTimestamps(false)}
                 aria-pressed={!showTimestamps}
-                className={cn("rounded px-2 py-1 transition-colors", !showTimestamps ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg-muted hover:text-fg")}
+                className={cn("px-2.5 py-1 transition-colors", !showTimestamps ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
               >
                 Paragraphs
               </button>
               <button
                 onClick={() => setShowTimestamps(true)}
                 aria-pressed={showTimestamps}
-                className={cn("rounded px-2 py-1 transition-colors", showTimestamps ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg-muted hover:text-fg")}
+                className={cn("border-l-2 border-border-strong px-2.5 py-1 transition-colors", showTimestamps ? "bg-fg-strong text-bg" : "text-fg-strong hover:bg-bg-subtle")}
               >
                 Timestamps
               </button>
@@ -1068,10 +1068,15 @@ export function TranscriptViewer({
                 <div
                   onClick={handleTranscriptClick}
                   className={cn(
-                    "rounded-xl border border-border bg-surface p-5 min-h-[400px] [&_.ProseMirror]:max-w-[68ch]",
+                    // Stijl B reading sheet (2026-11-07): no card — paper, a 2px ink rule on top, real
+                    // paragraph spacing; with Timestamps on (read-only) the time sits in a left gutter,
+                    // like the transcript sheet on the homepage. CSS lives in globals.css (.transcript-sheet).
+                    "transcript-sheet border-t-2 border-border-strong pt-6 min-h-[400px] [&_.ProseMirror]:max-w-[68ch]",
                     textSize === "s" && "[&_.ProseMirror]:text-sm",
+                    textSize === "m" && "[&_.ProseMirror]:text-[1.0625rem]",
                     textSize === "l" && "[&_.ProseMirror]:text-lg",
-                    !showTimestamps && "hide-timestamps"
+                    !showTimestamps && "hide-timestamps",
+                    showTimestamps && "with-gutter"
                   )}
                 >
                   <EditorContent editor={editor} />

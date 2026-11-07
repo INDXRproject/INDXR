@@ -39,8 +39,8 @@ export function TranscriptTabs({ tabs, activeId, transcriptId }: { tabs: ViewTab
             className={cn(
               "pb-3 border-b-2 px-2 transition-colors",
               t.id === activeId
-                ? "border-accent font-medium text-fg"
-                : "border-transparent text-fg-muted hover:text-fg",
+                ? "border-fg-strong font-bold text-fg-strong"
+                : "border-transparent text-fg-muted hover:text-fg-strong",
             )}
           >
             {t.label}
@@ -51,7 +51,7 @@ export function TranscriptTabs({ tabs, activeId, transcriptId }: { tabs: ViewTab
       {/* Mobile view selector */}
       <button
         onClick={() => setSheetOpen(true)}
-        className="md:hidden w-full flex items-center justify-between rounded-lg border border-border bg-surface px-3 h-11 text-sm text-fg"
+        className="md:hidden w-full flex items-center justify-between border-2 border-border-strong bg-bg px-3 h-11 text-sm text-fg"
         aria-label="Choose view"
         data-testid="transcript-view-selector"
       >
@@ -77,7 +77,7 @@ export function TranscriptTabs({ tabs, activeId, transcriptId }: { tabs: ViewTab
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 rounded-md px-2 min-h-[44px] text-sm transition-colors",
-                  t.id === activeId ? "bg-accent-subtle text-accent-fg font-medium" : "text-fg hover:bg-surface-elevated/60",
+                  t.id === activeId ? "bg-accent text-fg-on-accent font-bold" : "text-fg hover:bg-surface-elevated/60",
                 )}
               >
                 <span className="flex-1 text-left">{t.label}</span>

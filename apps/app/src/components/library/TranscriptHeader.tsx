@@ -122,21 +122,21 @@ export function TranscriptHeader(props: TranscriptHeaderProps) {
             if (e.key === "Enter") e.currentTarget.blur();
             if (e.key === "Escape") { setTitle(props.title); setEditing(false); }
           }}
-          className="w-full max-w-[34em] text-2xl sm:text-[1.75rem] font-bold bg-transparent border-b-2 border-accent outline-none text-fg leading-tight"
+          className="w-full max-w-[34em] text-3xl sm:text-[2.5rem] font-bold tracking-[-0.03em] bg-transparent border-b-2 border-fg-strong outline-none text-fg-strong leading-[1.05]"
         />
       ) : (
         <h1
           onClick={() => setEditing(true)}
           title="Click to rename"
           dir="auto"
-          className="max-w-[34em] text-2xl sm:text-[1.75rem] font-bold text-fg leading-tight cursor-text hover:text-fg/80 transition-colors wrap-break-word"
+          className="max-w-[34em] text-3xl sm:text-[2.5rem] font-bold tracking-[-0.03em] text-fg-strong leading-[1.05] cursor-text hover:text-fg/80 transition-colors wrap-break-word"
         >
           {title}
         </h1>
       )}
 
       {/* Fact line */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-muted">
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-xs text-fg">
         <div className="flex flex-wrap items-center gap-1.5">
           {badges.map((b) => (
             <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />
