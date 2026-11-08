@@ -311,7 +311,11 @@ async def token_endpoint(
             return _oauth_error(400, "invalid_grant", "Unknown or already-used authorization code.")
         if datetime.fromisoformat(row["code_expires_at"]) < _now():
             return _oauth_error(400, "invalid_grant", "Authorization code expired.")
-        if row["client_id"] != client_id or row["redirect_uri"] != redirect_uri:
+        # Loopback-tolerant comparison (RFC 8252 §7.3), same as at /authorize time — a proxy or
+        # client library between the authorize and token calls may normalize 127.0.0.1/localhost
+        # inconsistently; the identity that matters is "the same loopback redirect", not the exact
+        # string.
+        if row["client_id"] != client_id or not _redirect_uri_matches(redirect_uri, [row["redirect_uri"]]):
             return _oauth_error(400, "invalid_grant", "client_id/redirect_uri do not match the authorization.")
         if not _pkce_ok(code_verifier, row["code_challenge"], row["code_challenge_method"]):
             return _oauth_error(400, "invalid_grant", "PKCE verification failed.")
