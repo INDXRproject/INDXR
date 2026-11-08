@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@indxr/shared/utils/supabase/server";
 import { Notice } from "@indxr/shared/components/ui/notice";
 import { ConsentCard } from "./ConsentCard";
 
-// OAuth consent screen for the MCP connector (ADR-108). Only Claude/ChatGPT and loopback (local
-// MCP dev clients) may ever receive a redirect back from here — every other host is refused
-// automatically, with no Approve button rendered at all, so a malicious or unregistered client
-// cannot get a user to click through.
+// OAuth consent screen for the MCP connector (ADR-108) — now backed by our own OAuth 2.1 server
+// (backend/oauth_server.py), not Supabase's. Only Claude/ChatGPT and loopback (local MCP dev
+// clients) may ever receive a redirect back from here; the backend already refuses any other host
+// at DCR time, this is a second check. No "remembered consent": every authorize shows this screen.
 const ALLOWED_REDIRECT_HOSTS = [/^claude\.ai$/, /^claude\.com$/, /^chatgpt\.com$/, /^localhost$/, /^127\.0\.0\.1$/];
 
 function isAllowedRedirectHost(uri: string): boolean {
@@ -17,6 +15,8 @@ function isAllowedRedirectHost(uri: string): boolean {
     return false;
   }
 }
+
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || "http://localhost:8000";
 
 export default async function OAuthConsentPage({
   searchParams,
@@ -35,22 +35,20 @@ export default async function OAuthConsentPage({
     );
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
+  const res = await fetch(`${PYTHON_BACKEND_URL}/oauth/authorize/${encodeURIComponent(authorizationId)}`, {
+    headers: { "X-Backend-Secret": process.env.BACKEND_API_SECRET || "" },
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => null);
 
-  if (error || !data) {
+  if (!res.ok || !data) {
     return (
       <div className="mx-auto mt-16 max-w-md px-4">
         <Notice tone="error" title="Could not load this authorization request">
-          {error?.message || "Unknown error."}
+          {data?.error_description || "Unknown error."}
         </Notice>
       </div>
     );
-  }
-
-  // Already consented (or just decided) — Supabase hands back a ready redirect_url directly.
-  if ("redirect_url" in data) {
-    redirect(data.redirect_url);
   }
 
   const { client, redirect_uri: redirectUri } = data;

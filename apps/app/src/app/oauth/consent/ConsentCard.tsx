@@ -31,9 +31,14 @@ export function ConsentCard({
 
   return (
     <div className="mx-auto mt-16 max-w-md border-2 border-fg-strong bg-bg p-6">
-      <p className="font-mono text-xs uppercase tracking-[0.08em] text-fg-muted">Connect an app</p>
-      <h1 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-fg-strong">{clientName}</h1>
-      <p className="mt-1 text-sm text-fg-muted">wants to connect to your INDXR.AI account.</p>
+      {/* The redirect host is shown larger than the client name — the app's display name is
+          whatever the app itself chose at registration (untrustworthy); the host you'll actually
+          be sent back to is the one fact this screen can verify, so it leads. */}
+      <p className="font-mono text-xs uppercase tracking-[0.08em] text-fg-muted">Connect to INDXR.AI</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-[-0.02em] text-fg-strong break-all">{redirectHost}</h1>
+      <p className="mt-2 text-sm text-fg-muted">
+        "<span className="font-medium text-fg">{clientName}</span>" is requesting access to your account.
+      </p>
 
       <div className="mt-5 border-2 border-border-strong p-4 text-sm text-fg">
         <p className="font-bold text-fg-strong">It will be able to:</p>
@@ -47,8 +52,6 @@ export function ConsentCard({
           <li>Change your account or password</li>
         </ul>
       </div>
-
-      <p className="mt-4 text-xs text-fg-muted">You will be sent back to {redirectHost}.</p>
 
       <div className="mt-6 flex gap-3">
         <Button variant="outline" className="flex-1" onClick={deny} disabled={isPending}>

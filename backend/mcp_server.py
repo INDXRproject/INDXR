@@ -5,25 +5,24 @@ Lets a logged-in user's AI assistant (Claude, ChatGPT in developer mode) read th
 after OAuth login: collections, search, transcript text, source/citation, and an existing AI
 summary. Never writes, never generates, never touches credits.
 
-Security model: Supabase's OAuth server issues ordinary `authenticated`-role user JWTs by default.
-The Custom Access Token Hook (see migration 20261108011126_custom_access_token_hook.sql) rebinds
-`aud` on OAuth-issued tokens to this server's resource URL before they are ever handed to a client,
-so a token minted here is useless against the Data API (it fails the Data API's own audience check
-by virtue of having the wrong `aud`, and request_backend_secret gates the Next.js proxy itself).
-`verify_token` below independently re-checks `iss`/`aud`/`exp`/`client_id` via PyJWT against
-Supabase's JWKS — defense in depth, not reliant on the hook alone. Every Supabase query in every
-tool is filtered by `.eq("user_id", user_id)`, where `user_id` is the token's own `sub` claim —
-never caller-supplied.
+Security model (ADR-108, revised): an earlier version of this file verified Supabase-issued OAuth
+JWTs rewritten by a Custom Access Token Hook. That failed the security gate — PostgREST/Storage/
+GoTrue don't enforce `aud`, and RLS on `transcripts` keys off `auth.uid()` (the `sub` claim)
+regardless of `role`, so a "scoped-down" Supabase JWT was still a fully-privileged session token
+everywhere except this MCP server. This server now verifies **opaque tokens** issued by our own
+OAuth 2.1 authorization server (oauth_server.py): random strings, never a valid JWT, looked up by
+their SHA-256 hash in `oauth_tokens`. Supabase's own APIs reject an opaque string outright, so the
+isolation guarantee no longer depends on `aud`/`role` configuration those services don't check.
+Every Supabase query in every tool is filtered by `.eq("user_id", user_id)`, where `user_id` comes
+from the token row's own `user_id` column — never caller-supplied.
 """
 
+import hashlib
 import logging
-import os
 import re
-import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
-import jwt
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
@@ -35,55 +34,40 @@ from ratelimit import check_user_rate_limit
 
 logger = logging.getLogger("indxr-mcp")
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-ISSUER_URL = f"{SUPABASE_URL}/auth/v1"
-JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+ISSUER_URL = "https://app.indxr.ai"
+# Must match RESOURCE_URL in oauth_server.py — the audience every token is bound to.
 RESOURCE_URL = "https://app.indxr.ai/api/mcp"
 RESOURCE_METADATA_URL = "https://app.indxr.ai/.well-known/oauth-protected-resource/api/mcp"
 
-_jwks_client: jwt.PyJWKClient | None = None
 
-
-def _get_jwks_client() -> jwt.PyJWKClient:
-    global _jwks_client
-    if _jwks_client is None:
-        _jwks_client = jwt.PyJWKClient(JWKS_URL, cache_keys=True, lifespan=600)
-    return _jwks_client
-
-
-class SupabaseOAuthTokenVerifier(TokenVerifier):
-    """Verifies a Supabase OAuth access token: ES256 signature via JWKS, iss/aud/exp, and that the
-    token actually carries a client_id (i.e. was minted through the OAuth authorization_code grant,
-    not somehow presented as a plain session token with a forged aud)."""
+class OpaqueTokenVerifier(TokenVerifier):
+    """Hashes the incoming bearer token and looks it up in `oauth_tokens` (our own OAuth server's
+    table) — never a JWT decode. Rejects anything expired, revoked, or simply unknown."""
 
     async def verify_token(self, token: str) -> AccessToken | None:
-        try:
-            signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
-            claims = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["ES256"],
-                audience=RESOURCE_URL,
-                issuer=ISSUER_URL,
-                options={"require": ["exp", "iss", "aud", "sub"]},
-            )
-        except jwt.exceptions.PyJWTError as e:
-            logger.info(f"mcp token rejected: {e}")
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        db = get_supabase_client()
+        exec_result = (
+            db.table("oauth_tokens").select("*")
+            .eq("token_hash", token_hash).eq("token_type", "access")
+            .maybe_single().execute()
+        )
+        row = exec_result.data if exec_result else None
+        if not row:
             return None
-
-        client_id = claims.get("client_id")
-        if not client_id:
-            logger.info("mcp token rejected: no client_id claim (not an OAuth-issued token)")
+        if row.get("revoked_at"):
+            return None
+        expires_at = datetime.fromisoformat(row["expires_at"])
+        if expires_at < datetime.now(timezone.utc):
             return None
 
         return AccessToken(
             token=token,
-            client_id=client_id,
+            client_id=row["client_id"],
             scopes=["mcp"],
-            expires_at=claims.get("exp"),
-            resource=claims.get("aud"),
-            subject=claims.get("sub"),
-            claims=claims,
+            expires_at=int(expires_at.timestamp()),
+            resource=row["resource"],
+            subject=row["user_id"],
         )
 
 
@@ -107,7 +91,7 @@ mcp = MCPServer(
     title="INDXR.AI",
     instructions="Read a user's INDXR.AI transcript library: collections, search, transcript text, "
     "source citations, and existing AI summaries. Read-only — nothing here writes or deletes.",
-    token_verifier=SupabaseOAuthTokenVerifier(),
+    token_verifier=OpaqueTokenVerifier(),
     auth=AuthSettings(
         issuer_url=ISSUER_URL,
         resource_server_url=RESOURCE_URL,
@@ -294,15 +278,15 @@ async def get_transcript(id: str, start_minute: float = 0, minutes: float = 15) 
     user_id = _current_user_id()
     db = get_supabase_client()
 
-    row = (
+    exec_result = (
         db.table("transcripts")
         .select("id, title, transcript, edited_content, speaker_names, duration")
         .eq("id", id)
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
-        .data
     )
+    row = exec_result.data if exec_result else None
     if not row:
         raise ValueError("No transcript with this id in your library.")
 
@@ -374,15 +358,15 @@ async def get_source(id: str) -> dict[str, Any]:
     user_id = _current_user_id()
     db = get_supabase_client()
 
-    row = (
+    exec_result = (
         db.table("transcripts")
         .select("title, channel, video_id, duration, character_count, language, published_at, collection_id, created_at")
         .eq("id", id)
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
-        .data
     )
+    row = exec_result.data if exec_result else None
     if not row:
         raise ValueError("No transcript with this id in your library.")
 
@@ -419,15 +403,15 @@ async def get_summary(id: str) -> dict[str, Any]:
     user_id = _current_user_id()
     db = get_supabase_client()
 
-    row = (
+    exec_result = (
         db.table("transcripts")
         .select("title, ai_summary, ai_summary_edited")
         .eq("id", id)
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
-        .data
     )
+    row = exec_result.data if exec_result else None
     if not row:
         raise ValueError("No transcript with this id in your library.")
 

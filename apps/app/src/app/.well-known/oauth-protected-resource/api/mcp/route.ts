@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 
 const BODY = {
   resource: "https://app.indxr.ai/api/mcp",
-  authorization_servers: ["https://uivlvwcplcaixkzuiwsv.supabase.co/auth/v1"],
+  authorization_servers: ["https://app.indxr.ai"],
+  scopes_supported: ["mcp"],
 };
 
 const CORS_HEADERS = {

@@ -31,6 +31,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  // Anti-clickjacking for the OAuth consent screen — an Approve button is exactly what a clickjack
+  // overlay would target.
+  if (pathname === '/oauth/consent' || pathname.startsWith('/oauth/consent/')) {
+    response.headers.set('X-Frame-Options', 'DENY')
+    response.headers.set('Content-Security-Policy', "frame-ancestors 'none'")
+  }
+
   return response
 }
 

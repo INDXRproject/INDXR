@@ -39,9 +39,12 @@ from mailer import send_quick_checkout_ready_email
 # Load environment variables
 load_dotenv()
 
-# mcp_server reads SUPABASE_URL at import time (module-level AuthSettings) — must come after
-# load_dotenv() or it builds an empty issuer_url from an unset env var.
+from backend_auth import verify_backend_secret
+
+# mcp_server and oauth_server read SUPABASE_URL at import time (module-level AuthSettings) — must
+# come after load_dotenv() or they build an empty issuer_url from an unset env var.
 from mcp_server import mcp_app
+from oauth_server import oauth_router
 
 # Initialize PostHog
 posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
@@ -185,19 +188,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="INDXR.AI Backend", version="1.0.0", lifespan=lifespan)
 app.mount("/mcp", mcp_app)
-
-_BACKEND_API_SECRET = os.getenv("BACKEND_API_SECRET", "")
-
-async def verify_backend_secret(request: Request, x_backend_secret: str = Header(default="")):
-    """Reject requests that lack the shared backend secret.
-
-    Exception: direct browser uploads send a Supabase JWT (Authorization: Bearer).
-    Their auth is validated inside the endpoint body — backend-secret check is skipped here.
-    """
-    if request.headers.get("Authorization", "").startswith("Bearer "):
-        return  # JWT-authenticated upload — validated in endpoint body
-    if _BACKEND_API_SECRET and x_backend_secret != _BACKEND_API_SECRET:
-        raise HTTPException(status_code=401, detail="Invalid backend secret")
+app.include_router(oauth_router)
 
 # CORS configuration for Next.js frontend
 app.add_middleware(
