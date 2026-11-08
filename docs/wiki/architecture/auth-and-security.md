@@ -167,6 +167,36 @@ Bewijs (gerolde-back SQL-simulaties tegen productie, 2026-07-12):
 
 ---
 
+## MCP-connector OAuth (ADR-108)
+
+Read-only AI-assistant-toegang (Claude/ChatGPT) via het Model Context Protocol, op
+`https://app.indxr.ai/api/mcp`. Geen Supabase-managed OAuth-server — een eerste poging daarmee
+(Custom Access Token Hook die `aud`/`role` herschreef op OAuth-tokens) faalde de security-poort:
+PostgREST/Storage/GoTrue controleren `aud` niet by default, en RLS op `transcripts` gebruikt
+`auth.uid()` (leest `sub`, negeert `role`) — een "gescopete" Supabase-JWT werkte dus gewoon overal.
+
+**Eigen OAuth 2.1-server** (`backend/oauth_server.py`), opaque tokens: willekeurige strings, alleen
+SHA-256-gehasht opgeslagen in `oauth_tokens`, nooit een geldige JWT-vorm — Supabase's eigen APIs
+wijzen zo'n token categorisch af (`"Invalid Compact JWS"`), onafhankelijk van RLS/grants.
+
+- **Wat een MCP-token wél kan**: de vijf read-only tools in `backend/mcp_server.py`
+  (`list_collections`, `search_library`, `get_transcript`, `get_source`, `get_summary`), altijd
+  gefilterd op de token's eigen `user_id` (uit `oauth_tokens`, nooit caller-supplied).
+- **Wat een MCP-token niet kan**: iets anders dan `/api/mcp` aanroepen. Het is geen JWT, dus
+  `GET/PATCH /rest/v1/*`, elke RPC, Storage-uploads, en `PUT /auth/v1/user` falen allemaal — bewezen
+  in de poort (zie ADR-108), niet aangenomen.
+- **Tokens**: toegangstoken 1 uur; refresh-token 90 dagen met rotatie bij elk gebruik — hergebruik
+  van een al-geroteerde refresh-token trekt de hele `family_id` in (diefstal-respons).
+- **Consent**: `/oauth/consent` (hergebruikt de bestaande login-sessie), redirect-host
+  whitelisted tot claude.ai/claude.com/chatgpt.com/loopback — zowel bij DCR-registratie als bij
+  consent zelf geweigerd voor elke andere host. `X-Frame-Options: DENY` tegen clickjacking.
+- **Metadata**: `/.well-known/oauth-authorization-server` en `/.well-known/oauth-protected-resource*`
+  (Next.js, statisch) wijzen naar `https://app.indxr.ai` als eigen issuer.
+- **Nog niet gebouwd (fase 2)**: "Connected apps"-UI in Instellingen om een koppeling zelf in te
+  trekken (nu alleen via `POST /oauth/revoke`, niet in de app zichtbaar) — zie known-issues.md.
+
+---
+
 ## Account Suspension
 
 Gebruikers kunnen gesuspendeerd worden via het admin dashboard.
