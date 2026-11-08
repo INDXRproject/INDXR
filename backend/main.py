@@ -39,6 +39,10 @@ from mailer import send_quick_checkout_ready_email
 # Load environment variables
 load_dotenv()
 
+# mcp_server reads SUPABASE_URL at import time (module-level AuthSettings) — must come after
+# load_dotenv() or it builds an empty issuer_url from an unset env var.
+from mcp_server import mcp_app
+
 # Initialize PostHog
 posthog.api_key = os.getenv("POSTHOG_API_KEY", "")
 # EU host with an explicit EU-fallback — a missing env must never fall back to the SDK's US default.
@@ -169,12 +173,18 @@ async def lifespan(app: FastAPI):
     else:
         app.state.arq_pool = None
         logger.warning("ARQ_REDIS_URL not set — YouTube Whisper falls back to asyncio.create_task")
-    yield
+    # The mounted MCP sub-app (mcp_server.py) keeps its own session-manager task group; FastAPI's
+    # app.mount() does NOT forward ASGI lifespan events to a mounted sub-app, so its lifespan is
+    # entered here explicitly (empirically confirmed — without this, every MCP request fails with
+    # "Task group is not initialized").
+    async with mcp_app.router.lifespan_context(mcp_app):
+        yield
     if getattr(app.state, 'arq_pool', None):
         await app.state.arq_pool.aclose()
         logger.info("ARQ pool closed")
 
 app = FastAPI(title="INDXR.AI Backend", version="1.0.0", lifespan=lifespan)
+app.mount("/mcp", mcp_app)
 
 _BACKEND_API_SECRET = os.getenv("BACKEND_API_SECRET", "")
 

@@ -5,7 +5,7 @@ const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://app.localhost:3001'
 
 // Paths that require authentication
-const APP_PATHS = ['/dashboard', '/admin']
+const APP_PATHS = ['/dashboard', '/admin', '/oauth/consent']
 
 function isAppPath(pathname: string): boolean {
   return APP_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))

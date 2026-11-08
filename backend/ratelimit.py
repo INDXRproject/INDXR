@@ -63,6 +63,24 @@ async def check_ip_rate_limit(ip: str, bucket: str, max_requests: int, window_se
         return True
 
 
+async def check_user_rate_limit(user_id: str, bucket: str, max_requests: int, window_seconds: int) -> bool:
+    """Same fixed-window counter as check_ip_rate_limit, keyed by user_id instead of IP — for the
+    MCP connector, where every call already carries an authenticated user (ADR-108)."""
+    redis = _get_redis()
+    if redis is None:
+        return True
+
+    key = f"indxr-backend-ratelimit:{bucket}:{user_id}"
+    try:
+        count = await redis.incr(key)
+        if count == 1:
+            await redis.expire(key, window_seconds, nx=True)
+        return int(count) <= max_requests
+    except Exception as e:
+        logger.warning(f"check_user_rate_limit failed (failing open): {e}")
+        return True
+
+
 def client_ip_from_request(request_headers, fallback: str) -> str:
     """Best-effort real client IP behind Railway's proxy (X-Forwarded-For is set by the edge)."""
     xff = request_headers.get("x-forwarded-for") or request_headers.get("X-Forwarded-For")
