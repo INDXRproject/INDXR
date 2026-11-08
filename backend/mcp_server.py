@@ -544,7 +544,7 @@ async def get_summary(id: str) -> dict[str, Any]:
         "title": row.get("title"),
         "overview": summary.get("overview"),
         "sections": [
-            {"heading": s.get("heading"), "start_minute": (s.get("start_time") or 0) / 60, "content": s.get("content")}
+            {"heading": s.get("heading"), "start": _fmt_mmss(s.get("start_time") or 0), "start_minute": round((s.get("start_time") or 0) / 60, 2), "content": s.get("content")}
             for s in (summary.get("sections") or [])
         ],
     }
