@@ -6,6 +6,7 @@ import { ConsentCard } from "./ConsentCard";
 // clients) may ever receive a redirect back from here; the backend already refuses any other host
 // at DCR time, this is a second check. No "remembered consent": every authorize shows this screen.
 const ALLOWED_REDIRECT_HOSTS = [/^claude\.ai$/, /^claude\.com$/, /^chatgpt\.com$/, /^localhost$/, /^127\.0\.0\.1$/];
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 function isAllowedRedirectHost(uri: string): boolean {
   try {
@@ -65,6 +66,9 @@ export default async function OAuthConsentPage({
   }
 
   const redirectHost = new URL(redirectUri).hostname;
+  // Loopback means an MCP client running locally (Claude Code, an MCP Inspector, …) — the actual
+  // host is a meaningless "localhost"/"127.0.0.1" to a user, so name what it really is instead.
+  const redirectLabel = LOOPBACK_HOSTS.has(redirectHost) ? "A program on your own computer" : redirectHost;
 
   return (
     <div className="px-4">
@@ -75,7 +79,7 @@ export default async function OAuthConsentPage({
           </Notice>
         </div>
       )}
-      <ConsentCard authorizationId={authorizationId} clientName={client.name} redirectHost={redirectHost} />
+      <ConsentCard authorizationId={authorizationId} clientName={client.name} redirectHost={redirectLabel} />
     </div>
   );
 }
