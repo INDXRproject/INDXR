@@ -27,6 +27,7 @@ from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 
 from credit_manager import get_supabase_client
@@ -83,7 +84,7 @@ async def _rate_limit_or_raise(bucket: str) -> None:
     user_id = _current_user_id()
     allowed = await check_user_rate_limit(user_id, f"mcp-{bucket}", max_requests=60, window_seconds=60)
     if not allowed:
-        raise ValueError("Rate limit exceeded — try again in a minute.")
+        raise ToolError("Rate limit exceeded — try again in a minute.")
 
 
 mcp = MCPServer(
@@ -288,7 +289,7 @@ async def get_transcript(id: str, start_minute: float = 0, minutes: float = 15) 
     )
     row = exec_result.data if exec_result else None
     if not row:
-        raise ValueError("No transcript with this id in your library.")
+        raise ToolError("No transcript with this id in your library.")
 
     used_edited = bool(row.get("edited_content"))
     segments = row.get("edited_content") if used_edited else row.get("transcript")
@@ -368,7 +369,7 @@ async def get_source(id: str) -> dict[str, Any]:
     )
     row = exec_result.data if exec_result else None
     if not row:
-        raise ValueError("No transcript with this id in your library.")
+        raise ToolError("No transcript with this id in your library.")
 
     collection_name = None
     if row.get("collection_id"):
@@ -413,7 +414,7 @@ async def get_summary(id: str) -> dict[str, Any]:
     )
     row = exec_result.data if exec_result else None
     if not row:
-        raise ValueError("No transcript with this id in your library.")
+        raise ToolError("No transcript with this id in your library.")
 
     summary = row.get("ai_summary_edited") or row.get("ai_summary")
     if not summary:
