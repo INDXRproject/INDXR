@@ -87,6 +87,62 @@ async def _rate_limit_or_raise(bucket: str) -> None:
         raise ToolError("Rate limit exceeded — try again in a minute.")
 
 
+_UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+def _require_transcript_id(value: Any) -> str:
+    v = str(value or "").strip()
+    if not _UUID_RE.match(v):
+        raise ToolError(
+            f"'{v}' is not a valid transcript id. Transcript ids look like "
+            "'07699035-6b71-4678-b281-850e72c228ab'; get them from search_library."
+        )
+    return v
+
+
+def _not_found() -> ToolError:
+    return ToolError(
+        "No transcript with this id in your library. Use search_library to find the right id."
+    )
+
+
+def _clean(text: str) -> str:
+    """Collapse caption line breaks and runs of whitespace into single spaces."""
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+_TS_RE = re.compile(r"^\s*\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]\s*")
+
+
+def _node_text(node: Any) -> str:
+    if not isinstance(node, dict):
+        return ""
+    if node.get("type") == "text":
+        return node.get("text") or ""
+    return "".join(_node_text(c) for c in (node.get("content") or []))
+
+
+def _edited_paragraphs(doc: Any) -> list[dict[str, Any]]:
+    """The saved edited version is a Tiptap document (one paragraph per reading paragraph, each
+    starting with its '[mm:ss]' or '[h:mm:ss]' marker — see transcriptToJSON in TranscriptViewer.tsx).
+    Turn it back into {start, speaker, text} paragraphs; a paragraph without a marker inherits the
+    previous start time."""
+    out: list[dict[str, Any]] = []
+    last = 0.0
+    nodes = doc.get("content") if isinstance(doc, dict) else None
+    for node in nodes or []:
+        text = _node_text(node)
+        m = _TS_RE.match(text)
+        if m:
+            a, b, c = m.groups()
+            last = float(int(a) * 3600 + int(b) * 60 + int(c)) if c else float(int(a) * 60 + int(b))
+            text = text[m.end():]
+        text = _clean(text)
+        if text:
+            out.append({"start": last, "speaker": None, "text": text})
+    return out
+
+
 mcp = MCPServer(
     name="indxr",
     title="INDXR.AI",
@@ -108,7 +164,7 @@ mcp = MCPServer(
     title="List collections",
     annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
-async def list_collections() -> list[dict[str, Any]]:
+async def list_collections() -> dict[str, Any]:
     """List this user's collections (folders) with how many transcripts are in each."""
     await _rate_limit_or_raise("list_collections")
     user_id = _current_user_id()
@@ -117,12 +173,21 @@ async def list_collections() -> list[dict[str, Any]]:
     cols = db.table("collections").select("id, name").eq("user_id", user_id).execute().data or []
     counts: dict[str, int] = {}
     rows = db.table("transcripts").select("collection_id").eq("user_id", user_id).execute().data or []
+    uncategorized = 0
     for r in rows:
         cid = r.get("collection_id")
         if cid:
             counts[cid] = counts.get(cid, 0) + 1
+        else:
+            uncategorized += 1
 
-    return [{"id": c["id"], "name": c["name"], "transcript_count": counts.get(c["id"], 0)} for c in cols]
+    return {
+        "collections": [
+            {"id": c["id"], "name": c["name"], "transcript_count": counts.get(c["id"], 0)} for c in cols
+        ],
+        "transcripts_not_in_a_collection": uncategorized,
+        "total_transcripts": len(rows),
+    }
 
 
 # ── Tool 2: search_library ───────────────────────────────────────────────────
@@ -151,7 +216,7 @@ def _excerpt_around(text: str, needle: str, radius: int = 150) -> str:
     title="Search library",
     annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
-async def search_library(query: str, collection_id: str | None = None, limit: int = 10) -> list[dict[str, Any]]:
+async def search_library(query: str, collection_id: str | None = None, limit: int = 10) -> dict[str, Any]:
     """Search this user's transcript titles, channel names, and transcript text. Returns the
     matching transcripts with a short excerpt around the hit."""
     await _rate_limit_or_raise("search_library")
@@ -159,10 +224,25 @@ async def search_library(query: str, collection_id: str | None = None, limit: in
     limit = max(1, min(int(limit), 20))
     db = get_supabase_client()
 
-    search = re.sub(r"[%,()]", " ", query).strip()
+    search = re.sub(r"[%,()]", " ", query or "").strip()
     if not search:
-        return []
+        raise ToolError("The search is empty. Give one or more words to look for.")
     tokens = search.split()[:6]
+
+    collection_name = None
+    if collection_id:
+        cid = str(collection_id).strip()
+        if not _UUID_RE.match(cid):
+            raise ToolError(
+                f"'{cid}' is not a valid collection id. Get collection ids from list_collections, "
+                "or leave collection_id empty to search the whole library."
+            )
+        col_res = db.table("collections").select("name").eq("id", cid).eq("user_id", user_id).maybe_single().execute()
+        col = col_res.data if col_res else None
+        if not col:
+            raise ToolError("No collection with this id in your library. Call list_collections to see the valid ids.")
+        collection_name = col.get("name")
+        collection_id = cid
 
     q = (
         db.table("transcripts")
@@ -182,12 +262,19 @@ async def search_library(query: str, collection_id: str | None = None, limit: in
     first_token = tokens[0] if tokens else search
     results: list[dict[str, Any]] = []
     for r in rows:
-        segments = r.get("edited_content") or r.get("transcript") or []
-        full_text = " ".join(seg.get("text", "") for seg in segments if isinstance(seg, dict))
+        if r.get("edited_content"):
+            pieces = [(p["start"], p["text"]) for p in _edited_paragraphs(r["edited_content"])]
+        else:
+            pieces = [
+                (seg.get("offset", 0), _clean(seg.get("text", "")))
+                for seg in (r.get("transcript") or [])
+                if isinstance(seg, dict)
+            ]
+        full_text = _clean(" ".join(t for _, t in pieces))
         hit_offset = None
-        for seg in segments:
-            if isinstance(seg, dict) and first_token.lower() in seg.get("text", "").lower():
-                hit_offset = seg.get("offset")
+        for off, t in pieces:
+            if first_token.lower() in t.lower():
+                hit_offset = off
                 break
         results.append(
             {
@@ -204,7 +291,15 @@ async def search_library(query: str, collection_id: str | None = None, limit: in
                 ),
             }
         )
-    return results
+    note = None
+    if not results:
+        where = f" in the collection '{collection_name}'" if collection_name else ""
+        note = (
+            f"No matches for '{search}'{where}. Search matches whole words and word beginnings in "
+            "titles, channel names and transcript text (all words must appear); it does not search "
+            "by meaning. Try fewer or different words."
+        )
+    return {"query": search, "collection": collection_name, "results": results, "note": note}
 
 
 # ── Tool 3: get_transcript ───────────────────────────────────────────────────
@@ -237,7 +332,7 @@ def _paragraphs_for_window(
     def flush():
         if cur_text:
             name = _resolve_speaker(cur_speaker, speaker_names)
-            text = " ".join(cur_text).strip()
+            text = _clean(" ".join(cur_text))
             paras.append({"start": cur_start, "speaker": name, "text": text})
 
     for seg in windowed:
@@ -277,47 +372,70 @@ async def get_transcript(id: str, start_minute: float = 0, minutes: float = 15) 
     there is more."""
     await _rate_limit_or_raise("get_transcript")
     user_id = _current_user_id()
+    tid = _require_transcript_id(id)
     db = get_supabase_client()
 
     exec_result = (
         db.table("transcripts")
         .select("id, title, transcript, edited_content, speaker_names, duration")
-        .eq("id", id)
+        .eq("id", tid)
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
     )
     row = exec_result.data if exec_result else None
     if not row:
-        raise ToolError("No transcript with this id in your library.")
+        raise _not_found()
 
-    used_edited = bool(row.get("edited_content"))
-    segments = row.get("edited_content") if used_edited else row.get("transcript")
-    segments = segments or []
-    speaker_names = row.get("speaker_names") or {}
+    notes: list[str] = []
+    try:
+        start_min = float(start_minute)
+        win_min = float(minutes)
+    except (TypeError, ValueError):
+        raise ToolError("start_minute and minutes must be numbers, e.g. start_minute=15, minutes=15.")
+    if start_min < 0:
+        notes.append(f"start_minute {start_minute} is negative; started at 0.")
+        start_min = 0.0
+    if win_min < 1 or win_min > 30:
+        clamped = min(max(win_min, 1.0), 30.0)
+        notes.append(f"minutes must be between 1 and 30; used {clamped:g}.")
+        win_min = clamped
 
-    start_sec = max(0.0, float(start_minute) * 60)
-    window_sec = max(60.0, min(float(minutes), 30) * 60)  # cap a single window at 30 minutes
-    end_sec = start_sec + window_sec
+    used_edited = isinstance(row.get("edited_content"), dict)
+    segments = [s for s in (row.get("transcript") or []) if isinstance(s, dict)]
+    if used_edited:
+        all_paras = _edited_paragraphs(row["edited_content"])
+        notes.append("Showing the user's edited version of this transcript.")
+    else:
+        all_paras = None
 
-    paras = _paragraphs_for_window(segments, speaker_names, start_sec, end_sec)
+    last_seg_end = (segments[-1].get("offset", 0) + segments[-1].get("duration", 0)) if segments else 0
+    total_sec = float(row.get("duration") or last_seg_end or (all_paras[-1]["start"] if all_paras else 0))
+    total_min = round(total_sec / 60, 1)
+
+    start_sec = start_min * 60
+    if total_sec and start_sec >= total_sec:
+        raise ToolError(
+            f"start_minute {start_minute} is past the end: this transcript is {total_min} minutes long. "
+            "Use a start_minute below that."
+        )
+    end_sec = start_sec + win_min * 60
+
+    if all_paras is not None:
+        paras = [p for p in all_paras if start_sec <= p["start"] < end_sec]
+    else:
+        paras = _paragraphs_for_window(segments, row.get("speaker_names") or {}, start_sec, end_sec)
     lines = [f"[{_fmt_mmss(p['start'])}] " + (f"{p['speaker']}: " if p["speaker"] else "") + p["text"] for p in paras]
 
-    total_duration = row.get("duration") or (segments[-1]["offset"] + segments[-1]["duration"] if segments else 0)
-    has_more = end_sec < total_duration
-
-    note = (
-        "This transcript has a saved edited version; showing the edited text without original timecodes attribution."
-        if used_edited
-        else None
-    )
-
+    has_more = end_sec < total_sec
     return {
         "title": row.get("title"),
-        "start_minute": start_minute,
-        "text": "\n\n".join(lines) if lines else "(nothing in this time window)",
-        "next": {"start_minute": start_sec / 60 + window_sec / 60} if has_more else None,
-        "note": note,
+        "total_minutes": total_min,
+        "from_minute": round(start_min, 2),
+        "to_minute": round(min(end_sec, total_sec) / 60, 2) if total_sec else round(end_sec / 60, 2),
+        "text": "\n\n".join(lines) if lines else "(no speech in this part of the recording)",
+        "next": {"start_minute": round(end_sec / 60, 2)} if has_more else None,
+        "note": " ".join(notes) or None,
     }
 
 
@@ -357,19 +475,20 @@ async def get_source(id: str) -> dict[str, Any]:
     date, collection, when it was added, and a ready APA-7 citation."""
     await _rate_limit_or_raise("get_source")
     user_id = _current_user_id()
+    tid = _require_transcript_id(id)
     db = get_supabase_client()
 
     exec_result = (
         db.table("transcripts")
         .select("title, channel, video_id, duration, character_count, language, published_at, collection_id, created_at")
-        .eq("id", id)
+        .eq("id", tid)
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
     )
     row = exec_result.data if exec_result else None
     if not row:
-        raise ToolError("No transcript with this id in your library.")
+        raise _not_found()
 
     collection_name = None
     if row.get("collection_id"):
@@ -402,23 +521,24 @@ async def get_summary(id: str) -> dict[str, Any]:
     one (that costs credits) — says so instead when none exists."""
     await _rate_limit_or_raise("get_summary")
     user_id = _current_user_id()
+    tid = _require_transcript_id(id)
     db = get_supabase_client()
 
     exec_result = (
         db.table("transcripts")
         .select("title, ai_summary, ai_summary_edited")
-        .eq("id", id)
+        .eq("id", tid)
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
     )
     row = exec_result.data if exec_result else None
     if not row:
-        raise ToolError("No transcript with this id in your library.")
+        raise _not_found()
 
     summary = row.get("ai_summary_edited") or row.get("ai_summary")
     if not summary:
-        return {"title": row.get("title"), "summary": None, "note": "No summary has been generated for this transcript yet."}
+        return {"title": row.get("title"), "summary": None, "note": "No summary has been generated for this transcript yet. The user can create one in INDXR (Summary tab); you can also read the transcript with get_transcript and summarise it yourself."}
 
     return {
         "title": row.get("title"),
