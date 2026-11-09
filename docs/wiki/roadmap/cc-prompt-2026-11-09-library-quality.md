@@ -69,9 +69,9 @@ op claude.com/support.claude.com, niet uit je geheugen)
    `supported-formats` en `youtube-video-summarizer`. Haal ze weg als niets ze meer gebruikt.
 10. CLAUDE.md: corrigeer de rij "Rate limiting … uit in prod" (Upstash staat aan, LOG 2026-11-09 03:00) en
     de sectie "Geen Sentry / uptime monitoring" (Sentry draait voor de backend; check of er
-    uptime-monitoring is en schrijf op wat waar is). Laat "Database backups … open voor launch" staan,
-    maar zoek uit wat er nu werkelijk is: het Supabase-plan en of PITR of dagelijkse backups aan staan
-    (Management API). Rapporteer wat het kost om het aan te zetten. Zet zelf niets betaalds aan.
+    uptime-monitoring is en schrijf op wat waar is). Database-backups: besluit Khidr 9-11. Betaalde backups pas als de omzet
+    €1–2K is (de verliezen terugverdiend). Zet dat zo in CLAUDE.md en priorities.md. Zet niets aan en
+    onderzoek de kosten niet verder.
 
 Docs: LOG.md onderaan, `docs/wiki/roadmap/priorities.md` (sectie "Gevonden 9-11" afvinken), ADR-108
 aanvullen voor Connected apps, LESSONS.md als een fout een patroon is. Commit en push zelf, per blok (A, B,

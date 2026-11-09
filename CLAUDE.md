@@ -318,7 +318,7 @@ Als ze verschijnen: `git rm -r --cached <path>`
 ### Supabase
 - **Email verificatie staat AAN** (`mailer_autoconfirm=false`, geverifieerd 2026-07-15 via Management API). Nieuwe email/password-signups zijn PKCE en moeten de verificatielink klikken → `/auth/callback?code=…` → sessie. LET OP: custom SMTP (Resend, `smtp.resend.com`, sender `no-reply@send.indxr.ai`) is gekoppeld met auth-rate-limit 30/u (geverifieerd 2026-07-20) — niet meer de ingebouwde 2/u mailer. **Nieuwe signups met `@indxr-test.com` worden door Supabase geweigerd** ("Email address invalid"); gebruik `@indxr.ai` (of een echt domein met MX) voor E2E-signup-tests, of maak accounts admin-side aan (`admin.createUser` met `email_confirm:true` accepteert `@indxr-test.com`).
 - RLS staat aan op alle 30 public tabellen (geverifieerd 2026-09-01; was eerder 25 op 2026-07-24 — `summary_cost_baseline_log` was per abuis zonder RLS aangemaakt, gedicht in migratie `20260901210140`)
-- Database backups nog niet geconfigureerd — **open voor launch**
+- Database backups nog niet geconfigureerd — **bewust uitgesteld** (besluit Khidr 2026-11-09: pas bij €1–2K omzet, als de verliezen terug zijn; nu geen vaste gebruikers)
 
 ### Railway
 - Bij Railway restart mid-job: background task sterft — job blijft hangen in `running` state, **geen auto-recovery**

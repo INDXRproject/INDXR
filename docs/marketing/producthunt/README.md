@@ -2,7 +2,7 @@
 
 **Status:** draft, er staat niets ingepland of gepubliceerd. PH toont nu "Schedule launch" omdat alle verplichte velden gevuld zijn. **Inplannen alleen na akkoord van Khidr.**
 
-## Copy 9-11 (copy-rewrite: Claude/ChatGPT-koppeling erbij — LEIDEND, nog niet in de PH-draft gezet)
+## Copy 9-11 (Claude/ChatGPT-koppeling) — IN DE DRAFT GEZET 9-11 (beschrijving, 7 galerijkaarten, maker-comment-alinea over de koppeling)
 - **Tagline:** "All your sources. One searchable archive." (ongewijzigd)
 - **Description (467/500):** "INDXR turns lectures, podcasts, YouTube videos and your own recordings into clean transcripts (speakers, punctuation, timestamps), kept with their source in one archive you can search word for word. / Connect it to Claude or ChatGPT and your sources sit next to everything the assistant knows and can look up, quoted with the minute they were said. Read-only, free. / YouTube captions are free. AI transcription is pay-per-minute: credits never expire, no subscription."
 - **Eerste maker-comment, alinea 2:** de koppeling als haak: "You can also connect your library to Claude or ChatGPT (MCP, read-only) and ask questions across your own sources, with answers that cite the transcript and the timestamp." Link: indxr.ai/connect.
@@ -22,7 +22,11 @@
 - **First comment:** niet aangeraakt. Het is Khidrs eigen stem en past bij de positionering (Obsidian-workflow, bibliotheek, "for anyone learning anything"). De feiten erin kloppen: 10 credits, captions gratis, credits verlopen niet.
 - **Pricing-veld:** "Free Options". Laten staan of "Freemium" kiezen.
 
-## Galerij (1270×760, stijl B): `gallery/01–05.png`
+## Galerij 9-11 (1270×760, in de draft): `gallery/01–07.png`, ook online als `https://indxr.ai/press/indxr-gallery-0N.jpg`
+1. Titelkaart "All your sources. One searchable archive. In Claude and ChatGPT too." 2. Echt Claude-antwoord via de INDXR-koppeling (HIST 202, WO I, quotes met tijdstempels). 3. Hetzelfde antwoord: "From my own knowledge" + "Two slips in the lecture" (geverifieerd: Merriman zegt "sixteen-year-old" Princip rond 10:30; Princip was 19). 4. Echte bibliotheek (110 transcripten, 6 collecties). 5. Echt transcript met bron (YaleCourses) + Cite. 6. Captions vs. INDXR (JFK). 7. Prijs.
+Nog open: video (YouTube-link; wacht op het kanaal, zie `social/accounts-kit.md`).
+
+## Galerij 7-11 (vervangen)
 1. Titelkaart met logo, "All your sources. One searchable archive." en "Transcripts, done properly."
 2. Captions tegenover INDXR (JFK, Rice 1962, publiek domein).
 3. De bibliotheek met zoeken in titels en transcripttekst. **Mockup in stijl B met verzonnen titels.** Na de redesign vervangen door een echte screenshot.
