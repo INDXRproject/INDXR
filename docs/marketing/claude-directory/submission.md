@@ -71,6 +71,13 @@ En vink aan: alle tools zelf getest (gedaan, als custom connector in Claude).
 
 **9. Compliance:** zeven verklaringen. Alle zeven gelden voor ons: geen financiële transacties, geen AI-media, geen verzameling van gespreksdata, publieke documentatie aanwezig.
 
+## Status portal (9-11, Claude)
+Stap 1–7 ingevuld in het draft (tab claude.ai/directory/manage/new/connector, "Draft saved in this tab").
+Stap 8: instructies staan erin met `<<PASSWORD>>` als plek voor het wachtwoord; vinkje "Self-tested" en
+de 7 verklaringen van stap 9 zet Khidr zelf (attestaties, niet door Claude). Extra notities stap 9 ingevuld.
+Contact-e-mail: contact@indxr.ai. Iconen: MCP-server geeft sinds commit 665c72b `icons` + `website_url` mee;
+listing gebruikt https://indxr.ai/web-app-manifest-512x512.png.
+
 ## Checklist voor Khidr (in deze volgorde)
 1. ✅ Gedaan 2026-11-09: privacybeleid, Connected apps, en het reviewer-account `reviewer@indxr.ai` (gevuld, hieronder).
 2. Zet het wachtwoord van het reviewer-account zelf (Supabase → Auth → gebruiker `reviewer@indxr.ai` → Reset of via de admin) en bewaar het in Proton Pass. Er staat nog geen wachtwoord op — dat is bewust nooit door Claude gezet of gezien.
