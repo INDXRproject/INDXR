@@ -13,8 +13,8 @@ Je privéadres nooit invullen. Als adres alleen "Netherlands" waar het verplicht
 |---|---|---|---|---|
 | 1 | **Hacker News** | Show HN met de Claude-koppeling als haak, het publiek dat MCP begrijpt | ⬜ maken (gebruikersnaam `sinbadbuilds`, dezelfde als op PH) | Post staat klaar in `community/show-hn.md`. Jij plaatst hem, ik help met de reacties |
 | 2 | **Reddit** | r/ObsidianMD, daarna r/Rag | ⬜ maken (`sinbadbuilds`). **Eerst 1–2 weken gewoon reageren in die subs**, anders word je als spam gemarkeerd | Teksten in `community/reddit-*.md` |
-| 3 | **X** | Bouwen in het openbaar, launchdag, de MCP-community zit op X | ⬜ maken: `@indxr_ai` (of `@indxrai`), naam "INDXR" | Profiel invullen + 5 klaarstaande posts (hieronder) |
-| 4 | **YouTube** | Demovideo's: PH-video, "Ask Claude about a Yale course" | ⬜ maken: kanaal "INDXR", handle `@indxr` | Banner en avatar uploaden, kanaaltekst, de 60-s-demo maken |
+| 3 | **X** | Bouwen in het openbaar, launchdag, de MCP-community zit op X | ✅ bestaat al: `@indxr_ai` (ingelogd in Chrome-profiel). Bio bijgewerkt 9-11 | Header uploaden (Khidr, X blokkeert mijn upload): `indxr.ai/press/indxr-x-header.jpg` |
+| 4 | **YouTube** | Demovideo's: PH-video, "Ask Claude about a Yale course" | ✅ bestaat al: kanaal "INDXR", `@indxr_ai`. Beschrijving bijgewerkt 9-11 | Banner uploaden (Khidr): `indxr.ai/press/indxr-youtube-banner.jpg`. Daarna maak ik de 60-s-demo |
 | 5 | **Trustpilot** | Pas zinvol met echte klanten | **Nog niet.** Een leeg profiel, of een profiel met reviews die je zelf hebt geregeld, werkt tegen je; Trustpilot verbiedt reviews uit je eigen kring | Na de eerste 10 betalende klanten: claimen (gratis) en uitnodigingen sturen via de bestel-mail |
 | — | AlternativeTo | Staat er al | ✅ | Tekst en screenshots bijwerken (Claude, 9-11) |
 | — | Product Hunt | Draft | ✅ | Galerij + tekst bijgewerkt (Claude, 9-11). Inplannen = jouw besluit, na de directory |
@@ -44,6 +44,5 @@ Link: `https://indxr.ai/?utm_source=x` · Locatie: Netherlands
 ## Wat jij nu doet (±30 min)
 1. HN-account `sinbadbuilds` (news.ycombinator.com/login → create account).
 2. Reddit-account `sinbadbuilds`. Begin met gewoon meedoen in r/ObsidianMD en r/Rag.
-3. X-account `@indxr_ai` met contact@indxr.ai, en log in in het Chrome-profiel "INDXR.ai".
-4. YouTube: kanaal "INDXR" op het Google-account contact@indxr.ai, handle `@indxr`.
-5. Zeg het me zodra 3 en 4 bestaan, dan vul ik profiel, header en eerste post in. Plaatsen pas na jouw ja.
+3. X: header uploaden (bestaat al als @indxr_ai).
+4. YouTube: banner uploaden (bestaat al als @indxr_ai).
