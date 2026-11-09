@@ -87,8 +87,10 @@ export default function DocsLibraryPage() {
           none (your own uploads, or a video that has since been removed), the reference says
           &quot;n.d.&quot;, which is how APA writes a source without a date. For your own files the reference
           uses the title and marks it as an audio recording; check the author before you use it in a paper.
-          The title is copied exactly as it appears on YouTube. APA writes titles in sentence case and in
-          italics, so adjust those two things when you paste the reference into a paper.
+          The title is copied exactly as it appears on YouTube. Pasting into a word processor or notes app
+          italicises the title automatically, as APA requires — but still check its capitalisation: APA
+          writes titles in sentence case, and INDXR doesn&apos;t rewrite the title itself (an automatic
+          lowercase pass would break proper nouns).
         </p>
 
         <AnchorHeading as="h2">Deleting, and how much space you use</AnchorHeading>

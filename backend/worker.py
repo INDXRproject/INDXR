@@ -251,6 +251,8 @@ async def _process_caption_video(
                 "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
                 "processing_method": "youtube_captions",
             }
+            if pre_meta.get("channel"):
+                insert_data["channel"] = pre_meta["channel"]
             if collection_id:
                 insert_data["collection_id"] = collection_id
             t = await asyncio.to_thread(
@@ -351,6 +353,8 @@ async def _process_caption_video(
         'thumbnail_url': f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg',
         'processing_method': 'youtube_captions',
     }
+    if extract_result.get('channel'):
+        insert_data['channel'] = extract_result['channel']
     if collection_id:
         insert_data['collection_id'] = collection_id
 

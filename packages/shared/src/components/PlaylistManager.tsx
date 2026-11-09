@@ -60,8 +60,18 @@ interface AvailabilitySummary {
 
 export type VideoStatus = 'pending' | 'extracting' | 'success' | 'error' | 'unavailable' | 'no_speech' | 'youtube_restricted' | 'age_restricted' | 'bot_detection' | 'timeout' | 'members_only' | 'no_captions'
 
+/** "Add to" choice from the review step (Gevonden 9-11 A3) — either an existing collection by id,
+ *  or a fresh one named after the playlist (handleExtract creates it). */
+export type CollectionChoice = { mode: 'existing'; id: string } | { mode: 'new' };
+
 interface PlaylistManagerProps {
-  onExtract: (videoIds: string[], availabilityData?: VideoAvailability[], playlistTitle?: string, playlistUrl?: string) => void;
+  onExtract: (
+    videoIds: string[],
+    availabilityData?: VideoAvailability[],
+    playlistTitle?: string,
+    playlistUrl?: string,
+    collectionChoice?: CollectionChoice,
+  ) => void;
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
   /** Raw backend error_type per failed video (populated at completion). Lets the failure blocks
@@ -115,6 +125,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
   const [hasExtracted, setHasExtracted] = useState(false);
   const [existingDuplicates, setExistingDuplicates] = useState<Record<string, Array<{ transcriptId: string; processingMethod: string }>>>({}); // video_id -> [{ transcriptId, processingMethod }]
   const [inlineError, setInlineError] = useState<string | null>(null);
+  // "Add to" picker (Gevonden 9-11 A3): the user's collections, and the choice — defaults to
+  // whichever existing collection already holds the most videos from this playlist, else "new".
+  const [userCollections, setUserCollections] = useState<Array<{ id: string; name: string }>>([]);
+  const [collectionChoice, setCollectionChoice] = useState<CollectionChoice>({ mode: 'new' });
   const supabase = createClient();
 
   // Monitor extraction progress
@@ -218,22 +232,30 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
       // We safely fetch the first 1000 items (unlikely to have a 1000+ playlist here)
       const { data: { user } } = await supabase.auth.getUser()
       const dupes: Record<string, Array<{ transcriptId: string; processingMethod: string }>> = {}
+      const collectionCounts: Record<string, number> = {}
       if (user && videoIds.length > 0) {
-        // Query Supabase
-        const { data: existing } = await supabase
-          .from('transcripts')
-          .select('id, video_id, processing_method')
-          .eq('user_id', user.id)
-          .in('video_id', videoIds)
+        // Query Supabase — also collection_id (A3): finds which existing collection already holds
+        // videos from this playlist, so "Add to" can default to it instead of always making a new one.
+        const [{ data: existing }, { data: cols }] = await Promise.all([
+          supabase.from('transcripts').select('id, video_id, processing_method, collection_id').eq('user_id', user.id).in('video_id', videoIds),
+          supabase.from('collections').select('id, name').eq('user_id', user.id),
+        ])
 
         if (existing) {
           existing.forEach(t => {
             if (!dupes[t.video_id]) dupes[t.video_id] = []
             dupes[t.video_id].push({ transcriptId: t.id, processingMethod: t.processing_method || 'youtube_captions' })
+            if (t.collection_id) collectionCounts[t.collection_id] = (collectionCounts[t.collection_id] ?? 0) + 1
           })
         }
+        setUserCollections(cols ?? []);
       }
       setExistingDuplicates(dupes);
+
+      // Default "Add to" choice: the collection already holding the most videos from this playlist,
+      // else a new one named after the playlist (A3).
+      const dominantCollectionId = Object.entries(collectionCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      setCollectionChoice(dominantCollectionId ? { mode: 'existing', id: dominantCollectionId } : { mode: 'new' });
 
       // Select first 10 by default, filtering out private videos AND captions duplicates
       const validEntries = data.entries.slice(0, 10).filter((e: PlaylistEntry) =>
@@ -263,8 +285,11 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
 
   const selectAll = () => {
     if (!playlist || hasExtracted) return;
-    const validEntries = playlist.entries.filter(e => 
-      e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video"
+    // Same exclusion as the initial preselect (A3): a video that already has a caption transcript
+    // stays unchecked — ticking it would just re-extract a duplicate for no new content.
+    const validEntries = playlist.entries.filter(e =>
+      e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video" &&
+      !existingDuplicates[e.id]?.some(d => d.processingMethod === 'youtube_captions')
     );
     setSelectedIds(new Set(validEntries.map(e => e.id)));
   };
@@ -376,7 +401,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
 
       setHasExtracted(true);
       setShowAvailabilityModal(false); // Hide inline summary
-      onExtract(extractableIds, enhancedResults, playlist?.title, url);
+      onExtract(extractableIds, enhancedResults, playlist?.title, url, collectionChoice);
     }
   };
 
@@ -662,6 +687,10 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
           userCredits={credits}
           unavailableCount={missingCount}
           existingDuplicates={existingDuplicates} // <--- Added this line
+          collections={userCollections}
+          playlistTitle={playlist?.title ?? ''}
+          collectionChoice={collectionChoice}
+          onCollectionChoiceChange={setCollectionChoice}
           onProceed={handleProceedWithExtraction}
           onCancel={() => {
              setShowAvailabilityModal(false);

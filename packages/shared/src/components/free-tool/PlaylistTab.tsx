@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import posthog from "posthog-js"
-import { PlaylistManager, VideoStatus } from "../PlaylistManager"
+import { PlaylistManager, VideoStatus, CollectionChoice } from "../PlaylistManager"
 import { Loader2 } from "lucide-react"
 import { Button } from "../ui/button"
 import { ErrorCard } from "../transcribe/ErrorCard"
@@ -41,12 +41,16 @@ function mapBackendStatus(res: { status: string; error_type?: string }): VideoSt
   switch (res.error_type) {
     case 'bot_detection':      return 'bot_detection'
     case 'timeout':            return 'timeout'
-    // connection_error / server_error are transient download failures the worker auto-retries
-    // (worker.py:614/710) — the same retry-eligible set as bot_detection/timeout. Mapping them to
-    // 'timeout' lands them in the retryable completion block ("Retry all") instead of the permanent
-    // "couldn't be transcribed" one, so a transient network blip no longer looks permanent (point 1).
+    // connection_error / server_error / proxy_error are transient download failures the worker
+    // auto-retries (worker.py:614/710) — the same retry-eligible set as bot_detection/timeout. Mapping
+    // them to 'timeout' lands them in the retryable completion block ("Retry all") instead of the
+    // permanent "couldn't be transcribed" one, so a transient network blip no longer looks permanent
+    // (point 1). proxy_error on a captions video is the same kind of connection hiccup — it was falling
+    // into the permanent bucket, which also shows audio-download-flavored copy that doesn't apply to
+    // captions extraction (Gevonden 9-11 A4).
     case 'connection_error':   return 'timeout'
     case 'server_error':       return 'timeout'
+    case 'proxy_error':        return 'timeout'
     case 'age_restricted':     return 'age_restricted'
     case 'members_only':       return 'members_only'
     case 'youtube_restricted': return 'youtube_restricted'
@@ -446,7 +450,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     setActiveJobId(jobId)
   }
 
-  const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string) => {
+  const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string, collectionChoice?: CollectionChoice) => {
     setError(null)
     setRetryRound(0)
     setProgressMessage("Initializing...")
@@ -472,18 +476,28 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       startTimeRef.current = Date.now()
       intervalRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
 
-      // Create or find collection for this playlist
+      // Collection for this playlist (A3): the review step's "Add to" choice wins when present —
+      // an explicit existing collection is used as-is, "new" creates one named after the playlist.
+      // Without a choice (shouldn't happen from the normal flow, but keeps this function safe to call
+      // directly), fall back to the previous auto-match-by-name-or-create behaviour.
       let autoCollectionId: string | undefined = undefined;
-      if (playlistTitle) {
+      if (collectionChoice?.mode === 'existing') {
+        autoCollectionId = collectionChoice.id
+      } else if (playlistTitle) {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          const { data: existingCol } = await supabase.from('collections').select('id').eq('user_id', user.id).ilike('name', playlistTitle).limit(1).maybeSingle()
-          if (existingCol) {
-            autoCollectionId = existingCol.id
-          } else {
+          if (collectionChoice?.mode === 'new') {
             const { data: newCol } = await supabase.from('collections').insert({ user_id: user.id, name: playlistTitle }).select('id').single()
             if (newCol) autoCollectionId = newCol.id
+          } else {
+            const { data: existingCol } = await supabase.from('collections').select('id').eq('user_id', user.id).ilike('name', playlistTitle).limit(1).maybeSingle()
+            if (existingCol) {
+              autoCollectionId = existingCol.id
+            } else {
+              const { data: newCol } = await supabase.from('collections').insert({ user_id: user.id, name: playlistTitle }).select('id').single()
+              if (newCol) autoCollectionId = newCol.id
+            }
           }
         }
       }

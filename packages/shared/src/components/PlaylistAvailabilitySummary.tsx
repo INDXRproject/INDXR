@@ -8,6 +8,7 @@ import { MethodBadge } from "./transcribe/MethodBadge";
 import { Switch } from "./ui/switch";
 import { playlistFreeIds } from "../lib/pricing";
 import { NOTICE_BAR, NOTICE_BASE, NOTICE_ICON, NOTICE_TITLE, noticeCompact } from "../lib/notice";
+import type { CollectionChoice } from "./PlaylistManager";
 
 interface VideoAvailability {
   videoId: string
@@ -38,11 +39,18 @@ interface PlaylistAvailabilitySummaryProps {
   // so they are NOT counted as unavailable.) These were already excluded; shown here for context.
   unavailableCount: number
   existingDuplicates: Record<string, Array<{ transcriptId: string; processingMethod: string }>>
+  // "Add to" picker (Gevonden 9-11 A3) — the user's collections, the playlist's own title (the
+  // default name for a new collection), and the current choice + setter (owned by PlaylistManager
+  // so it survives this component remounting between the picker and availability screens).
+  collections: Array<{ id: string; name: string }>
+  playlistTitle: string
+  collectionChoice: CollectionChoice
+  onCollectionChoiceChange: (c: CollectionChoice) => void
   onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => void
   onCancel: () => void
 }
 
-export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
+export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, collections, playlistTitle, collectionChoice, onCollectionChoiceChange, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
   const [expandedSection, setExpandedSection] = useState<'captions' | 'unavailable' | null>('unavailable')
 
   // Dedup on the VIDEO, not just the same method (Task 3 dedup-gap fix, 2026-09-12). Must match the
@@ -70,16 +78,21 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
 
   // Live recalculate summary
   const extractableResults = localResults.filter(r => r.status !== 'unavailable')
+  // A duplicate is never sent to the backend at all (PlaylistTab excludes it from video_ids before
+  // POSTing) — it costs 0 credits and must not occupy a free-slot position, or the preview here would
+  // show a different number than what Python actually reserves (A3; "bon en reservering blijven exact
+  // gelijk aan wat Python reserveert").
+  const reservableResults = extractableResults.filter(r => !r.isDuplicate)
 
   // Free slots are per-method (ADR-081): the first N CAPTION videos by playlist position are free,
   // whisper never takes a slot. Single source: playlistFreeIds (mirrors the backend + the receipt).
   // A caption video is charged (1 credit) iff it falls outside that free set.
   const freeVideoIds = playlistFreeIds(
-    extractableResults.map(r => r.videoId),
-    extractableResults.filter(r => r.status === 'needs_whisper').map(r => r.videoId),
+    reservableResults.map(r => r.videoId),
+    reservableResults.filter(r => r.status === 'needs_whisper').map(r => r.videoId),
   )
-  const captionCredits = extractableResults.filter(r => r.status === 'has_captions' && !freeVideoIds.has(r.videoId)).length
-  const whisperCredits = extractableResults.filter(r => r.status === 'needs_whisper').reduce((acc, r) => acc + r.estimatedCredits, 0)
+  const captionCredits = reservableResults.filter(r => r.status === 'has_captions' && !freeVideoIds.has(r.videoId)).length
+  const whisperCredits = reservableResults.filter(r => r.status === 'needs_whisper').reduce((acc, r) => acc + r.estimatedCredits, 0)
   const totalExtractionCredits = captionCredits + whisperCredits
 
   const currentSummary = {
@@ -152,6 +165,29 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
       </div>
 
       <div className="p-6 space-y-6">
+        {/* "Add to" picker (A3) — defaults to the collection already holding videos from this
+            playlist (set by the caller), otherwise a new one named after the playlist. Never
+            auto-creates a second collection for a course that's already being tracked. */}
+        {collections.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="playlist-collection-choice" className="text-xs font-bold text-fg-strong">Add to</label>
+            <select
+              id="playlist-collection-choice"
+              value={collectionChoice.mode === 'existing' ? collectionChoice.id : 'new'}
+              onChange={(e) => {
+                const v = e.target.value
+                onCollectionChoiceChange(v === 'new' ? { mode: 'new' } : { mode: 'existing', id: v })
+              }}
+              className="h-9 min-w-0 flex-1 border-2 border-border-strong bg-bg px-2 text-sm text-fg-strong sm:flex-none"
+            >
+              <option value="new">New collection ({playlistTitle || 'this playlist'})</option>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Cost breakdown (B1, ADR-080) — one bar in method colours replaces the three statcards.
             Zero-count segments do not render; unavailable shows in red only when there are any. */}
         <CostBreakdown

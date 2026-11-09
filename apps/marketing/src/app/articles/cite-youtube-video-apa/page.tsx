@@ -9,9 +9,12 @@ import { FREE_TIER } from "@indxr/shared/lib/pricing"
 // without page numbers → time stamp; sentence case in reference lists; transcripts of audiovisual works).
 // INDXR's citation is described exactly as buildCitation in apps/app/src/components/library/SourceCard.tsx
 // (and its port _build_citation in backend/mcp_server.py) outputs it: channel as author ("Unknown
-// channel" fallback), "(YYYY, Month D)" or "(n.d.)", the title VERBATIM (no sentence-casing, plain text so
-// no italics), "[Video]. YouTube.", and a https://youtu.be/<id> link; uploads → "<title> [Audio
-// recording]. (<date>)." The Justice example follows docs/guides/library.
+// channel" fallback), "(YYYY, Month D)" or "(n.d.)", the title VERBATIM (no sentence-casing — proper
+// nouns would break under an automatic lowercase pass), "[Video]. YouTube.", and a
+// https://youtu.be/<id> link; uploads → "<title> [Audio recording]. (<date>)." Since 2026-11-09 the
+// Copy citation button also writes a text/html variant (buildCitationHtml) with the title in <em>, so
+// pasting into a rich-text document italicises it automatically — sentence case is still a manual fix.
+// The Justice example follows docs/guides/library.
 
 const SLUG = "cite-youtube-video-apa"
 
@@ -47,7 +50,7 @@ const faqs = [
   },
   {
     q: "Is the citation INDXR gives me ready to paste?",
-    a: "Nearly. It has the right parts in the right order, but it copies the title exactly as YouTube shows it and, as plain text, cannot italicise it. Change the title to sentence case and italicise it in your document.",
+    a: "Nearly. It has the right parts in the right order, and pasting into a rich-text document (Word, Google Docs, Notion) italicises the title automatically. It still copies the title exactly as YouTube shows it — INDXR doesn't rewrite it, since an automatic lowercase pass breaks proper nouns — so change it to sentence case yourself in your document.",
   },
 ]
 

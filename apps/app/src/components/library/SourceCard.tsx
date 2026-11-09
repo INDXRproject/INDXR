@@ -46,6 +46,24 @@ export function buildCitation(p: { title: string; channel?: string | null; video
   return `${p.title} [Audio recording]. (${date}).`;
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Same reference as buildCitation, as HTML — the title in <em> (APA italicises a stand-alone
+ *  work's title). Pasted into a rich-text destination (Word, Docs, Notion, …) the title comes out
+ *  italic; a plain-text paste falls back to buildCitation's output unchanged. No sentence-case
+ *  conversion — YouTube titles keep proper nouns that an automatic lowercase pass would break. */
+function buildCitationHtml(p: { title: string; channel?: string | null; videoId?: string | null; publishedAt?: string | null }): string {
+  const date = apaDate(p.publishedAt) ?? "n.d.";
+  const title = `<em>${escapeHtml(p.title)}</em>`;
+  if (p.videoId) {
+    const author = escapeHtml(p.channel?.trim() || "Unknown channel");
+    return `${author}. (${date}). ${title} [Video]. YouTube. https://youtu.be/${p.videoId}`;
+  }
+  return `${title} [Audio recording]. (${date}).`;
+}
+
 export interface SourceCardProps {
   transcriptId: string;
   /** YouTube upload date (YYYY-MM-DD) when already stored; fetched once on first view otherwise. */
@@ -78,6 +96,7 @@ export function SourceCard(p: SourceCardProps) {
     return () => { cancelled = true; };
   }, [publishedAt, p.videoId, p.transcriptId]);
   const citation = buildCitation({ ...p, publishedAt });
+  const citationHtml = buildCitationHtml({ ...p, publishedAt });
   const words = p.characterCount ? Math.round(p.characterCount / 5).toLocaleString("en") : null;
   const lang = languageName(p.language);
   const thumb = p.thumbnailUrl || (p.videoId ? `https://i.ytimg.com/vi/${p.videoId}/hqdefault.jpg` : null);
@@ -85,7 +104,19 @@ export function SourceCard(p: SourceCardProps) {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(citation);
+      // Rich-text variant when the browser supports it (ClipboardItem) — the title comes out
+      // italic when pasted into Word/Docs/Notion; a plain-text paste still gets buildCitation's
+      // output unchanged. Falls back to plain text in browsers without ClipboardItem.
+      if (typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/plain": new Blob([citation], { type: "text/plain" }),
+            "text/html": new Blob([citationHtml], { type: "text/html" }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(citation);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -180,7 +211,8 @@ export function SourceCard(p: SourceCardProps) {
       </dl>
       <div className="border-t-2 border-fg-strong p-4">
         <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.06em] text-fg-muted">Cite</p>
-        <p className="mb-3 select-all break-words text-xs leading-relaxed text-fg" dir="auto">{citation}</p>
+        <p className="mb-1 select-all break-words text-xs leading-relaxed text-fg" dir="auto">{citation}</p>
+        <p className="mb-3 text-[11px] text-fg-muted">Check capitals: APA uses sentence case.</p>
         {CopyBtn}
       </div>
     </div>

@@ -75,7 +75,7 @@ export function isNarrowed(f: LibraryFilters): boolean {
 }
 
 // Duration buckets in seconds.
-const DURATION_BOUNDS: Record<NonNullable<LibraryFilters["duration"]>, [number, number | null]> = {
+export const DURATION_BOUNDS: Record<NonNullable<LibraryFilters["duration"]>, [number, number | null]> = {
   lt10: [0, 600],
   "10to30": [600, 1800],
   "30to60": [1800, 3600],
@@ -83,7 +83,7 @@ const DURATION_BOUNDS: Record<NonNullable<LibraryFilters["duration"]>, [number, 
 };
 
 /** Cutoff ISO timestamp for the "Added" filter, computed against `now`. */
-function addedCutoff(added: NonNullable<LibraryFilters["added"]>, now: Date): string {
+export function addedCutoff(added: NonNullable<LibraryFilters["added"]>, now: Date): string {
   if (added === "today") {
     const d = new Date(now);
     d.setHours(0, 0, 0, 0);
@@ -161,6 +161,29 @@ export function applyLibrarySort(query: QueryBuilder, f: LibraryFilters): QueryB
   if (f.sort === "duration") return query.order("duration", { ascending, nullsFirst: false });
   if (f.sort === "title") return query.order("title", { ascending });
   return query.order("created_at", { ascending });
+}
+
+/**
+ * Params for the search_transcripts_ranked RPC (the same one backend/mcp_server.py's
+ * search_library calls, ADR-108 follow-up "Gevonden 9-11" A2) — used only when `f.q` is set, so
+ * search results rank by title-match then ts_rank instead of the arbitrary row order a plain
+ * LIMIT gives. user_id/collection_id/limit/offset are page-specific, supplied by the caller.
+ */
+export function toSearchRpcParams(f: LibraryFilters, now: Date) {
+  const [durationMin, durationMax] = f.duration ? DURATION_BOUNDS[f.duration] : [null, null];
+  return {
+    p_query: f.q.trim(),
+    p_unread_only: f.status === "unread",
+    p_source: f.source,
+    p_has_summary: f.has.includes("summary") ? true : null,
+    p_has_edit: f.has.includes("edited") ? true : null,
+    p_has_rag: f.has.includes("rag") ? true : null,
+    p_duration_min: durationMin,
+    p_duration_max: durationMax,
+    p_added_after: f.added ? addedCutoff(f.added, now) : null,
+    p_sort: f.sort,
+    p_sort_asc: f.dir === "asc",
+  };
 }
 
 // ── Chip descriptors ────────────────────────────────────────────────────────

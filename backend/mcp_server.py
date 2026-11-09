@@ -192,14 +192,6 @@ async def list_collections() -> dict[str, Any]:
 
 # ── Tool 2: search_library ───────────────────────────────────────────────────
 
-def _fts_prefix_query(token: str) -> str | None:
-    """Port of apps/app/src/components/library/filters.ts ftsPrefixQuery — one search token into a
-    prefix tsquery string. Only letters/digits survive, so tsquery operators and PostgREST's
-    comma/paren delimiters can never reach the query string."""
-    parts = [p for p in re.split(r"[^\w]+", token, flags=re.UNICODE) if p]
-    return " & ".join(f"{p.lower()}:*" for p in parts) if parts else None
-
-
 def _excerpt_around(text: str, needle: str, radius: int = 150) -> str:
     """±radius chars of `text` around the first case-insensitive hit of `needle` (≈300 chars total)."""
     idx = text.lower().find(needle.lower())
@@ -244,20 +236,31 @@ async def search_library(query: str, collection_id: str | None = None, limit: in
         collection_name = col.get("name")
         collection_id = cid
 
-    q = (
-        db.table("transcripts")
-        .select("id, title, channel, video_id, collection_id, duration, transcript, edited_content")
-        .eq("user_id", user_id)
-    )
-    if collection_id:
-        q = q.eq("collection_id", collection_id)
-    for tok in tokens:
-        fts = _fts_prefix_query(tok)
-        if not fts:
-            continue
-        q = q.or_(f'title.ilike.%{tok}%,channel.ilike.%{tok}%,video_id.ilike.%{tok}%,search_tsv.fts(simple)."{fts}"')
+    ranked = db.rpc(
+        "search_transcripts_ranked",
+        {
+            "p_user_id": user_id,
+            "p_query": search,
+            "p_collection_id": collection_id,
+            "p_limit": limit,
+        },
+    ).execute().data or []
 
-    rows = q.limit(limit).execute().data or []
+    # The ranked RPC returns only list columns (title match / ts_rank first) — fetch the heavy
+    # transcript/edited_content for just these ids (for the excerpt), preserving rank order.
+    ranked_ids = [r["id"] for r in ranked]
+    text_by_id: dict[str, dict[str, Any]] = {}
+    if ranked_ids:
+        text_rows = (
+            db.table("transcripts")
+            .select("id, transcript, edited_content")
+            .in_("id", ranked_ids)
+            .execute()
+            .data
+            or []
+        )
+        text_by_id = {t["id"]: t for t in text_rows}
+    rows = [{**r, **text_by_id.get(r["id"], {})} for r in ranked]
 
     first_token = tokens[0] if tokens else search
     results: list[dict[str, Any]] = []

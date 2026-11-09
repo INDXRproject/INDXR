@@ -13,6 +13,7 @@ import {
   parseFilters,
   applyLibraryFilters,
   applyLibrarySort,
+  toSearchRpcParams,
   filterChips,
   isNarrowed,
   FILTER_PARAMS,
@@ -159,12 +160,30 @@ function LibraryContent() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      const from = (page - 1) * pageSize;
+
+      // A search term ranks by title-match then relevance (search_transcripts_ranked, ADR-108
+      // follow-up A2) — the plain view query below has no ORDER BY for this case, so results came
+      // back in arbitrary row order. No search term: unchanged view-based filter/sort/paginate.
+      if (filters.q.trim()) {
+        const { data, error } = await supabase.rpc("search_transcripts_ranked", {
+          p_user_id: user.id,
+          p_collection_id: selectedCollectionId,
+          p_limit: pageSize,
+          p_offset: from,
+          ...toSearchRpcParams(filters, new Date()),
+        });
+        if (error) throw error;
+        const rows = (data ?? []) as Array<Transcript & { total_count: number }>;
+        setTranscripts(rows.map(({ total_count: _total_count, ...t }) => t as unknown as Transcript));
+        setFilteredCount(rows[0]?.total_count ?? 0);
+        return;
+      }
+
       let query = supabase.from("transcripts_list").select(LIST_COLUMNS, { count: "exact" });
       if (selectedCollectionId) query = query.eq("collection_id", selectedCollectionId);
       query = applyLibraryFilters(query, filters, new Date());
       query = applyLibrarySort(query, filters);
-
-      const from = (page - 1) * pageSize;
       query = query.range(from, from + pageSize - 1);
 
       const { data, count, error } = await query;
