@@ -54,8 +54,8 @@ export default function DocsAiAssistantsPage() {
         />
         <h1 className="text-4xl font-bold leading-[1] tracking-[-0.04em] text-[var(--fg-strong)] mb-5 sm:text-5xl">Claude &amp; ChatGPT</h1>
         <DefinitionLeadOpening>
-          Connect your INDXR library to an AI assistant, and it can search your transcripts and answer
-          questions about them, quoting the passage and the minute it was said. The connection can only
+          Connect your INDXR library to an AI assistant, and next to everything it already knows and can look
+          up, it can search your own transcripts and quote the passage and the minute it was said. The connection can only
           read your library, never change it, and it is free on every account.
         </DefinitionLeadOpening>
 

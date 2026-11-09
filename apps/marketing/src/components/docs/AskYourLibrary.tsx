@@ -9,8 +9,8 @@ export function AskYourLibrary({ lead }: { lead?: string }) {
       <p className="font-bold text-[var(--fg-strong)]">Ask Claude or ChatGPT about it</p>
       <p className="mt-1 text-sm leading-relaxed text-[var(--fg)]">
         {lead ?? "Everything you transcribe is kept in your library, with its source and a citation."} Connect the
-        library to Claude or ChatGPT and the assistant answers from your own transcripts, with quotes and
-        timestamps. Read-only, free on every account.{" "}
+        library to Claude or ChatGPT and the assistant can use your transcripts next to everything else it
+        knows, with quotes and timestamps. Read-only, free on every account.{" "}
         <Link href="/docs/guides/ai-assistants" className="font-bold text-[var(--link)] hover:underline">
           How to connect
         </Link>

@@ -17,7 +17,7 @@ const welcome = FREE_TIER.WELCOME_CREDITS
 
 const title = "Use Claude or ChatGPT with your own sources"
 const metaDescription =
-  "Claude and ChatGPT paraphrase from memory and can invent quotes. Give them your own transcripts instead, and get answers with the passage, the minute and the source."
+  "Claude and ChatGPT know a lot, but not your lectures and interviews. Add your own transcripts, organised and cited, and use them alongside everything else."
 
 export const metadata: Metadata = {
   alternates: { canonical: `/articles/${SLUG}` },
@@ -71,25 +71,25 @@ export default function ClaudeChatGptOwnSourcesPage() {
       sources={sources}
     >
       <p>
-        Ask Claude or ChatGPT about a lecture you watched and you get a confident, well-written answer. Ask
-        for a quote and you get one, in quotation marks. The trouble is that you cannot tell whether the
-        lecturer said it. The model is answering from what it absorbed in training, not from the lecture.
+        Claude and ChatGPT know a great deal and can search the web. What they do not have is your material:
+        the lecture series you are working through, the interviews behind your piece, the talks you are drawing
+        on for a book. Ask about those and the model guesses, and a guessed quote looks exactly like a real one.
       </p>
 
       <p>
-        For anyone who studies, researches or writes, that is the wrong way round. You want the assistant
-        to work from your sources: the lectures, interviews, podcasts and videos you chose. This article
-        explains why the default goes wrong, what changes when the assistant can read your sources, and how
-        to set that up with INDXR.
+        For anyone who studies, researches or writes, the best setup is both: the model&apos;s knowledge and the
+        web, plus your own sources, organised and cited, for the parts that matter. This article explains what
+        changes when the assistant can read your sources, how to combine them with everything else or keep it to
+        them, and how to set that up with INDXR.
       </p>
 
-      <h2>Why the answer comes from memory</h2>
+      <h2>What the assistant cannot see</h2>
 
       <p>
-        A language model does not look things up unless it is given a way to. Without one, it writes the
-        most plausible answer from patterns it learned in training. For famous material that is often
-        roughly right. For a specific lecture, a niche podcast or an interview you recorded yourself, the
-        model has little or nothing to go on, and it fills the gap with something that sounds right.
+        A language model knows what it learned in training and what it can find on the web. For famous
+        material that is often enough. A specific lecture, a niche podcast or an interview you recorded yourself
+        is usually in neither, so the model has little to go on, and it fills the gap with something that sounds
+        right.
       </p>
 
       <p>
@@ -98,12 +98,17 @@ export default function ClaudeChatGptOwnSourcesPage() {
         not mark the difference for you.
       </p>
 
-      <h2>The fix: give it the sources</h2>
+      <h2>The fix: add your sources</h2>
 
       <p>
-        The reliable fix is old advice: work from the source, not from memory. For an assistant, that means
-        the text it reasons over should be the transcript itself, and every claim it makes should point back
-        to a place in that transcript.
+        The fix is old advice: when a claim matters, go to the source. For an assistant, that means it can open
+        the transcript and point to a place in it, while still using everything else it brings: background,
+        context, the wider literature, a web search.
+      </p>
+
+      <p>
+        You decide the mix per question. &ldquo;Using my Early Middle Ages collection and what you know about the
+        period&hellip;&rdquo; combines the two. &ldquo;Answer only from my Kagan lectures&rdquo; keeps it to your sources.
       </p>
 
       <p>
@@ -157,7 +162,8 @@ export default function ClaudeChatGptOwnSourcesPage() {
 
       <p>
         The pattern is the same in each: name the collection or the source, and ask for quotes with
-        timestamps. That pushes the assistant to search and read rather than answer from memory.
+        timestamps. That makes the assistant search and read your sources for the specifics, on top of what it
+        already knows.
       </p>
 
       <h3>Study</h3>

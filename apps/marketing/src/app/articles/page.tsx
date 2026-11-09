@@ -19,7 +19,7 @@ const freeVideos = FREE_TIER.PLAYLIST_FREE_VIDEOS
 
 const articles = [
   // Research with your sources (positioning 9-11-2026): lead category.
-  { href: "/articles/claude-chatgpt-own-sources", label: "Claude or ChatGPT With Your Own Sources", category: "Research", description: "Stop the model quoting from memory: give it your transcripts, and get answers with the passage, the minute and the source." },
+  { href: "/articles/claude-chatgpt-own-sources", label: "Claude or ChatGPT With Your Own Sources", category: "Research", description: "Claude and ChatGPT know a lot, but not your lectures and interviews. Add them, organised and cited, and use them together." },
   { href: "/articles/transcribe-interviews-journalism", label: "Transcribing Interviews", category: "Research", description: "For journalists and non-fiction writers: transcribe interviews, check every quote against the recording, and find every mention." },
   { href: "/articles/cite-youtube-video-apa", label: "Cite a YouTube Video in APA 7", category: "Research", description: "The reference format, the rules, worked examples, and how to cite a quote with its timestamp." },
   { href: "/articles/youtube-to-notes", label: "Study Notes From a Lecture Playlist", category: "Research", description: "A playlist becomes a cited collection; Claude, ChatGPT or INDXR's own summary writes notes with a reference per section." },

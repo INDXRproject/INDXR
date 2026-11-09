@@ -4,7 +4,7 @@
 
 ## Copy 9-11 (copy-rewrite: Claude/ChatGPT-koppeling erbij — LEIDEND, nog niet in de PH-draft gezet)
 - **Tagline:** "All your sources. One searchable archive." (ongewijzigd)
-- **Description (472/500):** "INDXR turns lectures, podcasts, YouTube videos and your own recordings into clean transcripts (speakers, punctuation, timestamps), kept with their source in one archive you can search word for word. / Connect it to Claude or ChatGPT and ask your own sources: the assistant searches your transcripts and answers with quotes and the minute they were said. Read-only, free. / YouTube captions are free. AI transcription is pay-per-minute: credits never expire, no subscription."
+- **Description (467/500):** "INDXR turns lectures, podcasts, YouTube videos and your own recordings into clean transcripts (speakers, punctuation, timestamps), kept with their source in one archive you can search word for word. / Connect it to Claude or ChatGPT and your sources sit next to everything the assistant knows and can look up, quoted with the minute they were said. Read-only, free. / YouTube captions are free. AI transcription is pay-per-minute: credits never expire, no subscription."
 - **Eerste maker-comment, alinea 2:** de koppeling als haak: "You can also connect your library to Claude or ChatGPT (MCP, read-only) and ask questions across your own sources, with answers that cite the transcript and the timestamp." Link: indxr.ai/connect.
 - **Galerij:** kaart toevoegen met de chat uit §02 van de homepage (Claude-antwoord met citaat + 8:41-chip); screenshots uit de showcasebibliotheek (Kagan 26, Freedman 22, Sandel 12).
 

@@ -155,8 +155,8 @@ export default async function LandingPage() {
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
               Lectures, interviews, podcasts and videos become transcripts you keep, each with its source. Search
-              them word for word, cite them, or work with them in Claude and ChatGPT: answers that quote your
-              sources, not the internet.
+              them word for word, cite them, or bring them into Claude and ChatGPT: everything the assistant knows
+              and can look up, plus the sources you chose, organised and cited.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row">
               <Link href="#try" className={BTN_PRIMARY}>
@@ -228,17 +228,17 @@ export default async function LandingPage() {
       <IndexSection n="02" label="Ask your AI">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
-            <h2 className={H2}>Claude and ChatGPT, working from your sources.</h2>
+            <h2 className={H2}>Claude and ChatGPT, with your sources on hand.</h2>
             <p className="mt-6 text-lg leading-relaxed text-[var(--fg-subtle)]">
-              An AI is only as good as what it reads. Connect your library and it reads yours: the lectures you
-              are studying, the interviews behind your article, every talk you draw on for a book. Ask it to
-              compare, summarise or find the passage, and it answers with quotes and timestamps you can check
-              against the source.
+              Claude and ChatGPT already know a lot and can search the web. Connect your library and they also
+              have your own material: the lectures you are studying, the interviews behind your article, the
+              talks you draw on for a book, organised and with every source on file. Use it alongside everything
+              else, or keep the answer to your sources only. Every quote comes with a timestamp you can check.
             </p>
             <ul className="mt-6 space-y-2 text-[var(--fg)]">
               {[
                 "Read-only: it can search and read, never change or delete.",
-                "Answers from your sources, not from what the model half-remembers.",
+                "Your sources next to the web and the model's own knowledge, or on their own: you choose per question.",
                 "Ask across a whole course or project at once, not one file at a time.",
                 "Free with every account. Works in Claude, Claude Code and ChatGPT (paid plans).",
               ].map((t) => (

@@ -177,7 +177,7 @@ export default function TranscribeInterviewsPage() {
       </blockquote>
 
       <p>
-        The assistant answers from your transcripts, not from its own memory, and points to the minute for
+        The assistant takes the quotes from your transcripts, next to whatever background it already knows, and points to the minute for
         each quote. That makes a first draft or a briefing much faster. It does not make the assistant the
         authority on what was said: you are. Every quote it hands you still gets the same check against the
         recording. The setup is in the <Link href="/docs/guides/ai-assistants">Claude and ChatGPT guide</Link>,
