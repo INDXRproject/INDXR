@@ -62,6 +62,15 @@ class OpaqueTokenVerifier(TokenVerifier):
         if expires_at < datetime.now(timezone.utc):
             return None
 
+        # Best-effort "last used" stamp for the Connected apps settings screen (Gevonden 9-11 B6) —
+        # never blocks/fails the actual auth decision on an update error.
+        try:
+            db.table("oauth_tokens").update({"last_used_at": datetime.now(timezone.utc).isoformat()}).eq(
+                "token_hash", token_hash
+            ).execute()
+        except Exception:
+            logger.warning("oauth_tokens last_used_at update failed (non-fatal)", exc_info=True)
+
         return AccessToken(
             token=token,
             client_id=row["client_id"],

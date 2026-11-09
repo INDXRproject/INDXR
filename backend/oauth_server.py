@@ -431,3 +431,96 @@ async def revoke_token(token: str = Form(...), token_type_hint: Optional[str] = 
             db.table("oauth_tokens").update({"revoked_at": now}).eq("token_hash", token_hash).execute()
     # RFC 7009 §2.2: always 200, regardless of whether the token existed — never leak that.
     return JSONResponse({}, headers=NO_STORE_HEADERS)
+
+
+# ── Connected apps (Gevonden 9-11 B6) ───────────────────────────────────────────
+# User-facing — the browser calls these with the user's own session, never the raw opaque token
+# (that never reaches the app at all). Same "verify the caller's own Supabase session" pattern as
+# decide_authorization above.
+
+def _verify_user_session(authorization: str) -> Optional[str]:
+    if not authorization.startswith("Bearer "):
+        return None
+    db = get_supabase_client()
+    user_response = db.auth.get_user(authorization[len("Bearer "):])
+    if not user_response or not user_response.user:
+        return None
+    return user_response.user.id
+
+
+@oauth_router.get("/oauth/connections")
+async def list_connections(authorization: str = Header(default=""), _: None = Depends(verify_backend_secret)):
+    user_id = _verify_user_session(authorization)
+    if not user_id:
+        return _oauth_error(401, "unauthorized", "Invalid or expired session.")
+
+    db = get_supabase_client()
+    tokens = (
+        db.table("oauth_tokens")
+        .select("client_id, created_at, last_used_at, revoked_at")
+        .eq("user_id", user_id)
+        .execute()
+        .data
+        or []
+    )
+    by_client: dict[str, dict] = {}
+    for t in tokens:
+        if t.get("revoked_at"):
+            continue
+        agg = by_client.setdefault(t["client_id"], {"connected_at": t["created_at"], "last_used_at": t.get("last_used_at")})
+        if t["created_at"] < agg["connected_at"]:
+            agg["connected_at"] = t["created_at"]
+        if t.get("last_used_at") and (not agg["last_used_at"] or t["last_used_at"] > agg["last_used_at"]):
+            agg["last_used_at"] = t["last_used_at"]
+
+    if not by_client:
+        return JSONResponse({"connections": []}, headers=NO_STORE_HEADERS)
+
+    clients = (
+        db.table("oauth_clients")
+        .select("id, client_name, redirect_uris")
+        .in_("id", list(by_client.keys()))
+        .execute()
+        .data
+        or []
+    )
+    connections = []
+    for c in clients:
+        agg = by_client[c["id"]]
+        redirect_uri = (c.get("redirect_uris") or [""])[0]
+        try:
+            host = urlparse(redirect_uri).hostname or redirect_uri
+        except Exception:
+            host = redirect_uri
+        redirect_host = "A program on your own computer" if host in LOOPBACK_HOSTS else host
+        connections.append(
+            {
+                "client_id": c["id"],
+                "name": c["client_name"],
+                "redirect_host": redirect_host,
+                "connected_at": agg["connected_at"],
+                "last_used_at": agg["last_used_at"],
+            }
+        )
+    connections.sort(key=lambda c: c["connected_at"], reverse=True)
+    return JSONResponse({"connections": connections}, headers=NO_STORE_HEADERS)
+
+
+@oauth_router.post("/oauth/connections/{client_id}/disconnect")
+async def disconnect_connection(client_id: str, authorization: str = Header(default=""), _: None = Depends(verify_backend_secret)):
+    user_id = _verify_user_session(authorization)
+    if not user_id:
+        return _oauth_error(401, "unauthorized", "Invalid or expired session.")
+
+    db = get_supabase_client()
+    now = _now().isoformat()
+    # Every token this user ever got from this client — access and refresh alike, any family.
+    # The next MCP call with any of them hits the same expired/revoked check as everywhere else
+    # (OpaqueTokenVerifier.verify_token) → 401.
+    db.table("oauth_tokens").update({"revoked_at": now}).eq("user_id", user_id).eq("client_id", client_id).is_(
+        "revoked_at", "null"
+    ).execute()
+    # Authorizations are short-lived (10-minute TTL) and single-use, but clear out any stray
+    # pending/approved-not-yet-exchanged row too — "alle tokens en autorisaties".
+    db.table("oauth_authorizations").delete().eq("user_id", user_id).eq("client_id", client_id).execute()
+    return JSONResponse({"success": True}, headers=NO_STORE_HEADERS)

@@ -7,6 +7,7 @@ import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { pageOg } from "@/lib/pageOg"
 import { FREE_TIER } from "@indxr/shared/lib/pricing"
+import { appHref } from "@indxr/shared/lib/cross-host-links"
 
 // The MCP connector (ADR-108): a read-only remote MCP server at app.indxr.ai/api/mcp, OAuth 2.1 with
 // dynamic client registration. Tool list, limits and block sizes mirror backend/mcp_server.py.
@@ -147,9 +148,10 @@ export default function DocsAiAssistantsPage() {
 
         <AnchorHeading as="h2">Disconnect</AnchorHeading>
         <p className={P}>
-          Remove the INDXR connector in Claude or ChatGPT and its access ends. To have every connection revoked at
-          once, email <a href="mailto:support@indxr.ai" className="text-[var(--link)] hover:underline">support@indxr.ai</a>.
-          What the assistant read during a chat is kept by that provider under its own terms.
+          Remove the INDXR connector in Claude or ChatGPT and its access ends. To revoke it from INDXR's side too —
+          every token that app ever got — go to{" "}
+          <a href={appHref("/dashboard/settings")} className="text-[var(--link)] hover:underline">Settings → Connected apps</a>{" "}
+          and click Disconnect. What the assistant read during a chat is kept by that provider under its own terms.
         </p>
 
         <RelatedTopicsList

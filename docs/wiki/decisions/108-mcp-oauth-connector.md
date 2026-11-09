@@ -78,9 +78,32 @@ controleert".
 - Geen Supabase-managed OAuth-server meer nodig — volledig zelf beheerd, dus ook zelf
   verantwoordelijk voor tokenrotatie/-opruiming (lazy cleanup: clients zonder token binnen 30 dagen
   worden bij de volgstvolgende registratie opgeruimd).
-- Geen "ingetrokken apps"-UI in de app nog (fase 2, zie known-issues.md).
 - De oude Custom Access Token Hook-functie is gedropt (migratie
   `20261108200119_drop_custom_access_token_hook.sql`) nadat de Dashboard-toggle bevestigd uit stond.
+
+## Fase 2 — Connected apps (2026-11-09, Gevonden 9-11 B6)
+
+Instellingen toont nu een **Connected apps**-blok: per gekoppelde client de naam, de host waarheen
+teruggestuurd wordt (loopback → "A program on your own computer", zelfde regel als het
+consent-scherm), wanneer gekoppeld en wanneer laatst gebruikt, en een **Disconnect**-knop.
+
+- Nieuwe kolom `oauth_tokens.last_used_at` (migratie `20261109171153_oauth_tokens_last_used_at.sql`),
+  gestempeld door `OpaqueTokenVerifier.verify_token` (`mcp_server.py`) op elke geauthenticeerde
+  MCP-aanroep — best-effort, blokkeert de auth-beslissing nooit bij een schrijffout.
+- Twee nieuwe endpoints in `oauth_server.py`, zelfde patroon als `decide_authorization` (backend-secret
+  + de gebruiker's eigen Supabase-sessietoken, nooit een door Next.js beweerde user_id):
+  `GET /oauth/connections` (lijst, gegroepeerd per client — alleen clients met minstens één
+  niet-ingetrokken token) en `POST /oauth/connections/{client_id}/disconnect` (zet `revoked_at` op
+  ALLE tokens van (user_id, client_id), verwijdert eventuele resterende `oauth_authorizations`-rijen).
+  De browser ziet het ruwe opaque token nooit — Disconnect werkt dus per client_id, niet per token.
+- Next.js: `app/actions/connectedApps.ts` (server actions, forwarden de sessie als
+  `Authorization: Bearer <access_token>`) + `ConnectedAppsCard.tsx` in Instellingen. Leeg → "No AI
+  assistants connected" met een link naar `/docs/guides/ai-assistants`.
+- Bewijs: testclient gekoppeld, verschijnt in de lijst met host + datum; Disconnect ingedrukt →
+  verdwijnt uit de lijst; de volgende MCP-call met het (nog geldige, niet-verlopen) access-token van
+  die client geeft 401.
+- `docs/guides/ai-assistants`'s "Disconnect"-sectie wijst nu naar Settings → Connected apps i.p.v.
+  mailen naar support; de "fase 2"-regel in known-issues.md is verwijderd.
 
 ## Poort — bewezen, echte output (2026-11-08)
 

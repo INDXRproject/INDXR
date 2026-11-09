@@ -649,11 +649,6 @@ rijen bij aanvang: geen (0 op alle paden). Zie ADR-019 + `backend/idempotency.py
 ## YouTube-captions zonder interpunctie → alinea's breken midden in een zin (2026-11-07)
 Oude/automatische YouTube-captions (bv. Harvard Justice, 2009) hebben geen punten. INDXR neemt captions over zoals YouTube ze levert en breekt alinea's dan op pauzes, die soms midden in een zin vallen. **Besluit Khidr 7-11: zo laten** — wie nette zinnen wil, gebruikt AI-transcriptie (zet interpunctie + sprekers). Marketing claimt daarom geen interpunctie voor captions (home §02/§04 gelabeld "AI transcription").
 
-## MCP-connector — geen intrekken-UI in de app (fase 2, 2026-11-08)
-Fase 1 (ADR-108) heeft wel `POST /oauth/revoke` server-side, maar geen "Connected apps"-scherm in
-Instellingen waar een gebruiker zelf een gekoppelde AI kan loskoppelen. Tot fase 2 kan dit alleen via
-een directe DB-ingreep (service-role) op `oauth_tokens`/`oauth_clients`.
-
 ## Upstash rate limiting staat wél aan in productie (CLAUDE.md is hier verouderd, 2026-11-09)
 CLAUDE.md zegt nog "uit in prod tot Upstash env-vars terug" — `railway variables --service api` laat
 zien dat `UPSTASH_REDIS_REST_URL`/`_TOKEN` nu wél gezet zijn, en een echte test (65-70 gelijktijdige

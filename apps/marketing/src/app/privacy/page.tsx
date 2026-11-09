@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-[var(--fg-muted)] mb-10">
-          Last updated: 2026-08-30
+          Last updated: 2026-11-09
         </p>
 
         <div className="prose-content text-[var(--fg-subtle)] leading-relaxed space-y-8">
@@ -150,6 +150,34 @@ export default function PrivacyPage() {
               advertisement attribution. Some of these providers are based outside the
               EU; where that’s the case (including the Google transfer to the United States), the
               transfer is protected by the European Commission’s Standard Contractual Clauses.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-[var(--fg)] mb-3">AI assistants (optional)</h2>
+            <p>
+              You can connect your library to Claude or ChatGPT so the assistant can read your sources
+              alongside its own knowledge and the web. This is off by default — you turn it on yourself,
+              by signing in and approving the connection, and you choose, question by question, whether
+              the assistant uses your sources at all.
+            </p>
+            <p className="mt-4">
+              The connection is read-only. It can only ever send what the assistant actually asks
+              for — the titles and collections in your library, search results, the transcript text it
+              reads, a source’s citation and metadata, and an AI summary you already made. It never gets
+              your audio files, account details, or payment information, and it can’t change, delete, or
+              create anything, or spend credits. Once the assistant has that data, Anthropic’s or
+              OpenAI’s own privacy policy governs what happens to it from there — INDXR doesn’t control
+              that part.
+            </p>
+            <p className="mt-4">
+              We keep the connection itself — a random token, never a password or a copy of your
+              session — for up to 90 days, or until you disconnect, whichever comes first; the
+              short-lived access token it renews with lasts one hour. You can disconnect an assistant at
+              any time from <strong>Settings → Connected apps</strong> in the app, which immediately
+              revokes every token it was ever given — the next request from it is refused. Removing the
+              connector in Claude or ChatGPT itself stops new requests from reaching us, but disconnecting
+              in INDXR is what actually revokes access on our side.
             </p>
           </section>
 

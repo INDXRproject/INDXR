@@ -7,6 +7,7 @@ import { EmailNotificationsToggle } from "@/components/dashboard/settings/EmailN
 import { MarketingOptOutToggle } from "@/components/dashboard/settings/MarketingOptOutToggle"
 import { LibraryPageSizeSelect } from "@/components/dashboard/settings/LibraryPageSizeSelect"
 import { DeleteAccountCard } from "@/components/dashboard/settings/DeleteAccountCard"
+import { ConnectedAppsCard } from "@/components/dashboard/settings/ConnectedAppsCard"
 import { ThemeToggle } from "@indxr/shared/components/ui/theme-toggle"
 import { PageHeader } from "@indxr/shared/components/PageHeader"
 
@@ -75,6 +76,9 @@ export default async function SettingsPage() {
 
         {/* Developer Exports */}
         <DeveloperExportsCard initialChunkSize={chunkSize} />
+
+        {/* Connected apps (ADR-108 fase 2) */}
+        <ConnectedAppsCard />
 
         {/* Danger zone — gescheiden onderaan, weg van credits/accountoverzicht */}
         <div className="pt-4 mt-4 border-t-2 border-border-strong">
