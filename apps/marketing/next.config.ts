@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
       { source: '/ingest/:path*', destination: `${POSTHOG_HOST}/:path*` },
     ];
   },
+  // Press kit images (Product Hunt / directory galleries) may be fetched cross-origin by upload tools.
+  async headers() {
+    return [{ source: '/press/:path*', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }] }]
+  },
   async redirects() {
     // Pre-launch: never submitted to Search Console, no external inbound links. All redirects
     // from our own restructures were dead weight and are removed (ADR-075). Internal links point
