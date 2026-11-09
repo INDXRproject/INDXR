@@ -71,7 +71,10 @@ En vink aan: alle tools zelf getest (gedaan, als custom connector in Claude).
 
 **9. Compliance:** zeven verklaringen. Alle zeven gelden voor ons: geen financiële transacties, geen AI-media, geen verzameling van gespreksdata, publieke documentatie aanwezig.
 
-## Status portal (9-11, Claude)
+## Status portal
+**Ingediend 2026-11-09 door Khidr** ("Server submitted for review"). Reactie komt op contact@indxr.ai; status via claude.ai/directory/manage → Submissions. Reviewer-account getest door Khidr (inloggen werkt).
+
+### Draft-notities (9-11, Claude)
 Stap 1–7 ingevuld in het draft (tab claude.ai/directory/manage/new/connector, "Draft saved in this tab").
 Stap 8: instructies staan erin met `<<PASSWORD>>` als plek voor het wachtwoord; vinkje "Self-tested" en
 de 7 verklaringen van stap 9 zet Khidr zelf (attestaties, niet door Claude). Extra notities stap 9 ingevuld.

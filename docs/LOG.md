@@ -1308,3 +1308,4 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 [2026-11-09 19:00] taak: MCP-tools krijgen annotations.title (Claude-directory-portal markeerde 5× 'Missing title annotation'); SDK-check: ToolAnnotations.title komt mee in list_tools | gewijzigd: backend/mcp_server.py
 [2026-11-09 19:25] taak: MCP-server meldt nu website_url + icons (INDXR-merkteken) in serverInfo — connector-icoon in Claude toonde een Vercel-achtige driehoek | gewijzigd: backend/mcp_server.py
 [2026-11-09 16:30] taak: Claude-directory-portal stap 1–9 klaargezet (draft), MCP-iconen live (665c72b, deploy groen) | gewijzigd: docs/marketing/claude-directory/submission.md
+[2026-11-09 17:00] taak: Claude Connectors Directory ingediend (Khidr), reviewer-account wachtwoord gezet + getest | gewijzigd: docs/marketing/claude-directory/submission.md
