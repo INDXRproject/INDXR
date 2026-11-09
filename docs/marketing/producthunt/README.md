@@ -24,6 +24,7 @@
 
 ## Galerij 9-11 (1270×760, in de draft): `gallery/01–07.png`, ook online als `https://indxr.ai/press/indxr-gallery-0N.jpg`
 1. Titelkaart "All your sources. One searchable archive. In Claude and ChatGPT too." 2. Echt Claude-antwoord via de INDXR-koppeling (HIST 202, WO I, quotes met tijdstempels). 3. Hetzelfde antwoord: "From my own knowledge" + "Two slips in the lecture" (geverifieerd: Merriman zegt "sixteen-year-old" Princip rond 10:30; Princip was 19). 4. Echte bibliotheek (110 transcripten, 6 collecties). 5. Echt transcript met bron (YaleCourses) + Cite. 6. Captions vs. INDXR (JFK). 7. Prijs.
+Volgorde sinds 9-11 (avond): 1 titel · 2 Claude-quotes · 3 eigen kennis apart · **4 academische alinea met APA in-text + referentielijst** (echt Claude-antwoord; quotes geverifieerd op 29:49 en 45:35) · 5 bibliotheek · 6 transcript + bron · 7 prijs. De JFK-kaart "Captions vs. INDXR" is geschrapt (Khidr: cringe).
 Nog open: video (YouTube-link; wacht op het kanaal, zie `social/accounts-kit.md`).
 
 ## Galerij 7-11 (vervangen)
