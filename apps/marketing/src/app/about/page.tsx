@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "About INDXR.AI — who builds it and why",
   // 155-char budget (Ahrefs crawl 2026-10-27: was 172 chars). Keyword first.
   description:
-    "INDXR.AI turns recordings into text — uploaded audio and video, YouTube links, or a whole playlist. Who runs it, why it exists, and where it runs.",
+    "INDXR.AI turns lectures, videos and recordings into a searchable archive you can also ask Claude or ChatGPT about. Who runs it, why, and where.",
   ...pageOg("/about"),
 }
 
@@ -67,6 +67,12 @@ export default function AboutPage() {
             before that: transcribe, edit, keep your sources organised in a library, and export to
             whatever you actually work in. Markdown and text for notes, SRT and VTT for subtitles,
             structured JSON for feeding a source to an LLM.
+          </p>
+          <p>
+            And because more and more of that work happens in a chat with an AI, your library can also be
+            connected to Claude or ChatGPT. You ask a question, the assistant reads your own transcripts and
+            answers with quotes and timestamps you can check.{" "}
+            <a href="/docs/guides/ai-assistants" className="text-[var(--link)] hover:underline">How to connect</a>.
           </p>
           <p>
             That is one way of working, and it is mine. The export formats exist so it can fit into

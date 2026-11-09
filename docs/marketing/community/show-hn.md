@@ -1,7 +1,7 @@
 # Show HN — tekst (Khidr plaatst)
 
 **Titel (≤80 tekens):**
-Show HN: INDXR – turn YouTube lectures and recordings into a searchable library
+Show HN: INDXR – your lecture transcripts as a library Claude can search (MCP)
 
 **URL:** https://indxr.ai/?utm_source=hn
 
@@ -10,6 +10,8 @@ Show HN: INDXR – turn YouTube lectures and recordings into a searchable librar
 Hi HN, I'm Khidr, a solo developer from the Netherlands. I built INDXR because I kept watching long lectures and podcasts and losing what was in them.
 
 What it does: paste a YouTube link (or a whole playlist) or upload a recording, and you get a clean transcript with speaker labels and timestamps. YouTube captions are free and work without an account. For videos without captions, and for your own files, it transcribes with AI (AssemblyAI). Everything lands in a library you can search and group into collections, and you can export it as Markdown (with YAML frontmatter and timestamp links back to the video), SRT/VTT, CSV, JSON, or a chunked JSON meant for RAG pipelines.
+
+The newest part: the library is also a remote MCP server (OAuth, read-only). Add https://app.indxr.ai/api/mcp as a custom connector in Claude (or ChatGPT developer mode, or `claude mcp add`), and you can ask things like "what does Kagan say about the soul across these four lectures?" The assistant searches the transcripts, reads the relevant blocks and answers with quotes and timestamps that link to the moment in the video. Five tools: list collections, search, read a transcript in time blocks, source + APA citation, existing summary. Guide: https://indxr.ai/connect
 
 Pricing is per minute with credits that don't expire, no subscription. I picked that because most people I talked to transcribe in bursts, and a monthly plan punishes that.
 

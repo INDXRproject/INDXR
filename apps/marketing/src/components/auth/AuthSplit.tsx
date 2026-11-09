@@ -13,6 +13,7 @@ const SIGNUP_POINTS: Array<[string, string]> = [
   ["Captions free", "every YouTube video that has them"],
   ["A library", `${LIBRARY_STORAGE_BASE_MB} MB, collections, search in the text itself`],
   ["Every export", "TXT, Markdown, SRT, VTT, CSV, JSON"],
+  ["Claude & ChatGPT", "ask your library, with quotes and timestamps"],
 ]
 
 const LOGIN_POINTS: Array<[string, string]> = [

@@ -6,8 +6,8 @@
 **Tagline (≤40):** Every lecture and interview, as text
 **One-liner:** Turn lectures, interviews and YouTube videos into clean, searchable transcripts in one library — pay per minute, no subscription.
 
-**Description (short, ~300 chars):**
-INDXR turns the lectures, interviews and videos you learn from into text you can search, quote and use. Paste a YouTube link or a whole playlist, or upload your own recording. You get speakers, punctuation and timestamps, all in one searchable library. Captions are free; AI transcription is from €0.02/min, with no subscription.
+**Description (short, ~300 chars, 9-11):**
+INDXR turns the lectures, interviews and videos you learn from into clean transcripts in one searchable library, each with its source and a citation. Ask about them in Claude or ChatGPT, with quotes and timestamps. Captions are free; AI transcription from €0.02/min, no subscription.
 
 **Description (long):**
 Most transcript tools give you a wall of lowercase caption text, or they charge a monthly subscription you only use twice. INDXR is built for people who collect what they learn: students working through a lecture series, researchers with a folder of interviews, creators and developers building a knowledge base.
@@ -17,10 +17,11 @@ Most transcript tools give you a wall of lowercase caption text, or they charge 
 - **Search everything.** Full-text search across every transcript in your library, plus collections per course or project.
 - **Use it anywhere.** Export to Markdown for Obsidian or Notion, SRT/VTT for subtitles, CSV/JSON for data, or chunked RAG JSON for LangChain, LlamaIndex and Pinecone.
 - **Pay for minutes, not months.** YouTube captions are free. AI transcription is 1 credit per minute, from €0.02/min. Credits never expire. 10 free credits to start.
+- **Ask it from your AI.** Connect your library to Claude, Claude Code or ChatGPT (paid plans, developer mode) via MCP. The assistant searches your transcripts and answers with quotes and timestamps. Read-only, free on every account. Guide: indxr.ai/connect
 - Processed in the EU; audio is deleted after transcription.
 
-**Categories:** Transcription · Speech to text · Productivity · Education / Research · Note-taking · Developer tools (RAG)
-**Tags:** transcription, youtube transcript, speech to text, lecture notes, interview transcription, playlist transcript, srt generator, rag, knowledge base
+**Categories:** Transcription · Speech to text · Productivity · Education / Research · Note-taking · Developer tools (RAG, MCP)
+**Tags:** transcription, youtube transcript, mcp server, claude connector, chatgpt, speech to text, lecture notes, interview transcription, playlist transcript, srt generator, rag, knowledge base
 **Pricing model:** Pay-as-you-go (credits), freemium (captions free + 10 welcome credits). From €5 one-time. No subscription.
 **Alternatives to (for SaaSHub/AlternativeTo):** Otter.ai, TurboScribe, Descript, HappyScribe, Rev, Tactiq
 **Maker:** Khidr — solo founder (Netherlands)

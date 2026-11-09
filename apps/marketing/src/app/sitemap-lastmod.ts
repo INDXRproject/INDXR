@@ -24,10 +24,10 @@
 
 export const SITEMAP_LASTMOD: Record<string, string> = {
   // Marketing
-  "": "2026-11-07",
-  "/pricing": "2026-11-07",
+  "": "2026-11-09",
+  "/pricing": "2026-11-09",
   "/transcribe": "2026-11-07",
-  "/about": "2026-05-03",
+  "/about": "2026-11-09",
   "/contact": "2026-07-24",
   // Legal-pagina's tracken de legal-versie, niet cosmetische wording. /terms:
   // de 08-01-commit was PUUR de 'auto-captions'→'YouTube captions'-hernoeming (geen
@@ -46,7 +46,7 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
 
   // Docs — Getting started
   "/docs": "2026-07-23",
-  "/docs/quickstart": "2026-08-26",
+  "/docs/quickstart": "2026-11-09",
   "/docs/how-indxr-works": "2026-07-23",
   "/docs/faq": "2026-07-23",
 
@@ -55,6 +55,7 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/docs/guides/playlists": "2026-08-01",
   "/docs/guides/uploads": "2026-07-23",
   "/docs/guides/library": "2026-07-23",
+  "/docs/guides/ai-assistants": "2026-11-09",
   "/docs/guides/summaries": "2026-07-22",
 
   // Docs — Reference

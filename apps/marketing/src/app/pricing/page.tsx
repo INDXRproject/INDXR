@@ -18,7 +18,7 @@ import { pageOg } from "@/lib/pageOg"
 export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
   title: "Pricing — INDXR.AI",
-  description: `YouTube transcript extraction and AI transcription credits. Starting at €${PACKAGES[0].priceEur.toFixed(2)} — pay-per-use, no subscription, VAT included. Credits never expire.`,
+  description: `AI transcription credits from €${PACKAGES[0].priceEur.toFixed(2)}. YouTube captions and the Claude/ChatGPT connection are free. No subscription, credits never expire.`,
   ...pageOg("/pricing"),
 }
 
@@ -74,7 +74,7 @@ const aggregateOfferSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "INDXR.AI Transcript Credits",
-  description: "Pay-per-use YouTube transcript extraction and AI transcription credits. No subscription, credits never expire.",
+  description: "Pay-per-use AI transcription credits. YouTube captions and the Claude/ChatGPT connection are free. No subscription, credits never expire.",
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "EUR",
@@ -119,6 +119,7 @@ const ALWAYS_FREE: Array<[string, string]> = [
   ["YouTube with captions", "every video"],
   ["Playlists with captions", `first ${FREE_TIER.PLAYLIST_FREE_VIDEOS} videos`],
   ["Every export except RAG JSON", "always"],
+  ["Claude & ChatGPT connection", "always"],
   ["Library storage", `${LIBRARY_STORAGE_BASE_MB} MB`],
   ["New account", `${FREE_TIER.WELCOME_CREDITS} credits`],
 ]

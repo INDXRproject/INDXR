@@ -12,7 +12,7 @@ import { EXPORT_FORMAT_COUNT } from "@indxr/shared/lib/exportFormats"
 export const metadata: Metadata = {
   title: "INDXR.AI — All your sources. One searchable archive.",
   description:
-    "Lectures, podcasts, YouTube videos and your own recordings, as clean transcripts with speakers and timestamps. Each keeps its source and a citation, in one archive you can search word for word. Pay per minute, no subscription.",
+    "Lectures, interviews, podcasts and videos as transcripts with source and citation. Search them, or use them in Claude and ChatGPT. No subscription.",
   alternates: { canonical: "/" },
 }
 
@@ -118,14 +118,14 @@ const PIPELINE = [
   { k: "In", t: "A source", b: `A YouTube link, a playlist, or your own file up to ${maxHours} hours.` },
   { k: "Out", t: "A transcript", b: "YouTube captions for free when a video has them. AI transcription when it has none: punctuation, speakers, timestamps." },
   { k: "Kept", t: "An archive", b: "Filed with its source — channel, link, length — in collections, searchable down to the word." },
-  { k: "Used", t: "A quote, a note", b: `A ready citation, or ${EXPORT_FORMAT_COUNT} export formats: notes, subtitles, spreadsheets, RAG.` },
+  { k: "Used", t: "A quote, an answer", b: `A ready citation, ${EXPORT_FORMAT_COUNT} export formats, or a question to Claude or ChatGPT about your own sources.` },
 ]
 
 const CARDS = [
-  { call: "COURSE · 01", t: "A course you want to read", b: "Drop in a playlist and get every lecture as text, each with a chapter summary to skim before you reread." },
+  { call: "STUDY · 01", t: "A course you want to master", b: "Drop in a playlist and get every lecture as text. Search it before the exam, or have Claude quiz you on the lectures themselves." },
   { call: "RESEARCH · 02", t: "Interviews and sources", b: "Speakers separated and renamed to who they are. Every quote one click from the second it was said, with a citation to paste." },
-  { call: "PODCAST · 03", t: "Podcasts and talks worth keeping", b: "The episode you half-remember is a search away: find the sentence, jump to the minute it was said." },
-  { call: "BUILD · 04", t: "Text you build on", b: "Chunked JSON with timestamps and deep links, ready for a vector database." },
+  { call: "WRITING · 03", t: "Journalism and non-fiction", b: "Every interview, talk and podcast behind the piece in one place. Draft with an AI that quotes your material, and check each line against the recording." },
+  { call: "BUILD · 04", t: "Text you build on", b: "Chunked JSON with timestamps and deep links for a vector database, or a direct connection for Claude and ChatGPT." },
 ]
 
 const EXPORTS: Array<{ f: string; note: string; sample: string }> = [
@@ -149,14 +149,14 @@ export default async function LandingPage() {
       <section className="w-full bg-[var(--bg)] pt-[96px] lg:pt-[112px]">
         <div className={`${WRAP} grid grid-cols-1 items-center gap-12 pb-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-20`}>
           <div>
-            <p className={`${MONO} mb-6 text-[var(--fg)]`}>Podcasts · lectures · interviews · videos · your own files</p>
+            <p className={`${MONO} mb-6 text-[var(--fg)]`}>For people who research, study and write</p>
             <h1 className="text-[2.6rem] font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-6xl lg:text-[4.25rem]">
               All your sources. One searchable archive.
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-[var(--fg)] sm:text-xl">
-              Paste a YouTube link or a whole playlist, or upload your own recordings. Each becomes a
-              transcript with timestamps, filed with its source in one archive you can search word for word,
-              quote and cite.
+              Lectures, interviews, podcasts and videos become transcripts you keep, each with its source. Search
+              them word for word, cite them, or work with them in Claude and ChatGPT: answers that quote your
+              sources, not the internet.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row">
               <Link href="#try" className={BTN_PRIMARY}>
@@ -223,8 +223,64 @@ export default async function LandingPage() {
         </div>
       </IndexSection>
 
+      {/* §02 — ask your sources from an AI assistant (MCP connector, ADR-108). Same JFK source as the
+          rest of the page; the answer cites the paragraph and the minute, like the real connector does. */}
+      <IndexSection n="02" label="Ask your AI">
+        <div className="grid items-start gap-12 lg:grid-cols-2">
+          <div>
+            <h2 className={H2}>Claude and ChatGPT, working from your sources.</h2>
+            <p className="mt-6 text-lg leading-relaxed text-[var(--fg-subtle)]">
+              An AI is only as good as what it reads. Connect your library and it reads yours: the lectures you
+              are studying, the interviews behind your article, every talk you draw on for a book. Ask it to
+              compare, summarise or find the passage, and it answers with quotes and timestamps you can check
+              against the source.
+            </p>
+            <ul className="mt-6 space-y-2 text-[var(--fg)]">
+              {[
+                "Read-only: it can search and read, never change or delete.",
+                "Answers from your sources, not from what the model half-remembers.",
+                "Ask across a whole course or project at once, not one file at a time.",
+                "Free with every account. Works in Claude, Claude Code and ChatGPT (paid plans).",
+              ].map((t) => (
+                <li key={t} className="flex gap-3">
+                  <span aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 bg-[var(--accent)] outline outline-2 outline-[var(--fg-strong)]" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/docs/guides/ai-assistants" className={`${BTN_SECONDARY} mt-8`}>
+              How to connect <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className={`border-2 ${INK} bg-[var(--bg)] shadow-[8px_8px_0_0_var(--fg-strong)]`}>
+            <div className={`flex items-center justify-between border-b-2 ${INK} px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.06em]`}>
+              <span className="font-bold text-[var(--fg-strong)]">Chat</span>
+              <span className="text-[var(--fg-muted)]">INDXR connected</span>
+            </div>
+            <div className="space-y-4 p-4">
+              <p className={`ml-auto max-w-[85%] border-2 ${INK} bg-[var(--bg-subtle)] px-3 py-2 text-[15px] text-[var(--fg-strong)]`}>
+                Why does Kennedy say they chose the Moon?
+              </p>
+              <p className="font-mono text-[11px] text-[var(--fg-muted)]">→ search_library “Moon” · get_transcript, 8–9 min</p>
+              <div className="text-[15px] leading-relaxed text-[var(--fg-strong)]">
+                <p>
+                  Because it is hard. He says they choose to go “not because they are easy, but because they are
+                  hard”, and that the goal will “serve to organize and measure the best of our energies and skills”.
+                </p>
+                <p className="mt-3 flex flex-wrap gap-2 font-mono text-[11px]">
+                  <span className={`border-2 ${INK} bg-[var(--accent)] px-2 py-0.5 font-bold text-[var(--fg-on-accent)]`}>
+                    Address at Rice University · 8:41 ↗
+                  </span>
+                  <span className={`border-2 ${INK} px-2 py-0.5 text-[var(--fg-strong)]`}>APA citation</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </IndexSection>
+
       {/* §02 — the pipeline */}
-      <IndexSection n="02" label="How it works">
+      <IndexSection n="03" label="How it works">
         <h2 className={`${H2} mb-10 max-w-3xl`}>Add a source. Search it in minutes.</h2>
         <ol className={`grid border-2 ${INK} sm:grid-cols-2 lg:grid-cols-4`}>
           {PIPELINE.map((s, i) => (
@@ -248,7 +304,7 @@ export default async function LandingPage() {
       </IndexSection>
 
       {/* §03 — the live tool */}
-      <IndexSection n="03" label="Try it" id="try">
+      <IndexSection n="04" label="Try it" id="try">
         <h2 className={`${H2} mb-4`}>Try it on one of yours.</h2>
         <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
           {loggedIn ? (
@@ -265,7 +321,7 @@ export default async function LandingPage() {
 
       {/* §04 — AI transcription vs raw auto-captions, as an annotated diff. Honest: captions are kept as
           YouTube gives them; the punctuation/speakers come from AI transcription (Khidr 7-11). */}
-      <IndexSection n="04" label="No captions?">
+      <IndexSection n="05" label="No captions?">
         <h2 className={`${H2} mb-10 max-w-3xl`}>No captions, or bad ones? AI writes it out properly.</h2>
         <div className={`grid border-2 ${INK} md:grid-cols-2`}>
           <div className={`border-b-2 ${INK} bg-[var(--bg-subtle)] p-6 md:border-b-0 md:border-r-2 sm:p-8`}>
@@ -304,7 +360,7 @@ export default async function LandingPage() {
       </IndexSection>
 
       {/* §05 — who brings what: catalogue cards */}
-      <IndexSection n="05" label="Who it is for">
+      <IndexSection n="06" label="Who it is for">
         <h2 className={`${H2} mb-10`}>What people bring to it.</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           {CARDS.map((c) => (
@@ -321,7 +377,7 @@ export default async function LandingPage() {
       </IndexSection>
 
       {/* §06 — exports, shown as the files themselves */}
-      <IndexSection n="06" label="Exports">
+      <IndexSection n="07" label="Exports">
         <h2 className={`${H2} mb-4`}>Take it anywhere.</h2>
         <p className="mb-10 max-w-2xl text-lg text-[var(--fg-subtle)]">
           {EXPORT_FORMAT_COUNT} formats, every one included: plain text, Markdown with front matter, CSV, JSON,
@@ -341,7 +397,7 @@ export default async function LandingPage() {
       </IndexSection>
 
       {/* §07 — the price, as a receipt */}
-      <IndexSection n="07" label="Pricing">
+      <IndexSection n="08" label="Pricing">
         <div className="grid items-start gap-12 lg:grid-cols-2">
           <div>
             <h2 className="text-5xl font-bold leading-[0.94] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
@@ -363,6 +419,7 @@ export default async function LandingPage() {
                 ["Chapter summary", `${summaryPer10} cr / 10 min`],
                 ["RAG JSON", `${ragPer10} cr / 10 min`],
                 ["All other exports", "incl."],
+                ["Claude & ChatGPT connection", "incl."],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-baseline gap-2 py-1.5">
                   <dt className="text-[var(--fg)]">{k}</dt>

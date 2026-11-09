@@ -38,6 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/docs/guides/uploads",
     "/docs/guides/library",
     "/docs/guides/summaries",
+    "/docs/guides/ai-assistants",
     // Docs — Reference
     "/docs/reference/export-formats",
     "/docs/reference/export-formats/txt",

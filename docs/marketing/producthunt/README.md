@@ -2,6 +2,12 @@
 
 **Status:** draft, er staat niets ingepland of gepubliceerd. PH toont nu "Schedule launch" omdat alle verplichte velden gevuld zijn. **Inplannen alleen na akkoord van Khidr.**
 
+## Copy 9-11 (copy-rewrite: Claude/ChatGPT-koppeling erbij — LEIDEND, nog niet in de PH-draft gezet)
+- **Tagline:** "All your sources. One searchable archive." (ongewijzigd)
+- **Description (472/500):** "INDXR turns lectures, podcasts, YouTube videos and your own recordings into clean transcripts (speakers, punctuation, timestamps), kept with their source in one archive you can search word for word. / Connect it to Claude or ChatGPT and ask your own sources: the assistant searches your transcripts and answers with quotes and the minute they were said. Read-only, free. / YouTube captions are free. AI transcription is pay-per-minute: credits never expire, no subscription."
+- **Eerste maker-comment, alinea 2:** de koppeling als haak: "You can also connect your library to Claude or ChatGPT (MCP, read-only) and ask questions across your own sources, with answers that cite the transcript and the timestamp." Link: indxr.ai/connect.
+- **Galerij:** kaart toevoegen met de chat uit §02 van de homepage (Claude-antwoord met citaat + 8:41-chip); screenshots uit de showcasebibliotheek (Kagan 26, Freedman 22, Sandel 12).
+
 ## Copy (bijgewerkt 6-11 naar de positionering van 4-11; de draft slaat automatisch op)
 - **Tagline (7-11):** **"All your sources. One searchable archive."** (41 tekens). Eerder: "A searchable archive of everything you learn from".
 - **Description (7-11, 488/500), in de draft gezet:** "INDXR turns lectures, podcasts, YouTube videos and your own recordings into clean transcripts (speakers, punctuation, timestamps) and keeps them in one archive you can search word for word. / Every transcript keeps its source: channel, link, length, and a citation you can copy. Organise by course or project, jump to the minute a sentence was said, export to Markdown, SRT or RAG JSON. / YouTube captions are free. AI transcription is pay-per-minute: credits never expire, no subscription." De vorige versie hieronder is vervangen.

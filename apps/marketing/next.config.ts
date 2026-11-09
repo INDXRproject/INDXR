@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
     return [
       { source: '/account/credits', destination: `${APP_URL}/dashboard/account`, permanent: true },
       { source: '/faq', destination: '/docs/faq', permanent: true },
+      // Short URL for posts and the PH page: the Claude/ChatGPT connector guide (ADR-108).
+      { source: '/connect', destination: '/docs/guides/ai-assistants', permanent: true },
 
       // Ahrefs crawl 2026-10-27: /blog/chunk-youtube-transcripts-for-rag 404's (external inbound
       // links + stale internal links used /blog/, the article has always lived at /articles/).

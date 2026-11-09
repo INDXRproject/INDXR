@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
@@ -236,7 +237,7 @@ export default function GettingStartedPage() {
         <AnchorHeading as="h2">7. It stays in your library</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Every transcript is saved to your <strong>Library</strong> — a searchable archive of everything
-          you have made. Search by title, filter by how it was made, and open any one again to re-read,
+          you have made. Search the titles and the transcript text, filter by how it was made, and open any one again to re-read,
           re-export in another format, or edit. Nothing is one-shot: a transcript you made last month is
           one search away.
         </p>
@@ -251,6 +252,14 @@ export default function GettingStartedPage() {
           alt="The Library list showing several saved transcripts, each row with its title, a source-method badge (YouTube captions or AI transcription), duration, word count and date."
           caption="Your Library: every transcript you make, searchable and re-openable — tagged with how it was made."
         />
+
+        <AnchorHeading as="h2">8. Ask about it in Claude or ChatGPT</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Optionally, connect your library to Claude or ChatGPT. The assistant can then search your
+          transcripts and answer questions about them with quotes and timestamps. It can only read, never
+          change anything, and connecting is free. Setup takes a minute:{" "}
+          <Link href="/docs/guides/ai-assistants" className="text-[var(--link)] hover:underline">Claude &amp; ChatGPT</Link>.
+        </p>
 
         <RelatedTopicsList
           title="Next"
