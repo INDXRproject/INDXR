@@ -125,7 +125,7 @@ const COPY: Record<string, Entry> = {
       "YouTube has no caption track for this video. AI transcription can still generate one from the audio. No credits were used.",
     actions: (c) => [
       ...(c.onUseAi
-        ? [{ label: c.aiCost ? `Use AI transcription — ${c.aiCost} credits` : "Use AI transcription", onClick: c.onUseAi } as ErrorCardAction]
+        ? [{ label: c.aiCost ? `Use AI transcription — ${c.aiCost} credit${c.aiCost === 1 ? "" : "s"}` : "Use AI transcription", onClick: c.onUseAi } as ErrorCardAction]
         : []),
       ...retryUrl(c),
     ],

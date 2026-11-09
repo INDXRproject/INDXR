@@ -653,3 +653,26 @@ Oude/automatische YouTube-captions (bv. Harvard Justice, 2009) hebben geen punte
 Fase 1 (ADR-108) heeft wel `POST /oauth/revoke` server-side, maar geen "Connected apps"-scherm in
 Instellingen waar een gebruiker zelf een gekoppelde AI kan loskoppelen. Tot fase 2 kan dit alleen via
 een directe DB-ingreep (service-role) op `oauth_tokens`/`oauth_clients`.
+
+## Upstash rate limiting staat wél aan in productie (CLAUDE.md is hier verouderd, 2026-11-09)
+CLAUDE.md zegt nog "uit in prod tot Upstash env-vars terug" — `railway variables --service api` laat
+zien dat `UPSTASH_REDIS_REST_URL`/`_TOKEN` nu wél gezet zijn, en een echte test (65-70 gelijktijdige
+MCP-tool-calls binnen één venster) bevestigt dat `check_user_rate_limit` nu actief limiteert: boven
+60 calls/60s krijg je een schone `ToolError` ("Rate limit exceeded — try again in a minute."),
+HTTP 200, geen 500, niets in de Railway-logs behalve de normale Upstash-HTTP-regels. Een eerdere
+sessie-entry (zie LOG.md 2026-11-08 21:15) concludeerde ten onrechte "geen limiet geraakt, Upstash
+staat uit" — dat was juist op het moment van die test, maar de env-vars zijn sindsdien toegevoegd.
+CLAUDE.md's rate-limiting-rij in de stack-tabel moet bijgewerkt worden (niet door deze taak gedaan —
+viel buiten de gevraagde scope).
+
+## `credit_transactions` refund-rij met `amount=0` bij een geslaagde job (onderzocht, niet gewijzigd, 2026-11-09)
+Elke terminale job (`transcription_jobs`/`playlist_extraction_jobs`, status complete/error) met
+`credits_reserved > 0` krijgt via `refund_credits()` (SQL RPC, `backend/credit_manager.py` →
+`transcription_pipeline.py`/`worker.py`) altijd een `credit_transactions`-rij met `kind='refund'` —
+ook als reserved == consumed (niets ging fout) en `amount=0`. Dit is **geen bug**: de rij is de
+voltooiingsmarkering die `watchdog_unrefunded_reserved_antijoin.sql`'s `NOT EXISTS (... kind='refund')`
+gebruikt om te weten dat een job al afgehandeld is. Zonder die rij (ook bij amount=0) zou de
+2-minuten-cron elke succesvolle job permanent als "onverrekend" blijven zien en `refund_credits()`
+telkens opnieuw aanroepen. Saldo-impact van de amount=0-rij zelf: geen (`credits + 0` is een no-op).
+Een skip-bij-amount-0 is dus **niet** zonder meer veilig — het zou de reconciliatie-vangnet breken.
+Niet gewijzigd — gerapporteerd aan Khidr i.p.v. zelf een fix gekozen (financiële logica, ADR-050-ontwerp).

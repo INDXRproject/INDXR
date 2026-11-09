@@ -1162,7 +1162,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
               </div>
               <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
                 <span className="font-bold">Total</span>
-                <span className="text-[22px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credits` : `${cost}+ credits`}</span>
+                <span className="text-[22px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credit${cost === 1 ? "" : "s"}` : `${cost}+ credits`}</span>
               </div>
               {/* balance on its own line; actions fill the width and stack on mobile (primary on top
                   via col-reverse), sit right on desktop — no cramped right-aligned cluster (point 4) */}
@@ -1175,7 +1175,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   {enough ? (
                     <Button onClick={handleWhisperConfirm} disabled={loading} className="h-10 w-full sm:w-auto">
                       {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      Extract — {cost}{known ? "" : "+"} credits
+                      Extract — {cost}{known ? "" : "+"} credit{cost === 1 && known ? "" : "s"}
                     </Button>
                   ) : (
                     <a href={appHref('/dashboard/credits')} className="w-full sm:w-auto">
