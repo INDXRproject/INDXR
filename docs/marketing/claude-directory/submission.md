@@ -14,9 +14,9 @@ standaard komt de connector als **Community**-listing in de directory. Soms beoo
 | Elke tool heeft `title` + `readOnlyHint` | ✅ 5 tools, alle read-only |
 | Getest als custom connector in Claude | ✅ Khidr (8-11) en Claude (9-11, HIST 202-demo) |
 | Documentatie-URL | ✅ https://indxr.ai/docs/guides/ai-assistants |
-| Privacybeleid met een sectie over de AI-koppeling | ⏳ CC-prompt 9-11 punt 7 |
-| Ontkoppelen in de app ("Connected apps") | ⏳ CC-prompt 9-11 punt 6. Geen harde eis, wel sterk aangeraden |
-| Gevuld reviewer-account | ⏳ CC-prompt 9-11 punt 8. Khidr zet de inloggegevens |
+| Privacybeleid met een sectie over de AI-koppeling | ✅ `/privacy` §"AI assistants (optional)", 2026-11-09 |
+| Ontkoppelen in de app ("Connected apps") | ✅ Instellingen → Connected apps, 2026-11-09 |
+| Gevuld reviewer-account | ✅ `reviewer@indxr.ai`, is_internal=true, 2 collecties (50 transcripten, read-only gedupliceerd uit contact@, geen nieuwe extracties). Khidr zet het wachtwoord zelf |
 | Icoon | ✅ het INDXR-merkteken (apps/marketing/public/, vierkant, ≥512 px) |
 
 ## Wat je in het portal invult
@@ -72,8 +72,8 @@ En vink aan: alle tools zelf getest (gedaan, als custom connector in Claude).
 **9. Compliance:** zeven verklaringen. Alle zeven gelden voor ons: geen financiële transacties, geen AI-media, geen verzameling van gespreksdata, publieke documentatie aanwezig.
 
 ## Checklist voor Khidr (in deze volgorde)
-1. Laat Claude Code de prompt `docs/wiki/roadmap/cc-prompt-2026-11-09-library-quality.md` afmaken (privacybeleid + Connected apps + reviewer-account).
-2. Zet het wachtwoord van het reviewer-account zelf (Supabase → Auth → user → Reset of via de admin) en bewaar het in Proton Pass.
+1. ✅ Gedaan 2026-11-09: privacybeleid, Connected apps, en het reviewer-account `reviewer@indxr.ai` (gevuld, hieronder).
+2. Zet het wachtwoord van het reviewer-account zelf (Supabase → Auth → gebruiker `reviewer@indxr.ai` → Reset of via de admin) en bewaar het in Proton Pass. Er staat nog geen wachtwoord op — dat is bewust nooit door Claude gezet of gezien.
 3. Open claude.ai/directory/manage → Submit new → MCP connector, en plak de velden hierboven.
 4. Vul bij stap 8 het e-mailadres en wachtwoord van de reviewer in.
 5. Dien in. Laat mij daarna weten dat het ingediend is, dan volg ik de status op (portal + mail).
