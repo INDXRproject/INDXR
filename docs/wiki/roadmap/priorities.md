@@ -604,3 +604,10 @@ Trigger-gebaseerd, niet vooraf gepland. Implementeer wanneer productie-data het 
 - [ ] **3.12 — YouTube Data API: quota-verhoging aanvragen + single-video batching evalueren**
     Trigger: >5.000 `videos.list` units/dag (zichtbaar in Google Cloud Console).
     Acties: (a) quota-verhoging aanvragen bij Google (gratis, 1–6 weken doorlooptijd); (b) evalueren of single-video calls geclusterd kunnen worden. Noot: playlist-flow batcheert al (1 call per 50 video IDs, bestaande implementatie in `get_playlist_items()`). Zie ADR-028.
+
+## Gevonden 9-11 (copy-rewrite/showcase, Claude-piloot)
+- **APA-citaat niet volledig APA:** `buildCitation` (apps/app/src/components/library/SourceCard.tsx:40) neemt de YouTube-titel letterlijk over (bv. hoofdletters "THE MORAL SIDE OF MURDER"); APA 7 vraagt sentence case + cursief. Docs/artikel zeggen dit nu eerlijk. Fix: sentence-case-conversie (let op eigennamen) of een "pas zelf aan"-hint in de SourceCard.
+- **Foutkopij playlist bij PROXY_ERROR op een captions-video:** toont "We couldn't reach this video's audio … Use Upload" terwijl het om ondertitels ging (gezien bij CLCV 205 college 16; los opnieuw geprobeerd → gelukt). Kopij voor captions-modus aanpassen + Retry-knop tonen.
+- **Playlist-flow maakt altijd een nieuwe collectie** ook als er al een collectie voor die cursus is, en de review-voorselectie vinkt video's aan die al in de bibliotheek staan (label "FREE"). Voorstel: "Add to existing collection" + al-aanwezige video's standaard uitgevinkt.
+- **YouTube-botcheck bij parallelle playlists:** 3 tegelijk → 4–6 video's rate-limited; Retry lost het op. Overweeg per-user serialisatie van caption-playlists.
+- **CLAUDE.md-rij "Rate limiting … uit in prod"** is achterhaald (Upstash staat aan sinds 8/9-11, zie LOG 2026-11-09 03:00); de "Not enforced"-notitie op /docs/reference/limits is verwijderd.

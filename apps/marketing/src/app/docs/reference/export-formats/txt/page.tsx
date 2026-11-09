@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
 import { pageOg } from "@/lib/pageOg"
@@ -84,6 +85,8 @@ export default function DocsTxtPage() {
             { publisher: "INDXR (own code)", supports: "TXT paragraph rules, timestamp format", verifiedAgainst: "packages/shared/src/utils/formatTranscript.ts (generateTxt, createParagraphMode)" },
           ]}
         />
+        <AskYourLibrary />
+
         <RelatedTopicsList
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },

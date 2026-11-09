@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, summaryCreditCost } from "@indxr/shared/lib/pricing"
 import { summaryModelName } from "@indxr/shared/lib/models"
@@ -95,6 +96,8 @@ export default function DocsSummariesPage() {
             { publisher: "INDXR (own code)", supports: "saved with transcript, regenerate overwrites", verifiedAgainst: "backend/summary_pipeline.py (run_summary_reservation_aware); apps/app/src/components/library/SummaryTab.tsx (generate/regenerate + progress)" },
           ]}
         />
+        <AskYourLibrary />
+
         <RelatedTopicsList
           topics={[
             { label: "How INDXR works", href: "/docs/how-indxr-works" },

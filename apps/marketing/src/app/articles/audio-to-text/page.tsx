@@ -3,6 +3,8 @@ import Link from "next/link"
 import { ToolPageTemplate } from "@/components/content/templates/ToolPageTemplate"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { DocsTable } from "@/components/docs/DocsTable"
+import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import {
   UPLOAD_MAX_FILE_MB,
   UPLOAD_FORMAT_COUNT_WORD,
@@ -16,21 +18,30 @@ import {
   exportFormatsProse,
   spellCount,
 } from "@indxr/shared/lib/exportFormats"
+import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
+import { SUBTITLE_MAX_LINE, SUBTITLE_MAX_LINES } from "@indxr/shared/lib/subtitleConfig"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { CREDIT_COSTS, creditCostEur, getAnchorPackage, FREE_TIER } from "@indxr/shared/lib/pricing"
 import { transcriptionModelName, TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
 
-const anchor = getAnchorPackage()
-const ragPer10Min = CREDIT_COSTS.RAG_JSON_PER_10MIN
+// 2026-11-09: video-to-text and supported-formats were merged into this page (308s in next.config.ts).
+// Their unique content lives below: the video section with the measured podcast-clip example and the
+// on-screen limits (from video-to-text), and the per-format notes (from supported-formats).
 
-// 155-char budget (Ahrefs crawl 2026-10-27: was 222 chars). Keyword first.
+const anchor = getAnchorPackage()
+const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
+const ragPer10Min = CREDIT_COSTS.RAG_JSON_PER_10MIN
+const welcome = FREE_TIER.WELCOME_CREDITS
+const welcomeMinutes = welcome / perMin
+
+// 155-char budget (Ahrefs crawl 2026-10-27). Keyword first.
 const metaDescription =
-  `Upload an audio or video file and get the full text back — punctuated, by speaker, timestamped, at one credit per minute. Free account: ${FREE_TIER.WELCOME_CREDITS} credits.`
+  `Turn interviews, lectures and podcasts into transcripts you keep, search and quote by timestamp. ${perMin} credit per minute; a free account includes ${welcome} credits.`
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/audio-to-text" },
-  title: "Audio to Text — Transcribe Audio Files to Text | INDXR.AI",
+  title: "Audio to Text — Transcribe Interviews, Lectures & Podcasts | INDXR.AI",
   description: metaDescription,
   ...editorialOg("audio-to-text"),
 }
@@ -41,12 +52,16 @@ const faqs = [
     a: "No. The file you upload is deleted on our side as soon as the transcription finishes, and only the transcript text stays in your library. Our transcription provider, AssemblyAI, does not use your audio to train its models, because we have opted out of its model-improvement programme, and its own data retention is set to one day, the shortest period it offers. Everything is processed inside the EU.",
   },
   {
+    q: "Can I convert an MP4 or a MOV to text?",
+    a: `Yes. INDXR takes the audio track out of the video for you, so you upload the file as it is. MKV, MOV, AVI and the other video formats work the same way, up to ${UPLOAD_MAX_FILE_MB}MB per file.`,
+  },
+  {
     q: "What happens if the transcription fails?",
     a: "Your credits are refunded in full. The cost is reserved from your balance when the job starts, and it is booked straight back on any failure, including when the server goes down in the middle of the job, so a transcription that does not complete never costs you anything.",
   },
   {
     q: "What if I run out of credits partway through a file?",
-    a: "It cannot happen. The full cost of the file is reserved before transcription begins, based on the duration we detect, so a job you cannot fully afford is declined up front rather than started and stranded halfway. You are never left with a half-finished transcript and an empty balance.",
+    a: "It cannot happen. The full cost of the file is reserved before transcription begins, based on the duration we detect, so a job you cannot fully afford is declined up front rather than started and stranded halfway.",
   },
   {
     q: "Can I upload a recording of a meeting or a phone call?",
@@ -54,94 +69,114 @@ const faqs = [
   },
   {
     q: "Why are names and technical terms transcribed wrong, and what can I do about it?",
-    a: "Proper names and specialist jargon are the known weak spot of every speech model, because it works from sound and cannot guess a spelling it has never met. The practical fix is to correct it once in the editor: every export you make afterwards carries the correction, and when there are several speakers you rename a speaker label once and it updates everywhere it appears.",
+    a: "Proper names and specialist jargon are the known weak spot of every speech model, because it works from sound and cannot guess a spelling it has never met. Correct it once in the editor: every export you make afterwards carries the correction, and when there are several speakers you rename a speaker label once and it updates everywhere it appears.",
   },
   {
     q: "Does it work when people talk over each other?",
     a: "Partly. The model detects who is speaking and labels each speaker, but where voices overlap the boundaries get less precise and a word can end up attached to the wrong speaker. On clean turn-taking the labelling is reliable; through a stretch of crosstalk, expect to fix a few lines.",
   },
   {
-    q: "How do I split a file that is too large?",
-    a: `This is rarely necessary: at ${UPLOAD_MAX_FILE_MB}MB a single file already holds hours of speech. If you do have a recording that large, what matters is not which program you use but where you cut it. Cut at a pause between sentences rather than in the middle of one, because a word split across the seam can be lost. Any everyday audio editor can trim a recording into parts and export each one. Sending them separately costs nothing extra, because you pay per minute of audio, not per file.`,
+    q: "How do I split a file that is too large or too long?",
+    a: `Cut it at a pause between sentences rather than in the middle of one, because a word split across the seam can be lost. Any everyday audio editor can do this. Sending the parts separately costs nothing extra, because you pay per minute of audio, not per file. The limits are ${UPLOAD_MAX_FILE_MB}MB and ${MAX_TRANSCRIPTION_HOURS} hours per file.`,
   },
 ]
 
 const sources = [
-  {
-    label: "AssemblyAI supported languages",
-    url: "https://www.assemblyai.com/docs/getting-started/supported-languages",
-  },
-  {
-    label: `${transcriptionModelName()} benchmarks`,
-    url: "https://www.assemblyai.com/benchmarks",
-  },
-  {
-    label: "Artificial Analysis speech-to-text leaderboard",
-    url: "https://artificialanalysis.ai/speech-to-text",
-  },
+  { label: "AssemblyAI supported languages", url: "https://www.assemblyai.com/docs/getting-started/supported-languages" },
+  { label: `${transcriptionModelName()} benchmarks`, url: "https://www.assemblyai.com/benchmarks" },
+  { label: "Artificial Analysis speech-to-text leaderboard", url: "https://artificialanalysis.ai/speech-to-text" },
+  { label: "RFC 6716 — Definition of the Opus Audio Codec", url: "https://datatracker.ietf.org/doc/html/rfc6716" },
+  { label: "Matroska — the MKV container", url: "https://www.matroska.org/" },
   {
     label: "A Closer Look, Subscription Cancellation Customer Experience Study (2024)",
     url: "https://a-closer-look.com/market-research/subscription-cancellation-customer-experience-study/",
   },
 ]
 
+function Ctas() {
+  return (
+    <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+      <Link href="/signup">
+        <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
+          Create a free account
+        </button>
+      </Link>
+      <Link href="/transcribe" className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline">
+        Or try the free tool first →
+      </Link>
+    </div>
+  )
+}
+
 export default function AudioToTextPage() {
   return (
     <ToolPageTemplate
       category="Workflows"
       slug="audio-to-text"
-      title="Audio to text: transcribe any audio file"
+      title="Audio to text: interviews, lectures and podcasts you can search and quote"
       metaDescription={metaDescription}
       publishedAt="2026-04-16"
-      updatedAt="2026-08-09"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
       image="https://indxr.ai/docs/screenshots/transcript-speakers-light.png"
     >
       <p>
-        You have an audio file or recording and you want the words in it. INDXR lets you upload the file
-        and gives you the full text back: punctuated, so it reads as sentences instead of one long
-        block; split by speaker, so you can tell who said what; and timestamped, so you can jump back to
-        the moment something was said. It costs one credit per minute of audio, and a free account
-        includes {FREE_TIER.WELCOME_CREDITS} credits, enough for {FREE_TIER.WELCOME_CREDITS} minutes, so
-        you can transcribe a real recording before spending anything.
+        You recorded an interview, sat through a lecture, or have a podcast episode you need to work from.
+        Upload the file and INDXR gives you the full text back: punctuated, split by speaker, with a
+        timestamp on every paragraph. The transcript stays in your library with its source, so you can
+        search it later, check a quote against the exact moment in the recording, and ask Claude or
+        ChatGPT about it.
       </p>
 
-      <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Link href="/transcribe">
-          <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
-            Try it now — no account needed
-          </button>
-        </Link>
-        <Link
-          href="/signup"
-          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
-        >
-          Or create a free account →
-        </Link>
-      </div>
+      <p>
+        It costs {perMin} credit per minute of audio. A free account includes {welcome} credits, enough
+        for {welcomeMinutes} minutes, so you can run a real recording through it before you pay anything.
+        There is no subscription, and credits never expire.
+      </p>
+
+      <Ctas />
+
+      <h2>Who it is for</h2>
+
+      <p>
+        <strong>Interviews.</strong> A journalist, a researcher or a writer with a stack of recorded
+        conversations. You rename the speakers once, find every place someone said a thing, and check the
+        wording against the recording before you quote it. There is a full walkthrough in{" "}
+        <Link href="/articles/transcribe-interviews-journalism">transcribing interviews</Link>.
+      </p>
+
+      <p>
+        <strong>Lectures.</strong> A student with recorded classes, or a course you downloaded. Put the
+        lectures in one collection and search the whole course for a term, or have an assistant write
+        study notes with a reference per section.
+      </p>
+
+      <p>
+        <strong>Podcasts.</strong> An episode you want to cite, or your own show you want in writing. Long
+        files are fine: up to {MAX_TRANSCRIPTION_HOURS} hours each.
+      </p>
 
       <h2>How it works</h2>
 
       <p>
-        <strong>You upload the file.</strong> A free account is needed and takes a moment, no card
-        required, with the {FREE_TIER.WELCOME_CREDITS} credits included. Audio and video files both
-        work, up to {UPLOAD_MAX_FILE_MB}MB and up to ten hours, and for a video the audio track is taken
-        out for you. You do not pick a language, because the model detects it from the audio.
+        <strong>You upload the file.</strong> Uploading needs a free account, no card required. Audio and
+        video both work, up to {UPLOAD_MAX_FILE_MB}MB and {MAX_TRANSCRIPTION_HOURS} hours per file. You do
+        not pick a language: the model detects it from the audio.
       </p>
 
       <p>
         <strong>It transcribes while you wait.</strong> An hour of audio is usually ready within a few
-        minutes, and two hours within about a quarter of an hour; a long recording or a busy moment can
-        stretch that. It runs on the server, so closing the tab or losing your connection does not cost
-        you the job. Everything is processed on European infrastructure, and the uploaded file is
-        deleted once transcription finishes.
+        minutes, two hours within about a quarter of an hour. It runs on the server, so closing the tab
+        does not cost you the job. Everything is processed on European infrastructure, and the uploaded
+        file is deleted once transcription finishes.
       </p>
 
       <p>
-        <strong>You read, edit and export.</strong> The transcript opens in your library, where you can
-        correct it, search it, summarise it and export it in {spellCount(EXPORT_FORMAT_COUNT)} formats.
+        <strong>It lands in your library.</strong> There you can correct it, search it, put it in a
+        collection, summarise it, export it in {spellCount(EXPORT_FORMAT_COUNT)} formats, or let Claude or
+        ChatGPT read it.
       </p>
 
       <DocsFigure
@@ -153,19 +188,11 @@ export default function AudioToTextPage() {
       <h2>What the transcript looks like</h2>
 
       <p>
-        Two things determine whether a transcript is usable: how many words are correct, and how the
-        text is structured. Both matter, and most tools only address the first. Word accuracy is
-        covered in the next section; the structure works as follows.
-      </p>
-
-      <p>
-        Transcripts come back punctuated, with sentence boundaries the model determined rather than
-        one continuous block of lowercase text. Speakers are detected and labelled, and you can
-        rename them: change Speaker A to the interviewer&apos;s name once and every occurrence
-        updates, in the transcript and in every export, with the original label always recoverable.
-        Text is grouped into paragraphs for reading, each with a timestamp marking where that passage
-        begins. Exports that include timestamps go down to the individual segment, a few seconds at a
-        time.
+        Transcripts come back punctuated, with sentence boundaries the model found, rather than one long
+        block of lowercase text. Speakers are detected and labelled, and you can rename them: change
+        Speaker A to the interviewer&apos;s name once and every occurrence updates, in the transcript and
+        in every export, with the original label always recoverable. Text is grouped into paragraphs, each
+        with a timestamp for where that passage begins.
       </p>
 
       <DocsFigure
@@ -174,67 +201,59 @@ export default function AudioToTextPage() {
         caption="A finished transcript reads back with punctuation, a timestamp per paragraph, and speaker labels you rename once to update everywhere."
       />
 
+      <h2>Check every quote against the recording</h2>
+
       <p>
-        What you notice first is that it reads. Sentences with punctuation, grouped into paragraphs,
-        are something you can skim and quote straight away, rather than a wall of lowercase you have to
-        repair before it is any use, which spares you the cleaning up that other tools leave you to do.
-        The same structure quietly pays off later: it lets a subtitle export break lines where a
-        sentence ends instead of mid-clause, lets a chunked export for a vector database cut on complete
-        thoughts, and lets the speaker labels make an interview quotable without listening back to work
-        out who said what.
+        A transcript is a strong draft of what was said, not proof of it. Before a sentence goes into a
+        paper or an article, it is worth hearing it once. Because each paragraph carries the moment it
+        starts, that takes seconds: search the library for the phrase, open the transcript at that
+        paragraph, and play it back from there.
+      </p>
+
+      <p>
+        Take a two-hour interview transcribed in March. That month you write your piece from it. In June a
+        quote is questioned, so you search for the phrase, jump to the timestamp and check what was
+        actually said. Nothing was re-uploaded, and none of it cost extra.
+      </p>
+
+      <AskYourLibrary lead="Every recording you transcribe is kept in your library, with its source and a citation." />
+
+      <p>
+        The assistant searches your transcripts and answers with the passage and the minute it was said, so
+        you can check its answer the same way you check your own. More on this in{" "}
+        <Link href="/articles/claude-chatgpt-own-sources">using Claude or ChatGPT with your own sources</Link>.
       </p>
 
       <h2>How accurate it is</h2>
 
       <p>
-        English transcription accuracy here is close to the current technical ceiling. AssemblyAI
-        places English in its{" "}
-        <a
-          href="https://www.assemblyai.com/docs/getting-started/supported-languages"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        English transcription accuracy here is close to the current technical ceiling. AssemblyAI places
+        English in its{" "}
+        <a href="https://www.assemblyai.com/docs/getting-started/supported-languages" target="_blank" rel="noopener noreferrer">
           highest accuracy band
         </a>
         , below ten per cent word error rate, and on{" "}
-        <a
-          href="https://artificialanalysis.ai/speech-to-text"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://artificialanalysis.ai/speech-to-text" target="_blank" rel="noopener noreferrer">
           independent benchmarks
         </a>{" "}
         {TRANSCRIPTION_MODEL.displayName} posts an English word error rate in the low single digits.
-        The top of that field has converged: on clean audio the best few models are within a
-        percentage point or two of one another.
       </p>
 
       <p>
-        Accuracy falls where you would expect: strong accents, overlapping speakers, background
-        noise, technical vocabulary, unfamiliar names. It handles these better than the automatic
-        captions produced by video platforms, but no engine handles them perfectly, and on difficult
-        audio expect to correct a few names.
-      </p>
-
-      <p>
-        For languages other than English, AssemblyAI publishes a{" "}
-        <a
-          href="https://www.assemblyai.com/docs/getting-started/supported-languages"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        Accuracy falls where you would expect: strong accents, overlapping speakers, background noise,
+        technical vocabulary, unfamiliar names. On difficult audio, expect to correct a few names. For
+        languages other than English, AssemblyAI publishes a{" "}
+        <a href="https://www.assemblyai.com/docs/getting-started/supported-languages" target="_blank" rel="noopener noreferrer">
           per-language accuracy table
         </a>{" "}
-        worth checking before committing to a long recording. We would rather point you there than
-        quote a figure for a language we have not measured.
+        worth checking before you commit a long recording.
       </p>
 
       <h2>What you can upload</h2>
 
       <p>
-        Audio or video, in {UPLOAD_FORMAT_COUNT_WORD} formats. A video file is transcribed exactly like
-        an audio one: the audio track is taken from it for you, so an MP4 or a MOV is as welcome here as
-        an MP3.
+        Audio or video, in {UPLOAD_FORMAT_COUNT_WORD} formats. Upload the file as it reached you: there is
+        no conversion step and no question about which container you have.
       </p>
 
       <table>
@@ -253,7 +272,7 @@ export default function AudioToTextPage() {
           </tr>
           <tr>
             <td>Maximum length</td>
-            <td>10 hours per file</td>
+            <td>{MAX_TRANSCRIPTION_HOURS} hours per file</td>
           </tr>
           <tr>
             <td>Languages</td>
@@ -262,53 +281,111 @@ export default function AudioToTextPage() {
         </tbody>
       </table>
 
+      <p>Where the common ones come from, and what to know about each:</p>
+
+      <ul>
+        <li>
+          <strong>M4A</strong> is what the iPhone Voice Memos app records. Upload it as it is; converting it
+          to MP3 first only adds a step and loses a little quality.
+        </li>
+        <li>
+          <strong>OPUS</strong> is what WhatsApp exports a voice message as. OGG is the open container Opus
+          audio usually travels in. Both upload without renaming.
+        </li>
+        <li>
+          <strong>WAV</strong> is uncompressed, which is why a recorder set to archival quality writes it
+          and why the files are big: an hour of stereo WAV at CD quality is roughly 600MB, over the{" "}
+          {UPLOAD_MAX_FILE_MB}MB limit. Split it at a pause rather than compressing it.
+        </li>
+        <li>
+          <strong>FLAC</strong> is lossless. It does not transcribe better than a good MP3 of the same
+          recording, so upload it because it is the file you have, not for accuracy.
+        </li>
+        <li>
+          <strong>MOV</strong> is what an iPhone camera films; <strong>MKV</strong> is what many downloads
+          and archives arrive as; <strong>WEBM</strong> is what a browser writes when it records your
+          screen. All upload directly.
+        </li>
+      </ul>
+
       <p>
-        The {UPLOAD_MAX_FILE_MB}MB limit is worth noting against free browser tools, which commonly
-        stop at 50 or 100MB. A single uncompressed hour of audio exceeds that on its own.
+        The full upload flow and its checks are in the <Link href="/docs/guides/uploads">uploads guide</Link>.
       </p>
+
+      <h2>Video files</h2>
+
       <p>
-        For what each of these formats is and where it comes from, see{" "}
-        <Link href="/articles/supported-formats">Supported formats</Link>.
+        A video is transcribed the same way as audio: the audio track is taken out and the picture is
+        discarded. That has two consequences worth knowing. The transcript does not describe what happens on
+        screen, so a screen recording gives you what was said about the screen. And text that appears in the
+        picture, such as slides or burned-in captions, is not read.
+      </p>
+
+      <p>
+        Here is a measured one. A clip of just over five minutes from a podcast interview, uploaded as a
+        7.4MB MP4. It cost six credits, came back with two speakers labelled, split into 74 timed passages,
+        ready in under half a minute, and the model reported 96.5 per cent confidence.
+      </p>
+
+      <DocsFigure
+        src="/docs/screenshots/video-transcript-speakers.png"
+        alt="A finished transcript of the video: each paragraph opens with a timestamp and a speaker label, Speaker A and Speaker B, followed by their words."
+        caption="The transcript of a video file reads back punctuated, split into paragraphs with a timestamp each, and labelled by speaker."
+      />
+
+      <p>
+        The same transcript exports as SRT or VTT subtitles, rebuilt to broadcast conventions: at most{" "}
+        {SUBTITLE_MAX_LINE} characters per line and {SUBTITLE_MAX_LINES} lines per cue, breaking on
+        sentence boundaries where it can:
+      </p>
+
+      <DocsCodeBlock>{`2
+00:00:02,920 --> 00:00:07,338
+Look, you get out in that world, Joe,
+you're famous everywhere.`}</DocsCodeBlock>
+
+      <p>
+        If subtitles are what you are after, the <Link href="/articles/srt-generator">SRT generator</Link>{" "}
+        article covers them in full.
       </p>
 
       <h2>Common questions about uploading</h2>
 
       <h3>Which audio and video formats can I upload?</h3>
       <p>
-        {uploadFormatsProse("and")}, up to {UPLOAD_MAX_FILE_MB} MB per file. You do not need to convert
-        anything first — upload the file as it came off your phone, recorder or meeting tool.
+        {uploadFormatsProse("and")}, up to {UPLOAD_MAX_FILE_MB}MB per file. You do not need to convert
+        anything first.
       </p>
 
       <h3>Can I transcribe a voice memo from my iPhone?</h3>
       <p>
-        Yes. iPhone voice memos are M4A files, which upload directly. A recording of an hour or more is
-        fine; the limits are the same as for any file, up to {UPLOAD_MAX_FILE_MB} MB and up to ten hours.
-      </p>
-
-      <h3>Can I transcribe a WhatsApp voice message?</h3>
-      <p>
-        Yes. WhatsApp exports voice messages as OPUS files, which are supported. Export the message from
-        the chat and upload the file as it is.
+        Yes. iPhone voice memos are M4A files, which upload directly. The limits are the same as for any
+        file: up to {UPLOAD_MAX_FILE_MB}MB and {MAX_TRANSCRIPTION_HOURS} hours.
       </p>
 
       <h3>What happens if my file has no speech in parts of it?</h3>
       <p>
         Silence and background noise are skipped in the transcript. You are charged per minute of audio,
-        rounded up to the nearest minute, so a recording with long pauses costs the same as one without.
+        rounded up, so a recording with long pauses costs the same as one without.
       </p>
 
       <h3>Do I need an account to upload a file?</h3>
       <p>
-        Yes, uploads require an account, because transcription runs on credits. New accounts start with a
-        credit balance so you can transcribe a full recording before deciding whether to{" "}
-        <Link href="/pricing">buy more</Link>.
+        Yes, uploads require an account, because transcription runs on credits and the transcript is saved
+        to your library. New accounts start with {welcome} credits, so you can transcribe a short recording
+        before deciding whether to <Link href="/pricing">buy more</Link>.
       </p>
 
-      <h2>What you can do with the transcript</h2>
+      <h2>What else you can do with the transcript</h2>
 
       <p>
-        Because the transcript is stored rather than downloaded once, you can come back to the same
-        recording and get something different out of it later.
+        You can correct the text without losing the original: edits are stored separately and the untouched
+        version stays one click away.
+      </p>
+
+      <p>
+        You can have the recording <Link href="/articles/youtube-to-notes">summarised into chapter notes</Link>,
+        with a timestamp per chapter that takes you back to that moment.
       </p>
 
       <DocsFigure
@@ -318,34 +395,8 @@ export default function AudioToTextPage() {
       />
 
       <p>
-        Take a two-hour interview transcribed in March. That month you export plain text and write
-        your piece. In June a quote is questioned, so you search the transcript for the phrase, jump
-        to the timestamp and check what was actually said. In September you want a clip subtitled, so
-        you export SRT and the lines come back rebuilt to a maximum of 42 characters across at most
-        two lines, with cues breaking on sentence boundaries where they can and on word boundaries
-        otherwise, never mid-word. Nothing was re-uploaded and none of it cost extra.
-      </p>
-
-      <p>
-        You can correct the text without losing the original, because edits are stored separately and
-        the untouched version stays one click away.
-      </p>
-
-      <p>
-        You can have the recording{" "}
-        <Link href="/articles/youtube-video-summarizer">summarised</Link>. The summary reads the whole
-        thing, splits it into
-        chapters where the subject changes, and writes worked-out notes under each one, with a
-        timestamp per chapter that jumps the player to that moment. A four-hour recording produces a
-        four-hour summary rather than the three paragraphs a fifteen-minute one would give you, so a
-        long lecture becomes an outline you can revise from and a long interview becomes something
-        you can navigate.
-      </p>
-
-      <p>
-        You can export in {spellCount(EXPORT_FORMAT_COUNT)} formats, and everything is free except
-        the RAG export, which chunks the transcript with metadata for LangChain, LlamaIndex, Pinecone
-        and similar tools.
+        And you can export in {spellCount(EXPORT_FORMAT_COUNT)} formats. Everything is free except the RAG
+        export, which chunks the transcript with metadata for vector databases.
       </p>
 
       <DocsTable>
@@ -363,9 +414,7 @@ export default function AudioToTextPage() {
               <td>{item.group}</td>
               <td className="whitespace-nowrap font-medium text-[var(--fg)]">{item.label}</td>
               <td>{item.sub}</td>
-              <td className="whitespace-nowrap">
-                {item.paid ? `${ragPer10Min} credit / 10 min` : "Free"}
-              </td>
+              <td className="whitespace-nowrap">{item.paid ? `${ragPer10Min} credit / 10 min` : "Free"}</td>
             </tr>
           ))}
         </tbody>
@@ -374,9 +423,9 @@ export default function AudioToTextPage() {
       <h2>What it costs</h2>
 
       <p>
-        One credit per minute of audio, rounded up, based on the duration detected after upload
-        rather than the file size. Prices below are on the {anchor.name} package, which is €
-        {anchor.priceEur} for {anchor.credits.toLocaleString()} credits.
+        {perMin} credit per minute of audio, rounded up, based on the duration detected after upload rather
+        than the file size. Prices below are on the {anchor.name} package, €{anchor.priceEur} for{" "}
+        {anchor.credits.toLocaleString()} credits.
       </p>
 
       <table>
@@ -388,22 +437,19 @@ export default function AudioToTextPage() {
           </tr>
         </thead>
         <tbody>
-          <tr><td>Under 1 minute</td><td>1 credit</td><td>{creditCostEur(1)}</td></tr>
-          <tr><td>10 minutes</td><td>10 credits</td><td>{creditCostEur(10)}</td></tr>
-          <tr><td>30 minutes</td><td>30 credits</td><td>{creditCostEur(30)}</td></tr>
-          <tr><td>1 hour</td><td>60 credits</td><td>{creditCostEur(60)}</td></tr>
-          <tr><td>2 hours</td><td>120 credits</td><td>{creditCostEur(120)}</td></tr>
+          {[1, 10, 30, 60, 120].map((m) => (
+            <tr key={m}>
+              <td>{m < 60 ? `${m} minute${m === 1 ? "" : "s"}` : `${m / 60} hour${m === 60 ? "" : "s"}`}</td>
+              <td>{m * perMin} credit{m * perMin === 1 ? "" : "s"}</td>
+              <td>{creditCostEur(m * perMin)}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
       <p>
-        There is no subscription, and credits never expire. If you have one recording this year, you
-        pay for one recording this year; credits bought in April are still there in October, and no
-        charge arrives in a month you did not use the site.
-      </p>
-
-      <p>
-        Most transcription services sell a monthly plan instead.{" "}
+        There is no subscription, and credits never expire. Most transcription services sell a monthly plan
+        instead.{" "}
         <a
           href="https://a-closer-look.com/market-research/subscription-cancellation-customer-experience-study/"
           target="_blank"
@@ -411,31 +457,19 @@ export default function AudioToTextPage() {
         >
           One 2024 survey
         </a>{" "}
-        found that six in ten people had avoided subscribing to a service because they expected
-        cancelling to be difficult. Here there is nothing to cancel, because nothing recurs. If you
-        are weighing this against a subscription tool, we set the two out side by side in{" "}
-        <Link href="/alternatives/otter-ai">INDXR vs Otter.ai</Link>.
+        found that six in ten people had avoided subscribing to a service because they expected cancelling to
+        be difficult. Here there is nothing to cancel. If you are weighing this against a subscription tool,
+        see <Link href="/alternatives/otter-ai">INDXR vs Otter.ai</Link>.
       </p>
 
       <h2>Why not use a free converter</h2>
 
       <p>
-        Free converters are everywhere, and for some jobs they are the right choice: one short
-        recording, wording that does not have to be exact, nothing you will need again. Use one and
-        think no further about it. What you trade, when the result does matter, is quality and headroom.
-        A free service has to keep its own costs down, which generally means a lighter transcription
-        model and tighter limits on length and file size. That is a fair deal when the words are
-        throwaway, and an expensive one in your own time the moment you have to clean up the result or
-        cut a file down to fit.
+        For one short recording whose wording does not have to be exact, a free converter is fine. What you
+        trade, when the result does matter, is quality, headroom and the archive. A free service has to keep
+        its own costs down, which generally means a lighter model and tighter limits, and it hands you one
+        download and forgets it.
       </p>
-
-      <p>
-        So it is worth saying what runs here. Your file is transcribed by {transcriptionModelName()},
-        processed inside the EU, never used to train an AI model, and kept by the transcription provider
-        for one day at most, its shortest setting. We would rather tell you that than leave you to guess.
-      </p>
-
-      <p>Where they fall short is clearest side by side.</p>
 
       <DocsTable>
         <thead>
@@ -454,12 +488,7 @@ export default function AudioToTextPage() {
           <tr>
             <td className="font-medium text-[var(--fg)]">After you download</td>
             <td>One file, then it is gone</td>
-            <td>Kept in your library to search and re-export</td>
-          </tr>
-          <tr>
-            <td className="font-medium text-[var(--fg)]">Speaker labels</td>
-            <td>None</td>
-            <td>Detected, and renameable once for the whole transcript</td>
+            <td>Kept in your library with its source, searchable, and readable by Claude or ChatGPT</td>
           </tr>
           <tr>
             <td className="font-medium text-[var(--fg)]">Export formats</td>
@@ -468,8 +497,8 @@ export default function AudioToTextPage() {
           </tr>
           <tr>
             <td className="font-medium text-[var(--fg)]">File size limit</td>
-            <td>Often 50 to 100 MB</td>
-            <td>{UPLOAD_MAX_FILE_MB} MB</td>
+            <td>Often 50 to 100MB</td>
+            <td>{UPLOAD_MAX_FILE_MB}MB</td>
           </tr>
           <tr>
             <td className="font-medium text-[var(--fg)]">Where it is processed</td>
@@ -482,26 +511,13 @@ export default function AudioToTextPage() {
       <h2>Try it on your own recording</h2>
 
       <p>
-        The only reliable way to judge a transcription service is to run something through it that you
-        care about. A free account includes {FREE_TIER.WELCOME_CREDITS} credits, covering{" "}
-        {FREE_TIER.WELCOME_CREDITS} minutes of audio, with no subscription and no card. If the result
-        is not good enough, you have lost nothing. If it is, the credits you buy afterwards do not
-        expire.
+        The only reliable way to judge a transcription service is to run something through it that you care
+        about. A free account includes {welcome} credits, covering {welcomeMinutes} minutes of audio, with no
+        card. If the result is good, the credits you buy afterwards do not expire, and every transcript you
+        make stays in your library.
       </p>
 
-      <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Link href="/transcribe">
-          <button className="h-12 cursor-pointer rounded-lg bg-[var(--accent)] px-8 py-3 text-base font-semibold text-[var(--fg-on-accent)] transition-all hover:bg-[var(--accent-hover)]">
-            Try it now — no account needed
-          </button>
-        </Link>
-        <Link
-          href="/signup"
-          className="text-sm font-medium text-[var(--link)] underline-offset-2 hover:underline"
-        >
-          Or create a free account →
-        </Link>
-      </div>
+      <Ctas />
     </ToolPageTemplate>
   )
 }

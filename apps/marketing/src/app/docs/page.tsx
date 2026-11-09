@@ -40,8 +40,8 @@ export default function DocsPage() {
               Documentation
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">
-              Everything you need to get the most out of INDXR — from your first transcript to advanced export
-              and RAG workflows.
+              How to turn lectures, interviews, podcasts and videos into a searchable library with sources and
+              citations, export it anywhere, and ask Claude or ChatGPT about it.
             </p>
           </header>
 

@@ -117,7 +117,7 @@ export default function FreeToolPage() {
         <p className="mt-8 text-sm text-[var(--fg-muted)]">
           <a href="/docs" className="text-[var(--link)] underline-offset-4 hover:underline">How transcription works</a>
           {" · "}Read more:{" "}
-          <a href="/articles/video-to-text" className="underline hover:text-[var(--fg)]">video to text</a>,{" "}
+          <a href="/articles/transcribe-interviews-journalism" className="underline hover:text-[var(--fg)]">transcribing interviews</a>,{" "}
           <a href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</a>,{" "}
           <a href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">generating SRT subtitles</a>.
         </p>

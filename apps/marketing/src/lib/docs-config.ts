@@ -34,11 +34,11 @@ export const docsConfig: DocsConfig = {
       label: "Guides",
       pages: [
         { href: "/docs/guides/single-video", label: "Single video", description: "Paste a link, get a transcript." },
+        { href: "/docs/guides/ai-assistants", label: "Claude & ChatGPT", description: "Ask your library from an AI assistant, with quotes and timestamps." },
         { href: "/docs/guides/playlists", label: "Playlists", description: "Turn a whole playlist into transcripts in one job." },
         { href: "/docs/guides/uploads", label: "Audio & video uploads", description: "Transcribe files you already have." },
         { href: "/docs/guides/library", label: "Library", description: "Where your transcripts are saved, edited, and searched." },
         { href: "/docs/guides/summaries", label: "Summaries", description: "AI summaries of a transcript, and what they cost." },
-        { href: "/docs/guides/ai-assistants", label: "Claude & ChatGPT", description: "Ask your library from an AI assistant, with quotes and timestamps." },
       ],
     },
     {

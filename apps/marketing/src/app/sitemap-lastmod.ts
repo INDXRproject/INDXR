@@ -42,7 +42,8 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
 
   // Alternatives (commercial comparison pages — ADR-105). New page created 2026-09-07; for a brand-new
   // page the creation date IS its real last-content date (this is the one legitimate use of "today").
-  "/alternatives/otter-ai": "2026-09-07",
+  // 2026-11-09: two comparison rows added (sources with citation; Claude/ChatGPT connector).
+  "/alternatives/otter-ai": "2026-11-09",
 
   // Docs — Getting started
   "/docs": "2026-07-23",
@@ -74,25 +75,21 @@ export const SITEMAP_LASTMOD: Record<string, string> = {
   "/docs/account/billing": "2026-07-23",
   "/docs/account/settings": "2026-07-23",
 
-  // Articles
-  "/articles": "2026-08-26",
-  "/articles/youtube-transcript-not-available": "2026-08-26",
-  "/articles/youtube-transcript-non-english": "2026-08-26",
-  "/articles/transcript-export-formats": "2026-08-27",
+  // Articles. 2026-11-09: positioning rewrite ("your own sources in Claude and ChatGPT") touched the
+  // visible copy of every article below dated 2026-11-09; three new articles were created that day;
+  // video-to-text, youtube-video-summarizer and supported-formats were merged away (308s in next.config.ts).
+  "/articles": "2026-11-09",
+  "/articles/claude-chatgpt-own-sources": "2026-11-09",
+  "/articles/transcribe-interviews-journalism": "2026-11-09",
+  "/articles/cite-youtube-video-apa": "2026-11-09",
+  "/articles/youtube-transcript-not-available": "2026-11-09",
+  "/articles/youtube-transcript-non-english": "2026-11-09",
+  "/articles/transcript-export-formats": "2026-11-09",
   "/articles/srt-generator": "2026-08-26",
-  // supported-formats: aangemaakt + laatst inhoudelijk gewijzigd op 2026-08-31 (3fdb483 create →
-  // e466b72 index-herordening + MKV-regel verzacht → 8055f7e editorial-foto's op de kaarten).
-  "/articles/supported-formats": "2026-08-31",
-  "/articles/youtube-playlist-transcript": "2026-08-07",
-  "/articles/audio-to-text": "2026-08-01",
-  // video-to-text: laatste zichtbare-copy-wijziging op 2026-08-31 (3fdb483 — cross-link-zin naar
-  // Supported formats toegevoegd aan de body-prose; creatie 2b60919 2026-08-13).
-  "/articles/video-to-text": "2026-08-31",
-  // youtube-video-summarizer: laatste content-commit 2026-08-27 (0f82ac7 — zichtbare prijs-prose
-  // herschreven naar "1 credit per 10 minutes"; creatie 116bd1d 2026-08-24).
-  "/articles/youtube-video-summarizer": "2026-08-27",
-  "/articles/youtube-to-notes": "2026-08-25",
-  "/articles/chunk-youtube-transcripts-for-rag": "2026-07-23",
-  "/articles/youtube-channel-knowledge-base": "2026-07-23",
-  "/articles/youtube-transcripts-vector-database": "2026-07-23",
+  "/articles/youtube-playlist-transcript": "2026-11-09",
+  "/articles/audio-to-text": "2026-11-09",
+  "/articles/youtube-to-notes": "2026-11-09",
+  "/articles/chunk-youtube-transcripts-for-rag": "2026-11-09",
+  "/articles/youtube-channel-knowledge-base": "2026-11-09",
+  "/articles/youtube-transcripts-vector-database": "2026-11-09",
 }

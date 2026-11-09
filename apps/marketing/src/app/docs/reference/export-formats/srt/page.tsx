@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import {
   SUBTITLE_MAX_LINE,
@@ -116,6 +117,8 @@ export default function DocsSrtPage() {
             { publisher: "INDXR (own code)", supports: "segmentation constants, sentence-aware cue packing, 42-char line wrap", verifiedAgainst: "packages/shared/src/lib/subtitleConfig.ts + packages/shared/src/utils/formatTranscript.ts (generateSrt, buildSubtitleCues, wrapLines)" },
           ]}
         />
+        <AskYourLibrary />
+
         <RelatedTopicsList
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },

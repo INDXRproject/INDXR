@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
+import { appHref } from "@indxr/shared/lib/cross-host-links"
 import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { pageOg } from "@/lib/pageOg"
 
@@ -77,21 +79,23 @@ export default function DocsLibraryPage() {
           online video, which you can copy with one click:
         </p>
         <p className="mt-3 border-l-2 border-[var(--fg-strong)] pl-4 font-mono text-sm text-[var(--fg)]">
-          Harvard University. (2009, September 4). Justice: What&apos;s the right thing to do? Episode 01
-          [Video]. YouTube. https://youtu.be/kBdfcR-8hEY
+          Harvard University. (2009, September 4). Justice: What&apos;s The Right Thing To Do? Episode 01
+          &quot;THE MORAL SIDE OF MURDER&quot; [Video]. YouTube. https://youtu.be/kBdfcR-8hEY
         </p>
         <p className="mt-3 text-[var(--fg-subtle)] leading-relaxed">
           The publication date is looked up on YouTube the first time you open a transcript. When there is
           none (your own uploads, or a video that has since been removed), the reference says
           &quot;n.d.&quot;, which is how APA writes a source without a date. For your own files the reference
           uses the title and marks it as an audio recording; check the author before you use it in a paper.
+          The title is copied exactly as it appears on YouTube. APA writes titles in sentence case and in
+          italics, so adjust those two things when you paste the reference into a paper.
         </p>
 
         <AnchorHeading as="h2">Deleting, and how much space you use</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           Delete a single transcript from its page, or select several in the list and delete them
           together; both ask you to confirm first. A storage meter on your{" "}
-          <a className="text-[var(--link)] hover:underline" href="/docs/account/settings">account page</a>{" "}
+          <a className="text-[var(--link)] hover:underline" href={appHref("/dashboard/account")}>account page</a>{" "}
           shows how much your saved transcripts add up to, so you can see your library&apos;s footprint at
           a glance.
         </p>
@@ -104,6 +108,8 @@ export default function DocsLibraryPage() {
             { publisher: "INDXR (own code)", supports: "account-page storage meter (real library_bytes)", verifiedAgainst: "apps/app/src/components/dashboard/account/StorageMeterCard.tsx; apps/app/src/app/dashboard/account/page.tsx" },
           ]}
         />
+        <AskYourLibrary lead="Your library keeps every transcript with its source and a citation, searchable in the text itself." />
+
         <RelatedTopicsList
           topics={[
             { label: "Export formats", href: "/docs/reference/export-formats" },

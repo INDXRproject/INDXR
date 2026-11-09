@@ -5,6 +5,7 @@ import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
 import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { HowItWorksFlow } from "@/components/docs/HowItWorksFlow"
 import { JsonLd } from "@/components/seo/JsonLd"
@@ -174,6 +175,8 @@ export default function DocsOverviewPage() {
           <Link href="/docs/guides/summaries" className={A}>summarised</Link>, and the summary is stored
           and edited the same way.
         </p>
+
+        <AskYourLibrary />
 
         <RelatedTopicsList
           topics={[

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { MAX_TRANSCRIPTION_HOURS } from "@indxr/shared/lib/limits"
 import { DocsShell } from "@/components/docs/DocsShell"
 import { DocsBreadcrumb } from "@/components/docs/DocsBreadcrumb"
 import { DefinitionLeadOpening } from "@/components/docs/DefinitionLeadOpening"
@@ -6,10 +7,11 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
-import { UPLOAD_FORMAT_COUNT_WORD, UPLOAD_FORMATS_LIST } from "@indxr/shared/lib/uploadFormats"
+import { UPLOAD_FORMAT_COUNT, UPLOAD_FORMAT_COUNT_WORD, UPLOAD_FORMATS_LIST, UPLOAD_MAX_FILE_MB } from "@indxr/shared/lib/uploadFormats"
 import { pageOg } from "@/lib/pageOg"
 
 const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
   title: "Audio & video uploads — INDXR.AI Docs",
   // 155-char budget (Ahrefs crawl 2026-10-27: was 219 chars). Keyword first.
   description:
-    "Upload an audio or video file and INDXR transcribes it with AI — 14 formats, up to 500 MB and 10 hours per file, at 1 credit per minute.",
+    `Upload an interview, lecture or other recording and INDXR transcribes it with AI: ${UPLOAD_FORMAT_COUNT} formats, up to ${UPLOAD_MAX_FILE_MB} MB and ${MAX_TRANSCRIPTION_HOURS} hours, ${perMin} credit a minute.`,
   robots: { index: true, follow: true },
   ...pageOg("/docs/guides/uploads"),
 }
@@ -57,15 +59,15 @@ export default function DocsUploadsPage() {
         <AnchorHeading as="h2">What you can upload</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
           INDXR accepts {UPLOAD_FORMAT_COUNT_WORD} audio and video formats: {UPLOAD_FORMATS_LIST}. A
-          file can be up to <strong>500 MB</strong> and up to <strong>10 hours</strong> long.
+          file can be up to <strong>{UPLOAD_MAX_FILE_MB} MB</strong> and up to <strong>{MAX_TRANSCRIPTION_HOURS} hours</strong> long.
           Both limits are checked in the browser before the upload starts and again on the server, so an
           oversized file is stopped early rather than after a long wait.
         </p>
 
                 <DocsFigure
           src="/docs/screenshots/uploader-empty.png"
-          alt="The empty file uploader: a drop zone that says to drag a file or click to browse, with the accepted formats and the 500 MB size limit."
-          caption="Drag a file in or browse; the accepted formats and the 500 MB limit are shown."
+          alt={`The empty file uploader: a drop zone that says to drag a file or click to browse, with the accepted formats and the ${UPLOAD_MAX_FILE_MB} MB size limit.`}
+          caption={`Drag a file in or browse; the accepted formats and the ${UPLOAD_MAX_FILE_MB} MB limit are shown.`}
         />
 <AnchorHeading as="h2">Uploads are always transcribed with AI</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
@@ -99,6 +101,8 @@ export default function DocsUploadsPage() {
             { publisher: "INDXR (own code)", supports: "1 credit/min cost, file deleted after processing", verifiedAgainst: "packages/shared/src/lib/pricing.ts (AI_TRANSCRIPTION_PER_MIN); backend/transcription_pipeline.py:710-715 (temp-file cleanup)" },
           ]}
         />
+        <AskYourLibrary lead="Interviews, lectures and recordings you upload are kept in your library, with speakers and timestamps." />
+
         <RelatedTopicsList
           topics={[
             { label: "Limits", href: "/docs/reference/limits" },

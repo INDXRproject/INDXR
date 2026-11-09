@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { pageOg } from "@/lib/pageOg"
+import { FREE_TIER } from "@indxr/shared/lib/pricing"
 
 // The MCP connector (ADR-108): a read-only remote MCP server at app.indxr.ai/api/mcp, OAuth 2.1 with
 // dynamic client registration. Tool list, limits and block sizes mirror backend/mcp_server.py.
@@ -57,6 +58,25 @@ export default function DocsAiAssistantsPage() {
           questions about them, quoting the passage and the minute it was said. The connection can only
           read your library, never change it, and it is free on every account.
         </DefinitionLeadOpening>
+
+        <div className="my-8 border-2 border-[var(--fg-strong)] bg-[var(--bg)]">
+          <p className="border-b-2 border-[var(--fg-strong)] bg-[var(--accent)] px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--fg-on-accent)]">
+            Before you connect
+          </p>
+          <div className="px-4 py-4">
+            <p className={P}>
+              You need a free INDXR account with a few sources in it: a lecture playlist, the interviews behind an
+              article, the talks you are drawing on for a book. YouTube captions cost nothing, and a new account
+              comes with {FREE_TIER.WELCOME_CREDITS} credits for AI transcription.
+            </p>
+            <a
+              href="/signup"
+              className="mt-4 inline-flex h-11 items-center border-2 border-[var(--fg-strong)] bg-[var(--fg-strong)] px-5 font-bold text-[var(--bg)] hover:opacity-90"
+            >
+              Create a free account
+            </a>
+          </div>
+        </div>
 
         <AnchorHeading as="h2">What the assistant can do</AnchorHeading>
         <ul className="list-disc space-y-2 pl-6 text-[var(--fg-subtle)] leading-relaxed">

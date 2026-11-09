@@ -67,6 +67,13 @@ const nextConfig: NextConfig = {
       // core "no plugin, runs in the browser" message, which the FAQ carries verbatim. 308 straight to
       // that Q&A anchor (a live 200 page → single hop, no chain).
       { source: '/articles/youtube-transcript-without-extension', destination: '/docs/faq#do-i-need-a-browser-extension', permanent: true },
+
+      // Article merges (2026-11-09, positioning "your own sources in Claude and ChatGPT"): three pages
+      // that duplicated a stronger one. Their unique content moved into the target first. Single 308
+      // hop each; none of the old slugs was ever a redirect destination, so no chains.
+      { source: '/articles/video-to-text', destination: '/articles/audio-to-text', permanent: true },
+      { source: '/articles/youtube-video-summarizer', destination: '/articles/youtube-to-notes', permanent: true },
+      { source: '/articles/supported-formats', destination: '/docs/guides/uploads', permanent: true },
     ]
   },
   images: {

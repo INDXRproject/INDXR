@@ -1,75 +1,92 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostEur, getAnchorPackage, anchorPerCreditText, RAG_CHUNK_DEFAULT } from "@indxr/shared/lib/pricing"
+import {
+  CREDIT_COSTS,
+  FREE_TIER,
+  creditCostEur,
+  getAnchorPackage,
+  anchorPerCreditText,
+  RAG_CHUNK_DEFAULT,
+  RAG_CHUNK_PRESETS,
+} from "@indxr/shared/lib/pricing"
+import { MAX_PLAYLIST_VIDEOS_PER_JOB } from "@indxr/shared/lib/limits"
+
+// 2026-11-09 rewrite (positioning 9-11): the no-code path (playlist → cited, searchable collection →
+// Claude/ChatGPT via the read-only connector) comes first; the RAG JSON / vector-database pipeline is
+// the "build your own" second half. Fixed the old claim that a YouTube playlist holds "up to 500
+// videos": 500 is INDXR's per-job cap (MAX_PLAYLIST_VIDEOS_PER_JOB), not a YouTube limit.
 
 const defaultChunk = RAG_CHUNK_DEFAULT
+const otherPresets = RAG_CHUNK_PRESETS.map((p) => p.value).filter((v) => v !== RAG_CHUNK_DEFAULT)
+const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
+const perCaption = CREDIT_COSTS.PLAYLIST_VIDEO_AUTO_CAPTIONS
+const freeVideos = FREE_TIER.PLAYLIST_FREE_VIDEOS
+
+// Worked example: 50 videos averaging 30 minutes. Every credit figure derives from pricing.ts.
+const EX_VIDEOS = 50
+const EX_MINUTES = 30
+const exCaptionCredits = Math.max(0, EX_VIDEOS - freeVideos) * perCaption
+const exAiCredits = EX_VIDEOS * EX_MINUTES * perMin
+const exRagCredits = Math.ceil((EX_VIDEOS * EX_MINUTES) / 10) * CREDIT_COSTS.RAG_JSON_PER_10MIN
+
+const metaDescription =
+  "Turn a YouTube channel into a searchable, cited library you can ask from Claude or ChatGPT, no code needed. Or export RAG JSON and build your own vector search."
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles/youtube-channel-knowledge-base" },
-  title: "YouTube Channel Knowledge Base — Transcribe, Index & Search | INDXR.AI",
-  // 155-char budget (Ahrefs crawl 2026-10-27: was 178 chars). Keyword first.
-  description:
-    "Extract transcripts from a whole YouTube channel, embed them in a vector database, and build semantic search over years of video.",
+  title: "YouTube Channel Knowledge Base — Search & Ask It in Claude | INDXR.AI",
+  description: metaDescription,
   ...editorialOg("youtube-channel-knowledge-base"),
 }
 
 const faqs = [
   {
-    q: "How many videos can a single INDXR.AI extraction handle?",
-    a: "INDXR.AI processes up to 500 videos per job. For larger channels, split into batches of up to 500 videos and all results accumulate in the same library. Each job runs in the background, so you can start a large batch, close the tab, and collect the transcripts from your library as they finish.",
+    q: "Can I build this without writing code?",
+    a: "Yes, and for most people that is the better route. Extract the channel's playlists into your INDXR library, then connect the library to Claude or ChatGPT. The assistant searches the transcripts and answers with quotes, timestamps and the source. The connector is read-only and free on every account.",
+  },
+  {
+    q: "How many videos can a single INDXR job handle?",
+    a: `Up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job. That is INDXR's limit, not YouTube's: a YouTube playlist can hold far more. A larger playlist is split into batches, and every batch lands in the same library. Each job runs in the background, so you can close the tab.`,
   },
   {
     q: "Is auto-caption quality good enough for a knowledge base?",
-    a: "For retrieval purposes, auto-captions are often sufficient — keyword matching and semantic similarity work with unpunctuated text. For use cases where the retrieved text will be shown to users or read directly, AI transcription produces more readable output with proper sentence boundaries, which also improves chunk coherence.",
+    a: "For search and retrieval, auto-captions are often enough: keyword matching and semantic similarity work with unpunctuated text. When the text will be quoted or read directly, AI transcription gives more readable output with proper sentence boundaries, which also makes chunks more coherent.",
   },
   {
-    q: "What embedding model should I use?",
-    a: "OpenAI's text-embedding-3-small (1536 dimensions) is a practical default — good performance, low cost ($0.02/1M tokens). For multilingual content, Cohere's embed-multilingual-v3.0 handles 100+ languages. For highest accuracy, Voyage AI's voyage-3 consistently benchmarks well. INDXR.AI's RAG JSON output is model-agnostic — the same JSON works with any embedding provider.",
-  },
-  {
-    q: "Can I build this without writing code?",
-    a: "For no-code pipelines, n8n and Make.com both support vector database nodes (Pinecone, Qdrant) and HTTP requests to OpenAI's embedding API. INDXR.AI's RAG JSON provides the structured input; n8n or Make.com handle the embedding and storage steps without code.",
+    q: "When should I build my own vector database instead?",
+    a: "When you are building a product: a search feature for other people, a chatbot on your site, or a pipeline that has to run without you. For your own research, the connector does the retrieval for you. RAG JSON is model-agnostic, so the same export works with any embedding provider.",
   },
 ]
 
 const sources = [
-  {
-    label: "ChromaDB documentation",
-    url: "https://docs.trychroma.com/docs/overview/introduction",
-  },
-  {
-    label: "OpenAI — text-embedding-3-small model card",
-    url: "https://platform.openai.com/docs/models/text-embedding-3-small",
-  },
+  { label: "ChromaDB documentation", url: "https://docs.trychroma.com/docs/overview/introduction" },
+  { label: "OpenAI — text-embedding-3-small model card", url: "https://platform.openai.com/docs/models/text-embedding-3-small" },
 ]
 
 const steps = [
   {
-    name: "Build the playlist",
-    text: "INDXR.AI accepts playlist URLs, not channel URLs directly. Use an existing channel playlist or create your own: log into YouTube, open the channel, and use 'Save to playlist' on each video. You can create a playlist of up to 500 videos from any public channel. For channels with hundreds of videos, batch by year or topic for easier incremental updates.",
+    name: "Gather the channel into playlists",
+    text: "INDXR accepts playlist URLs, not channel URLs. Use the channel's own playlists, or save the videos you want into a playlist of your own in YouTube.",
   },
   {
-    name: "Extract transcripts with INDXR.AI",
-    text: "Paste the playlist URL into INDXR.AI's Playlist tab. The review screen lists every video's duration and whether you've already processed it — captions aren't checked ahead of time, so a video that turns out to have none is simply skipped during extraction, with its credits refunded. For a knowledge base, enable AI Transcription — punctuation and accuracy matter when transcripts become your retrieval corpus. Select RAG JSON export for all videos in the batch.",
+    name: "Extract the playlist into your library",
+    text: `Paste the playlist URL into INDXR's Playlist tab. The transcripts are filed into a collection named after the playlist, each with its source and an APA citation. One job takes up to ${MAX_PLAYLIST_VIDEOS_PER_JOB} videos; larger playlists run in batches.`,
   },
   {
-    name: "Understand the RAG JSON output",
-    text: `Each video's RAG JSON file contains ${RAG_CHUNK_DEFAULT}-second chunks by default (30, 90 and 120 second presets are also available) with everything a vector database needs: chunk text, start and end timestamps, a pre-constructed deep link to the exact moment in the video, token count estimate, and a flat metadata object with video ID, title, channel, and chunk index.`,
+    name: "Search the collection",
+    text: "The library search looks inside the transcript text, so you can find every video where a term came up, filtered to one collection.",
   },
   {
-    name: "Build the vector index",
-    text: "Load the RAG JSON files, embed each chunk using OpenAI's text-embedding-3-small, and add them to a ChromaDB collection (local, no infrastructure) or Pinecone index (production, scalable). For a 50-video knowledge base, embedding cost is approximately $0.01–0.05 using text-embedding-3-small at $0.02/1M tokens.",
+    name: "Ask Claude or ChatGPT",
+    text: "Connect the library to Claude, Claude Code or ChatGPT with the read-only connector. The assistant searches your transcripts and answers with quotes, timestamps and the source.",
   },
   {
-    name: "Query with natural language",
-    text: "Embed the user's query with the same model, run a similarity search against the collection, and return the top matching chunks. Each result includes the deep_link field — the direct timestamp URL that lets the downstream system cite sources precisely.",
-  },
-  {
-    name: "Add an LLM answer layer",
-    text: "Feed retrieved chunks to an LLM with a system prompt instructing it to cite video titles and timestamps. The deep_link per chunk enables inline citations that users can click to jump directly to the relevant moment in the video.",
+    name: "Or build your own pipeline",
+    text: "Export RAG JSON, embed the chunks, store them in a vector database and add your own answer layer, when you need search inside your own product.",
   },
 ]
 
@@ -78,97 +95,130 @@ export default function YouTubeChannelKnowledgeBasePage() {
     <TutorialTemplate
       category="Deep Dives"
       slug="youtube-channel-knowledge-base"
-      title="Turn Any YouTube Channel Into a Searchable AI Knowledge Base"
-      metaDescription="Extract transcripts from an entire YouTube channel, embed them in a vector database, and build a semantic search system over months or years of video content. Step-by-step guide."
+      title="Turn a YouTube Channel Into a Knowledge Base You Can Search and Ask"
+      metaDescription={metaDescription}
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
       steps={steps}
     >
       <p>
-        YouTube channels are dense information archives. A university lecture series, a technical
-        conference, a prolific educator with hundreds of videos — the content is there, but it&apos;s locked
-        in a format you can only consume sequentially. You can&apos;t search across a hundred videos for every
-        time a speaker discussed a specific concept, compare how their thinking evolved on a topic over
-        three years, or ask an AI assistant a question and have it retrieve the relevant moment from a
-        6-hour lecture.
+        YouTube channels are dense archives. A university lecture series, a conference, an educator with
+        hundreds of videos: the knowledge is there, but you can only watch it one video at a time. You
+        cannot search a hundred lectures for every time a speaker explained a concept, or ask a question
+        and get back the exact moment it was answered.
       </p>
 
       <p>
-        A semantic knowledge base solves this. The workflow: extract transcripts from the channel&apos;s
-        videos, convert them to embeddings, store them in a vector database, and build a search interface
-        that retrieves the most relevant passages for any natural language query.
+        There are two ways to fix that. The first needs no code: put the channel&apos;s transcripts in a
+        library where each one keeps its source, and let Claude or ChatGPT search them for you. The second
+        is to build your own retrieval pipeline with a vector database. This article does the first in
+        full, then the second for those who need it.
       </p>
 
-      <h2>Why YouTube Is a High-Value Source for Knowledge Bases</h2>
+      <h2>Step 1: Gather the channel into playlists</h2>
 
       <p>
-        YouTube hosts content that doesn&apos;t exist anywhere else in accessible form. Conference keynotes
-        with no published proceedings, interview series where experts share knowledge they never wrote
-        down, educational courses from institutions that don&apos;t publish transcripts. The transcript is the
-        text layer that makes this content processable.
+        INDXR accepts playlist URLs, not channel URLs. There are two practical paths.
       </p>
 
       <p>
-        The value of a knowledge base over individual video search is precision. YouTube&apos;s own search
-        finds videos whose titles or descriptions match your query. A semantic knowledge base finds the
-        specific 90-second passage in a 3-hour lecture where a concept was explained — and links you
-        directly to that timestamp. The granularity is different by an order of magnitude.
-      </p>
-
-      <h2>Step 1: Build the Playlist</h2>
-
-      <p>
-        INDXR.AI accepts playlist URLs, not channel URLs directly. There are two practical paths:
+        <strong>Use the channel&apos;s own playlists.</strong> Many channels group videos by series, course
+        or year. If the channel has those, use their URLs directly. Each one becomes its own collection,
+        which keeps a big channel easy to navigate.
       </p>
 
       <p>
-        <strong>Path A: Use an existing playlist.</strong> Many channels organize content into playlists
-        by series or topic. If the channel has thematic playlists — a lecture series, a conference year,
-        a topic archive — use those URLs directly.
+        <strong>Make your own playlist.</strong> Log into YouTube, open the channel, and use &quot;Save to
+        playlist&quot; on each video you want. YouTube playlists can be long; INDXR processes up to{" "}
+        {MAX_PLAYLIST_VIDEOS_PER_JOB} videos per job and runs a larger list in batches, all into the same
+        library. Batching by year or topic also makes the collection easier to update later.
+      </p>
+
+      <h2>Step 2: Extract the playlist into your library</h2>
+
+      <p>
+        Paste the playlist URL into the{" "}
+        <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link>. The review screen lists
+        every video&apos;s length and whether you have already processed it. Set each video to YouTube
+        captions or AI transcription, and start the job. It runs in the background.
       </p>
 
       <p>
-        <strong>Path B: Create your own playlist.</strong> Log into YouTube, open the channel, and use
-        the &quot;Save to playlist&quot; option on each video. You can create a playlist of up to 500 videos from
-        any public channel. For channels with hundreds of videos, batch by year or topic rather than
-        extracting everything at once — this makes the knowledge base easier to update incrementally.
+        The transcripts are filed into a collection named after the playlist. Each one keeps its source: the
+        channel, the link, the length, the publication date, and a ready{" "}
+        <Link href="/articles/cite-youtube-video-apa">APA 7 citation</Link>. That is what makes the
+        knowledge base usable for research rather than just for search.
       </p>
 
-      <h2>Step 2: Extract Transcripts with INDXR.AI</h2>
+      <p><strong>What it costs for a channel of {EX_VIDEOS} videos averaging {EX_MINUTES} minutes:</strong></p>
 
-      <p>
-        Paste the playlist URL into INDXR.AI&apos;s{" "}
-        <Link href="/articles/youtube-playlist-transcript">Playlist tab</Link>. The pre-extraction scan shows every
-        video&apos;s duration and whether you&apos;ve already processed it. For a channel
-        knowledge base, AI Transcription produces punctuated, accurately capitalized text — the quality
-        difference matters when these transcripts become your retrieval corpus.
-      </p>
-
-      <p><strong>Credit cost for a typical knowledge base project:</strong></p>
-
-      <p>
-        A channel with 50 videos averaging 30 minutes each, all processed with AI Transcription:
-      </p>
       <ul>
-        <li>50 videos × 30 minutes × 1 credit/minute = <strong>1,500 credits</strong></li>
-        <li>At {getAnchorPackage().name} pricing ({anchorPerCreditText()}): <strong>{creditCostEur(1500)}</strong></li>
-        <li>RAG JSON export: 1,500 minutes ÷ 10 minutes per credit = <strong>150 more credits</strong></li>
-        <li>Total: <strong>1,650 credits = ~{creditCostEur(1650)}</strong></li>
+        <li>
+          On YouTube captions: the first {freeVideos} videos free, then {perCaption} credit each ={" "}
+          <strong>{exCaptionCredits} credits</strong> ({creditCostEur(exCaptionCredits)} at {getAnchorPackage().name} pricing)
+        </li>
+        <li>
+          All on AI transcription: {EX_VIDEOS} × {EX_MINUTES} minutes × {perMin} credit per minute ={" "}
+          <strong>{exAiCredits.toLocaleString("en")} credits</strong> ({creditCostEur(exAiCredits)} at{" "}
+          {getAnchorPackage().name} pricing, {anchorPerCreditText()})
+        </li>
       </ul>
 
       <p>
-        This is a one-time extraction cost. The knowledge base persists indefinitely; adding new videos
-        costs only the per-video transcription.
+        Most channels mix the two: captions for videos that have them, AI for the rest or for the ones you
+        will quote. This is a one-time cost. Re-running the playlist later skips videos you already have, so
+        an update costs only the new videos.
       </p>
 
-      <h2>Step 3: Understand the RAG JSON Output</h2>
+      <h2>Step 3: Search the collection</h2>
+
+      <p>
+        Library search matches titles and the transcript text itself, so you can find every lecture where a
+        term came up, filtered to one collection. Each result opens the transcript at the passage, with the
+        timestamp to jump into the video.
+      </p>
+
+      <h2>Step 4: Ask Claude or ChatGPT</h2>
+
+      <p>
+        Connect the library once, and the assistant can list your collections, search them, read a
+        transcript in blocks with timestamps and speaker names, and look up each source with its citation.
+        It can only read, never change anything, and the connection is free on every account. Setup takes a
+        few minutes: see the <Link href="/docs/guides/ai-assistants">Claude and ChatGPT guide</Link>.
+      </p>
+
+      <p>Questions that work well name the collection and ask for evidence:</p>
+
+      <ul>
+        <li>&ldquo;Across my Justice collection, where does Sandel discuss consent? Quote him with timestamps.&rdquo;</li>
+        <li>&ldquo;How did the speaker&apos;s view on this change between the 2022 and 2025 talks? Cite each video.&rdquo;</li>
+        <li>&ldquo;Which videos in this collection mention Rawls? Give me the APA references.&rdquo;</li>
+      </ul>
+
+      <AskYourLibrary lead="Each playlist you extract becomes a collection, with every transcript's source and citation kept." />
+
+      <p>
+        For most research, writing and study, this is the whole job. You do not need to embed anything or
+        run a database: the assistant does the retrieval against your library. More on how that works in{" "}
+        <Link href="/articles/claude-chatgpt-own-sources">using Claude or ChatGPT with your own sources</Link>.
+      </p>
+
+      <h2>Build your own: the RAG JSON export</h2>
+
+      <p>
+        Build your own when you are making something for other people: a search box on your site, a
+        chatbot, a pipeline that runs without you. INDXR exports each transcript as RAG JSON at{" "}
+        {CREDIT_COSTS.RAG_JSON_PER_10MIN} credit per 10 minutes of video. For the {EX_VIDEOS}-video example
+        above that is <strong>{exRagCredits} credits</strong> on top of the transcripts.
+      </p>
 
       <p>
         Each video&apos;s <Link href="/articles/transcript-export-formats">RAG JSON</Link> file contains {defaultChunk}-second
-        chunks (by default) with everything a vector database needs:
+        chunks by default ({otherPresets.join(", ")} second presets are also available) with everything a
+        vector database needs:
       </p>
 
       <pre className="prose-content-pre"><code>{`{
@@ -216,7 +266,7 @@ export default function YouTubeChannelKnowledgeBasePage() {
         rather than just the video title.
       </p>
 
-      <h2>Step 4: Build the Vector Index</h2>
+      <h3>Build the vector index</h3>
 
       <p>
         The following example uses ChromaDB (local, no infrastructure required) and OpenAI embeddings.
@@ -275,7 +325,7 @@ for filepath in glob.glob("./transcripts/*.json"):
 
 print(f"Total chunks indexed: {collection.count()}")`}</code></pre>
 
-      <h2>Step 5: Query with Natural Language</h2>
+      <h3>Query in natural language</h3>
 
       <pre className="prose-content-pre"><code>{`def search_knowledge_base(query, n_results=5):
     query_embedding = client.embeddings.create(
@@ -302,7 +352,7 @@ print(f"Total chunks indexed: {collection.count()}")`}</code></pre>
 search_knowledge_base("trolley problem and utilitarian ethics")
 search_knowledge_base("how does Rawls define justice")`}</code></pre>
 
-      <h2>Step 6: Add an LLM Response Layer</h2>
+      <h3>Add an LLM answer layer</h3>
 
       <pre className="prose-content-pre"><code>{`def answer_question(question, n_chunks=4):
     query_embedding = client.embeddings.create(
@@ -338,20 +388,18 @@ search_knowledge_base("how does Rawls define justice")`}</code></pre>
 answer = answer_question("Explain the trolley problem and its implications for moral philosophy")
 print(answer)`}</code></pre>
 
-      <h2>Keeping the Knowledge Base Current</h2>
+      <h2>Keeping the knowledge base current</h2>
 
       <p>
-        For channels that publish regularly, INDXR.AI&apos;s duplicate detection means re-running a playlist
-        extraction only processes new videos — existing ones are skipped and not charged. A simple
-        update workflow: extract the channel playlist weekly or monthly, new transcripts appear
-        automatically and are ready to embed.
+        For channels that publish regularly, INDXR&apos;s duplicate detection means re-running a playlist
+        only processes new videos; existing ones are left out and not charged. The connector reads whatever
+        is in your library, so new transcripts are available to Claude or ChatGPT straight away. For your
+        own vector index, export the new transcripts and embed them as before.
       </p>
 
       <p>
-        For the full chunking research behind the {defaultChunk}-second default chunk size, see{" "}
-        <Link href="/articles/chunk-youtube-transcripts-for-rag">
-          How to Chunk YouTube Transcripts for RAG
-        </Link>
+        For the research behind the {defaultChunk}-second default chunk size, see{" "}
+        <Link href="/articles/chunk-youtube-transcripts-for-rag">How to Chunk YouTube Transcripts for RAG</Link>
         . For credit packages, see <Link href="/pricing">pricing</Link>.
       </p>
     </TutorialTemplate>

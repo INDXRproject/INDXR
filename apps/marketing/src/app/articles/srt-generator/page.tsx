@@ -299,7 +299,7 @@ begin with a story suppose you're the`}</DocsCodeBlock>
 
       <p>
         For getting the words out of a video file in the first place,{" "}
-        <Link href="/articles/video-to-text">video to text</Link> covers the upload side; for every other way
+        <Link href="/articles/audio-to-text">audio and video to text</Link> covers the upload side; for every other way
         to export a transcript, and for importing subtitles into a specific editor,{" "}
         <Link href="/articles/transcript-export-formats">transcript export formats</Link> is the hub.
       </p>

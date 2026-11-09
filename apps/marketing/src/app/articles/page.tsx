@@ -3,38 +3,42 @@ import { ContentCard } from "@/components/content/ContentCard"
 import { EditorialImage } from "@/components/content/EditorialImage"
 import { editorialAlt, hasEditorialImage } from "@/lib/editorialAlts"
 import { pageOg } from "@/lib/pageOg"
+import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
 
 export const metadata: Metadata = {
   alternates: { canonical: "/articles" },
-  title: "Articles — Audio, Video and YouTube Transcript Guides | INDXR.AI",
-  description: "Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows, troubleshooting, and AI transcription.",
+  title: "Articles — Research With Your Own Sources | INDXR.AI",
+  description: "Guides for people who research, study and write: transcribe your sources, cite them, and use them in Claude or ChatGPT.",
   ...pageOg("/articles"),
 }
 
 // description = the article's own metadata description (opening line), not newly written.
 // category = a stable internal grouping key; the shown section label is CATEGORY_LABEL below.
+const perMin = CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN
+const freeVideos = FREE_TIER.PLAYLIST_FREE_VIDEOS
+
 const articles = [
+  // Research with your sources (positioning 9-11-2026): lead category.
+  { href: "/articles/claude-chatgpt-own-sources", label: "Claude or ChatGPT With Your Own Sources", category: "Research", description: "Stop the model quoting from memory: give it your transcripts, and get answers with the passage, the minute and the source." },
+  { href: "/articles/transcribe-interviews-journalism", label: "Transcribing Interviews", category: "Research", description: "For journalists and non-fiction writers: transcribe interviews, check every quote against the recording, and find every mention." },
+  { href: "/articles/cite-youtube-video-apa", label: "Cite a YouTube Video in APA 7", category: "Research", description: "The reference format, the rules, worked examples, and how to cite a quote with its timestamp." },
+  { href: "/articles/youtube-to-notes", label: "Study Notes From a Lecture Playlist", category: "Research", description: "A playlist becomes a cited collection; Claude, ChatGPT or INDXR's own summary writes notes with a reference per section." },
+  { href: "/articles/youtube-channel-knowledge-base", label: "A Knowledge Base From a YouTube Channel", category: "Research", description: "Search a whole channel and ask it questions in Claude or ChatGPT, no code needed. Or build your own vector search." },
+  { href: "/articles/audio-to-text", label: "Interviews, Lectures and Podcasts to Text", category: "Research", description: `Upload a recording and keep a transcript you can search and quote by timestamp. ${perMin} credit per minute.` },
+
   // Troubleshooting
-  { href: "/articles/youtube-transcript-not-available", label: "YouTube Transcript Not Available?", category: "Troubleshooting", description: "Missing or not showing? Every reason — and how to get the text anyway." },
-  { href: "/articles/youtube-transcript-non-english", label: "Non-English Transcripts", category: "Troubleshooting", description: "Arabic, Spanish, Portuguese, Indonesian, Turkish — captions vs. AI transcription." },
-
-  // Formats (internal key: Export Formats)
-  { href: "/articles/transcript-export-formats", label: "Transcript Export Formats", category: "Export Formats", description: "Every export format — plain text, Markdown, CSV, SRT/VTT, JSON, and RAG-optimized JSON." },
-  { href: "/articles/srt-generator", label: "SRT Generator", category: "Export Formats", description: "Create an SRT or VTT subtitle file from a video, a link or an audio recording: re-timed per word and regrouped into readable, broadcast-standard cues." },
-
-  // Reference
-  { href: "/articles/supported-formats", label: "Supported Formats", category: "Reference", description: "Every input format INDXR transcribes — M4A, WAV, OGG, OPUS, FLAC, MP4, MKV, MOV and more. What each one is, where it comes from, and what happens to it." },
+  { href: "/articles/youtube-transcript-not-available", label: "YouTube Transcript Not Available?", category: "Troubleshooting", description: "Missing or not showing? Every reason, and how to get the text anyway." },
+  { href: "/articles/youtube-transcript-non-english", label: "Non-English Transcripts", category: "Troubleshooting", description: "Arabic, Spanish, Portuguese, Indonesian, Turkish: captions vs. AI transcription." },
 
   // Workflows & Use Cases
-  { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: "Extract a whole playlist in one job — first 3 YouTube caption videos free." },
-  { href: "/articles/audio-to-text", label: "Audio File Transcription", category: "Workflows", description: "Transcribe any audio or video file to text: punctuated, split by speaker, timestamped. One credit per minute." },
-  { href: "/articles/video-to-text", label: "Video File Transcription", category: "Workflows", description: "Transcribe any video file to text: the audio track is taken out for you, punctuated, split by speaker, timestamped, and exportable as subtitles." },
-  { href: "/articles/youtube-video-summarizer", label: "YouTube Video Summarizer", category: "Workflows", description: "Summarize a YouTube video into chapter notes with clickable timestamps: an overview plus worked-out chapters that scale with the video's length." },
-  { href: "/articles/youtube-to-notes", label: "YouTube to Notes", category: "Workflows", description: "Turn a video into a structured summary with chapters and timestamps, edit it into your own version, and export it as Markdown for Obsidian, Notion or any note app." },
+  { href: "/articles/youtube-playlist-transcript", label: "Playlist Transcripts", category: "Workflows", description: `Extract a whole playlist in one job. The first ${freeVideos} YouTube caption videos are free.` },
+
+  // Formats (internal key: Export Formats)
+  { href: "/articles/transcript-export-formats", label: "Transcript Export Formats", category: "Export Formats", description: "Every export format: plain text, Markdown, CSV, SRT/VTT, JSON, and RAG-optimized JSON." },
+  { href: "/articles/srt-generator", label: "SRT Generator", category: "Export Formats", description: "Create an SRT or VTT subtitle file from a video, a link or an audio recording: re-timed per word and regrouped into readable, broadcast-standard cues." },
 
   // AI & RAG (internal key: Deep Dives)
   { href: "/articles/chunk-youtube-transcripts-for-rag", label: "Chunking Transcripts for RAG", category: "Deep Dives", description: "The chunk size you pick matters more than your embedding model." },
-  { href: "/articles/youtube-channel-knowledge-base", label: "Building a YouTube Knowledge Base", category: "Deep Dives", description: "Extract a whole channel, embed it, and build semantic search over years of video." },
   { href: "/articles/youtube-transcripts-vector-database", label: "Transcripts in Vector Databases", category: "Deep Dives", description: "Step-by-step: extract transcripts, generate embeddings, store, and query in natural language." },
 ]
 
@@ -43,6 +47,7 @@ const categories = Array.from(new Set(articles.map((a) => a.category)))
 // Shown section label per internal category key. The keys stay put (they're the article
 // `category` prop identifiers, not URL slugs); only the displayed name changed.
 const CATEGORY_LABEL: Record<string, string> = {
+  "Research": "Research with your sources",
   "Troubleshooting": "Troubleshooting",
   "Export Formats": "Formats",
   "Workflows": "Workflows",
@@ -60,11 +65,12 @@ export default function ArticlesPage() {
         <header className="mb-14 border-b-2 border-[var(--fg-strong)] pb-10">
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">Articles</p>
           <h1 className="mt-4 text-5xl font-bold leading-[0.95] tracking-[-0.045em] text-[var(--fg-strong)] sm:text-7xl">
-            Guides for everything you transcribe.
+            Research with your own sources.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--fg-subtle)]">
-            Guides, tutorials, and reference on transcribing audio, video and YouTube — formats, workflows,
-            troubleshooting, and AI transcription.
+            Guides for people who research, study and write: turn lectures, interviews, podcasts and videos
+            into transcripts you can search and cite, and use them in Claude or ChatGPT. Plus formats,
+            workflows and troubleshooting.
           </p>
         </header>
 

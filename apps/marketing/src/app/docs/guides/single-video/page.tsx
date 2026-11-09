@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
@@ -117,6 +118,8 @@ export default function DocsSingleVideoPage() {
           alt="The error card for a private, removed, or region-blocked video: it can't be reached and no credits were used."
           caption="Private, removed, or region-blocked videos can't be reached; no credits are used."
         />
+<AskYourLibrary />
+
 <RelatedTopicsList
           topics={[
             { label: "How INDXR works", href: "/docs/how-indxr-works" },

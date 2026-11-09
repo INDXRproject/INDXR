@@ -119,6 +119,20 @@ const COMPARISON = [
     indxr: "Yes, and you rename a speaker once to update the whole transcript.",
   },
   {
+    // Otter side not claimed: we have not verified how Otter records a source or whether it builds a
+    // citation, so the cell says so instead of guessing (ADR-105: nothing unverifiable is asserted).
+    feature: "Sources kept with a citation",
+    otter: null,
+    indxr: "Yes. Every transcript keeps its source (channel, link, length, publication date) and a ready APA 7 citation you copy with one click.",
+  },
+  {
+    // Otter side checked 9 November 2026 against help.otter.ai "Otter MCP Server" (lists Claude,
+    // ChatGPT in beta, and Cursor; does not say which plans include it or whether it is read-only).
+    feature: "Ask your library from Claude or ChatGPT",
+    otter: "Otter has an MCP server for Claude and ChatGPT (ChatGPT in beta, per Otter's help centre on 9 November 2026). Its help page does not say which plans include it.",
+    indxr: "Yes. A read-only connector for Claude, Claude Code and ChatGPT that searches your transcripts and answers with quotes, timestamps and the source. Free on every INDXR account; ChatGPT needs a paid ChatGPT plan with developer mode.",
+  },
+  {
     feature: "Team workspaces",
     otter: "Yes, with shared workspaces and admin controls.",
     indxr: "No. INDXR is built for one person.",
@@ -251,7 +265,7 @@ export default function OtterAlternativePage() {
                       </tr>
                       <tr className="align-top">
                         <td className="border-b border-[var(--border-subtle)] px-3 py-3 leading-relaxed text-[var(--fg-muted)] sm:px-4">
-                          {row.otter}
+                          {row.otter ?? <span className="italic">Not compared here.</span>}
                         </td>
                         <td className="border-b border-l border-[var(--border-subtle)] px-3 py-3 leading-relaxed text-[var(--fg)] sm:px-4">
                           {row.indxr}

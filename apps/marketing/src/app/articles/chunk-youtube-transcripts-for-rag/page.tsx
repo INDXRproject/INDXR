@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
 import { transcriptionModelName } from "@indxr/shared/lib/models"
-import { RAG_CHUNK_PRESETS } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, RAG_CHUNK_PRESETS } from "@indxr/shared/lib/pricing"
 
 // Token estimates rendered from the pricing source (RAG_CHUNK_PRESETS), never hardcoded.
 const tok = (v: number) => RAG_CHUNK_PRESETS.find((p) => p.value === v)!.tokens.replace(" tokens", "")
@@ -76,7 +77,7 @@ const sources = [
 const steps = [
   {
     name: "Extract the transcript",
-    text: `Use INDXR.AI to extract the YouTube transcript. For videos with auto-captions, this is free and instant. For videos without captions or for non-English content, enable AI Transcription (${transcriptionModelName()}, 1 credit per minute) to get punctuated output with proper sentence boundaries.`,
+    text: `Use INDXR.AI to extract the YouTube transcript. For videos with auto-captions, this is free and instant. For videos without captions or for non-English content, enable AI Transcription (${transcriptionModelName()}, ${CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit per minute) to get punctuated output with proper sentence boundaries.`,
   },
   {
     name: "Choose your chunk duration",
@@ -108,7 +109,7 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
       title="How to Chunk YouTube Transcripts for RAG (and Why 30 Seconds Is Wrong)"
       metaDescription="The chunk size you pick matters more than your embedding model. Research-backed guide covering optimal sizes, overlap, sentence-boundary snapping, and why 30 seconds is wrong."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-24"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
@@ -130,6 +131,8 @@ export default function ChunkYouTubeTranscriptsForRAGPage() {
         where embedding models start to produce semantically meaningful vectors. You&apos;re embedding
         fragments, and your retrieval quality reflects it.
       </p>
+
+      <AskYourLibrary lead="Only want answers with timestamps in Claude or ChatGPT? You may not need a vector database at all: every transcript you make is kept in your library, with its source and a citation." />
 
       <h2>How Many Tokens Is 30 Seconds of Speech?</h2>
 

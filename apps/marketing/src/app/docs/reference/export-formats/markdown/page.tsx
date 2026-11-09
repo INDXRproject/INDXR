@@ -7,6 +7,7 @@ import { DocsCodeBlock } from "@/components/docs/DocsCodeBlock"
 import { DocsTable } from "@/components/docs/DocsTable"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { pageOg } from "@/lib/pageOg"
 
@@ -107,6 +108,8 @@ export default function DocsMarkdownPage() {
             { publisher: "INDXR (own code)", supports: "frontmatter keys, timestamp-heading format, paragraph split", verifiedAgainst: "packages/shared/src/utils/formatTranscript.ts (generateMarkdown, buildYamlFrontmatter)" },
           ]}
         />
+        <AskYourLibrary />
+
         <RelatedTopicsList
           topics={[
             { label: "All export formats", href: "/docs/reference/export-formats" },

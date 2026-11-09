@@ -70,7 +70,7 @@ export default function YouTubeTranscriptNotAvailablePage() {
       title="YouTube transcript not available? Why it happens, and how to get the text anyway"
       metaDescription="YouTube transcript missing or not showing? Tell an interface glitch from a video that has no captions, and get the text anyway when there's nothing to show."
       publishedAt="2026-04-16"
-      updatedAt="2026-08-14"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
@@ -267,6 +267,11 @@ export default function YouTubeTranscriptNotAvailablePage() {
         {FREE_TIER.WELCOME_CREDITS} minutes of audio, with no subscription and no card. If the result
         isn&apos;t good enough, you&apos;ve lost nothing. If it is, the credits you buy afterwards never
         expire, so they&apos;re there the next time a video turns up without a transcript.
+      </p>
+
+      <p>
+        With an account, the transcript is also kept in your library with its source and a citation, so you
+        can search it later or <Link href="/docs/guides/ai-assistants">ask Claude or ChatGPT about it</Link>.
       </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">

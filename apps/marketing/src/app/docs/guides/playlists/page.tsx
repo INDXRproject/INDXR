@@ -6,6 +6,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { DocsFigure } from "@/components/docs/DocsFigure"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS, FREE_TIER } from "@indxr/shared/lib/pricing"
@@ -101,6 +102,8 @@ export default function DocsPlaylistsPage() {
             { publisher: "INDXR (own code)", supports: "reserve up front, settle per video, refund the unused remainder; runs in background", verifiedAgainst: "backend/credit_manager.py:242-331 (reserve/settle/refund_credits); backend/main.py:1410-1442" },
           ]}
         />
+        <AskYourLibrary lead="A playlist becomes a collection: a whole course or series you can search at once." />
+
         <RelatedTopicsList
           topics={[
             { label: "How INDXR works", href: "/docs/how-indxr-works" },

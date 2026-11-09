@@ -68,7 +68,7 @@ export default function YouTubePlaylistTranscriptPage() {
       title="YouTube playlist transcript: extract every video in one job"
       metaDescription={metaDescription}
       publishedAt="2026-04-16"
-      updatedAt="2026-08-24"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       image="https://indxr.ai/docs/screenshots/playlist-complete-light.png"
@@ -107,7 +107,7 @@ export default function YouTubePlaylistTranscriptPage() {
 
       <DocsFigure
         src="/docs/screenshots/playlist-url-input.png"
-        alt="The playlist tab: a field to paste a YouTube playlist URL, a Fetch playlist button, and a line beneath it showing the first three caption videos are free, then one credit per video, with AI at one credit per minute."
+        alt={`The playlist tab: a field to paste a YouTube playlist URL, a Fetch playlist button, and a line beneath it showing the first ${spellCount(freeSlots)} caption videos are free, then ${spellCount(perCaption)} credit per video, with AI at ${spellCount(perAiMinute)} credit per minute.`}
         caption="Paste a playlist URL. The cost rule sits right under the field, before you fetch anything."
       />
 
@@ -291,6 +291,24 @@ export default function YouTubePlaylistTranscriptPage() {
         <code>video-title_video-id.ext</code>. For AI pipelines the RAG JSON export can be merged into a
         single array across the playlist, so a course or a channel becomes one dataset rather than a
         folder of files.
+      </p>
+
+      <h2>The playlist becomes a collection</h2>
+
+      <p>
+        When the job finishes, the playlist is not a folder of downloads. Its transcripts are filed into a
+        collection named after the playlist, and each one keeps its source: the channel, the link, the
+        publication date and a ready APA citation. Library search looks inside the text, so you can find
+        every lecture in the course where a term came up.
+      </p>
+
+      <p>
+        Connect the library to Claude or ChatGPT and you can ask the whole playlist a question: &ldquo;Where
+        in this course is the Battle of Tours discussed? Quote it with timestamps.&rdquo; The assistant
+        searches your transcripts and answers with the passage, the minute and the source. The connection is
+        read-only and free on every account; setup is in the{" "}
+        <Link href="/docs/guides/ai-assistants">Claude and ChatGPT guide</Link>, and the bigger picture in{" "}
+        <Link href="/articles/claude-chatgpt-own-sources">using Claude or ChatGPT with your own sources</Link>.
       </p>
 
       <h2>Try it on a playlist</h2>

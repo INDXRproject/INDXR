@@ -9,9 +9,10 @@ import { DocsTable } from "@/components/docs/DocsTable"
 import { DocsCallout } from "@/components/docs/DocsCallout"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { pageOg } from "@/lib/pageOg"
-import { CREDIT_COSTS, RAG_CHUNK_PRESETS } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, RAG_CHUNK_DEFAULT, RAG_CHUNK_PRESETS } from "@indxr/shared/lib/pricing"
 
 const ragPer10 = CREDIT_COSTS.RAG_JSON_PER_10MIN
 
@@ -69,7 +70,7 @@ const ragSample = `{
       "metadata": {
         "video_id": "kBdfcR-8hEY",
         "title": "Justice: What's The Right Thing To Do? Episode 01 …",
-        "channel": null,
+        "channel": "Harvard University",
         "chunk_index": 0,
         "start_time": 4.2,
         "end_time": 65.08,
@@ -120,6 +121,7 @@ export default function DocsJsonPage() {
           straight to that moment), ready to embed in a vector database — a store that finds passages
           by meaning rather than exact keywords.
         </DefinitionLeadOpening>
+        <AskYourLibrary lead="Only want an AI to answer from these transcripts? You may not need RAG JSON or a vector database at all." />
 
         <AnchorHeading as="h2">Standard JSON (free)</AnchorHeading>
         <p className="text-[var(--fg-subtle)] leading-relaxed">
@@ -177,7 +179,7 @@ export default function DocsJsonPage() {
           <tbody>
             {RAG_CHUNK_PRESETS.map((p) => (
               <tr key={p.value}>
-                <td>{p.label}{p.value === 60 ? " (default)" : ""}</td>
+                <td>{p.label}{p.value === RAG_CHUNK_DEFAULT ? " (default)" : ""}</td>
                 <td>{p.sub}</td>
                 <td>{p.tokens}</td>
               </tr>

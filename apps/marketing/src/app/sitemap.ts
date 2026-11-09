@@ -55,15 +55,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Articles
     "/articles",
+    "/articles/claude-chatgpt-own-sources",
+    "/articles/transcribe-interviews-journalism",
+    "/articles/cite-youtube-video-apa",
     "/articles/youtube-transcript-not-available",
     "/articles/youtube-transcript-non-english",
     "/articles/transcript-export-formats",
     "/articles/srt-generator",
-    "/articles/supported-formats",
     "/articles/youtube-playlist-transcript",
     "/articles/audio-to-text",
-    "/articles/video-to-text",
-    "/articles/youtube-video-summarizer",
     "/articles/youtube-to-notes",
     "/articles/chunk-youtube-transcripts-for-rag",
     "/articles/youtube-channel-knowledge-base",

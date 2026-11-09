@@ -94,7 +94,7 @@ export default function DocsCreditsPage() {
           Every account gets 100 MB of library storage — the space your saved transcripts, edits,
           summaries and exports take up. Since transcripts are text, 100 MB holds a lot. You can see how
           much you&apos;ve used on your{" "}
-          <a href="/dashboard/account" className="text-[var(--link)] hover:underline">Account page</a>.
+          <a href={appHref("/dashboard/account")} className="text-[var(--link)] hover:underline">Account page</a>.
         </p>
         <p className="text-[var(--fg-subtle)] leading-relaxed mt-3">
           If you fill it, new transcripts pause until you free up space — your existing transcripts are

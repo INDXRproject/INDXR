@@ -74,7 +74,7 @@ export default function YouTubeTranscriptNonEnglishPage() {
       title="Non-English YouTube transcripts: get the right language"
       metaDescription={metaDescription}
       publishedAt="2026-04-24"
-      updatedAt="2026-08-26"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
@@ -255,6 +255,13 @@ export default function YouTubeTranscriptNonEnglishPage() {
       </p>
 
       <h2>Try it</h2>
+
+      <p>
+        The transcript is kept in your library in the language it was spoken, with its source and a
+        citation. Connect the library to Claude or ChatGPT and you can ask about it in English and get the
+        original passage back with its timestamp.{" "}
+        <Link href="/docs/guides/ai-assistants">How to connect</Link>.
+      </p>
 
       <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <Link href="/signup">

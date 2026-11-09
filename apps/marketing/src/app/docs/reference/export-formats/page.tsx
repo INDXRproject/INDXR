@@ -7,6 +7,7 @@ import { AnchorHeading } from "@/components/docs/AnchorHeading"
 import { DocsTable } from "@/components/docs/DocsTable"
 import { SourcesBlock } from "@/components/docs/SourcesBlock"
 import { RelatedTopicsList } from "@/components/docs/RelatedTopicsList"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { CREDIT_COSTS } from "@indxr/shared/lib/pricing"
 import { EXPORT_FORMAT_COUNT, EXPORT_DOWNLOAD_COUNT, spellCount } from "@indxr/shared/lib/exportFormats"
@@ -135,6 +136,8 @@ export default function DocsExportFormatsPage() {
             { publisher: "INDXR (own code)", supports: "RAG JSON cost, plain-text-only for anonymous", verifiedAgainst: "packages/shared/src/lib/pricing.ts (RAG_JSON_PER_10MIN); packages/shared/src/components/TranscriptCard.tsx:122-133" },
           ]}
         />
+        <AskYourLibrary />
+
         <RelatedTopicsList
           topics={[
             { label: "Credits", href: "/docs/account/credits" },

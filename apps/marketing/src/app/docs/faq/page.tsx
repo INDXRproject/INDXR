@@ -34,12 +34,35 @@ const P = "text-[var(--fg-subtle)] leading-relaxed mb-4"
 
 const faqs: { question: string; answer: ReactNode }[] = [
   {
+    question: "What is INDXR.AI?",
+    answer: (
+      <>
+        INDXR turns a YouTube video — or a whole playlist, or an audio or video file you upload — into
+        text, either by copying the captions the video already carries or by transcribing the audio.
+        Everything you make is kept with its source in a library you can search word for word, export
+        as plain text, subtitles, CSV, Markdown or JSON, or ask Claude and ChatGPT about.
+        See <Link href="/docs/how-indxr-works" className={A}>How INDXR works</Link>.
+      </>
+    ),
+  },
+  {
+    question: "Can I use INDXR with Claude or ChatGPT?",
+    answer: (
+      <>
+        Yes. Connect your library once, then ask the assistant about your sources: it searches your
+        transcripts and answers with quotes and timestamps. It can only read, never change anything, and
+        it is free on every account. ChatGPT needs a paid plan with developer mode. See{" "}
+        <Link href="/docs/guides/ai-assistants" className={A}>Claude &amp; ChatGPT</Link>.
+      </>
+    ),
+  },
+  {
     question: "Do I need an account?",
     answer: (
       <>
         Not for a single video. Without signing in you can extract the caption track from one video at
         a time and take the text as a plain TXT file. Everything else — AI transcription, playlists,
-        uploads, the other six export formats, and the library that keeps your transcripts — needs a
+        uploads, the other {spellCount(EXPORT_FORMAT_COUNT - 1)} export formats, and the library that keeps your transcripts — needs a
         free account. See <Link href="/docs/quickstart" className={A}>Get your first transcript</Link>.
       </>
     ),
@@ -138,29 +161,6 @@ const faqs: { question: string; answer: ReactNode }[] = [
         There is no public REST API. There is a read-only connection for AI assistants (an MCP server),
         so Claude, Claude Code and ChatGPT can search and read your library. See{" "}
         <Link href="/docs/guides/ai-assistants" className={A}>Claude &amp; ChatGPT</Link>.
-      </>
-    ),
-  },
-  {
-    question: "Can I use INDXR with Claude or ChatGPT?",
-    answer: (
-      <>
-        Yes. Connect your library once, then ask the assistant about your sources: it searches your
-        transcripts and answers with quotes and timestamps. It can only read, never change anything, and
-        it is free on every account. ChatGPT needs a paid plan with developer mode. See{" "}
-        <Link href="/docs/guides/ai-assistants" className={A}>Claude &amp; ChatGPT</Link>.
-      </>
-    ),
-  },
-  {
-    question: "What is INDXR.AI?",
-    answer: (
-      <>
-        INDXR turns a YouTube video — or a whole playlist, or an audio or video file you upload — into
-        text, either by copying the captions the video already carries or by transcribing the audio.
-        Everything you make is kept with its source in a library you can search word for word, export
-        as plain text, subtitles, CSV, Markdown or JSON, or ask Claude and ChatGPT about.
-        See <Link href="/docs/how-indxr-works" className={A}>How INDXR works</Link>.
       </>
     ),
   },

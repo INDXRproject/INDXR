@@ -164,7 +164,7 @@ export default function TranscriptExportFormatsPage() {
       title="Transcript export formats: which file to choose"
       metaDescription="One transcript, several files: plain text, Markdown, CSV, SRT and VTT subtitles, standard JSON, and RAG JSON. A decision table plus a real example of each, so you can pick the right one."
       publishedAt="2026-04-16"
-      updatedAt="2026-08-27"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
@@ -211,6 +211,12 @@ export default function TranscriptExportFormatsPage() {
             </tr>
           </thead>
           <tbody>
+            <tr>
+              <td>No export: ask in Claude or ChatGPT</td>
+              <td>Leave it in your library; the assistant searches it and quotes it with timestamps and the source</td>
+              <td>Free</td>
+              <td>Free account</td>
+            </tr>
             <tr>
               <td>Plain text (TXT)</td>
               <td>Read a video like a document, or start your own writing from it</td>
@@ -261,6 +267,13 @@ export default function TranscriptExportFormatsPage() {
         Plain text and Markdown each come in two shapes, plain and with timestamps, which is why{" "}
         {spellCount(EXPORT_FORMAT_COUNT)} formats add up to {spellCount(EXPORT_DOWNLOAD_COUNT)} download
         options in the export menu. The rest of this page takes each format in turn.
+      </p>
+
+      <p>
+        The first row is not a file. If you were going to export a transcript only to paste it into Claude or
+        ChatGPT, you can skip the file: connect your library and the assistant reads the transcripts itself,
+        read-only, with the timestamp and citation for each passage. Setup is in the{" "}
+        <Link href="/docs/guides/ai-assistants">Claude and ChatGPT guide</Link>.
       </p>
 
       <h2>Plain text (TXT)</h2>

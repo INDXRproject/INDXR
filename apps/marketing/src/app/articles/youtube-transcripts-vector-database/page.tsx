@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { TutorialTemplate } from "@/components/content/templates/TutorialTemplate"
+import { AskYourLibrary } from "@/components/docs/AskYourLibrary"
 import { AUTHORS } from "@/lib/authors"
 import { editorialOg } from "@/lib/editorialMeta"
-import { creditCostEur, getAnchorPackage, anchorPerCreditText, RAG_CHUNK_DEFAULT } from "@indxr/shared/lib/pricing"
+import { CREDIT_COSTS, creditCostEur, getAnchorPackage, anchorPerCreditText, RAG_CHUNK_DEFAULT } from "@indxr/shared/lib/pricing"
 
 const defaultChunk = RAG_CHUNK_DEFAULT
 import { TRANSCRIPTION_MODEL } from "@indxr/shared/lib/models"
@@ -86,7 +87,7 @@ export default function YouTubeTranscriptsVectorDatabasePage() {
       title="YouTube Transcripts to Vector Database — A Complete Python Pipeline"
       metaDescription="Step-by-step guide to building a semantic search system over YouTube video content. Extract transcripts, generate embeddings, store in Pinecone or ChromaDB, and query with natural language."
       publishedAt="2026-04-16"
-      updatedAt="2026-04-16"
+      updatedAt="2026-11-09"
       author={AUTHORS["indxr-editorial"]}
       faqs={faqs}
       sources={sources}
@@ -105,6 +106,8 @@ export default function YouTubeTranscriptsVectorDatabasePage() {
         Python. The pipeline handles single videos or entire playlists and scales from a laptop to
         production infrastructure.
       </p>
+
+      <AskYourLibrary lead="Only want answers with timestamps in Claude or ChatGPT? You may not need a vector database at all: every transcript you make is kept in your library, with its source and a citation." />
 
       <h2>What We&apos;re Building</h2>
 
@@ -413,7 +416,7 @@ print(answer("Explain the role of positional encoding in transformers"))`}</code
 
       <p>
         The embedding cost is negligible. The primary cost is INDXR.AI credits for AI Transcription
-        ({anchorPerCreditText()} at {getAnchorPackage().name}, 1 credit/minute = ~{creditCostEur(30)} for 30 minutes). See{" "}
+        ({anchorPerCreditText()} at {getAnchorPackage().name}, {CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN} credit/minute = ~{creditCostEur(30 * CREDIT_COSTS.AI_TRANSCRIPTION_PER_MIN)} for 30 minutes). See{" "}
         <Link href="/pricing">pricing</Link> for package details.
       </p>
 

@@ -443,7 +443,7 @@ export default async function LandingPage() {
         <p className="mt-10 text-sm text-[var(--fg-muted)]">
           Audio is deleted as soon as transcription finishes, everything runs and is stored in the EU, and payment
           is handled by Stripe. More on{" "}
-          <Link href="/articles/video-to-text" className="underline hover:text-[var(--fg)]">converting video to text</Link>,{" "}
+          <Link href="/articles/claude-chatgpt-own-sources" className="underline hover:text-[var(--fg)]">using Claude with your own sources</Link>,{" "}
           <Link href="/articles/audio-to-text" className="underline hover:text-[var(--fg)]">audio to text</Link>, and{" "}
           <Link href="/articles/srt-generator" className="underline hover:text-[var(--fg)]">SRT subtitle generation</Link>.
         </p>
