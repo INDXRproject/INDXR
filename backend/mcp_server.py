@@ -171,7 +171,7 @@ mcp = MCPServer(
 
 @mcp.tool(
     title="List collections",
-    annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+    annotations={"title": "List collections", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
 async def list_collections() -> dict[str, Any]:
     """List this user's collections (folders) with how many transcripts are in each."""
@@ -215,7 +215,7 @@ def _excerpt_around(text: str, needle: str, radius: int = 150) -> str:
 
 @mcp.tool(
     title="Search library",
-    annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+    annotations={"title": "Search library", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
 async def search_library(query: str, collection_id: str | None = None, limit: int = 10) -> dict[str, Any]:
     """Search this user's transcript titles, channel names, and transcript text. Returns the
@@ -376,7 +376,7 @@ def _fmt_mmss(seconds: float) -> str:
 
 @mcp.tool(
     title="Get transcript",
-    annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+    annotations={"title": "Get transcript", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
 async def get_transcript(id: str, start_minute: float = 0, minutes: float = 15) -> dict[str, Any]:
     """Read this transcript's text for a time window, in paragraphs with [mm:ss] timestamps and
@@ -480,7 +480,7 @@ def _build_citation(title: str, channel: str | None, video_id: str | None, publi
 
 @mcp.tool(
     title="Get source",
-    annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+    annotations={"title": "Get source", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
 async def get_source(id: str) -> dict[str, Any]:
     """This transcript's source: title, channel, link, duration, word count, language, publication
@@ -526,7 +526,7 @@ async def get_source(id: str) -> dict[str, Any]:
 
 @mcp.tool(
     title="Get summary",
-    annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+    annotations={"title": "Get summary", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
 async def get_summary(id: str) -> dict[str, Any]:
     """This transcript's existing AI summary, if one has been generated. Never generates a new
