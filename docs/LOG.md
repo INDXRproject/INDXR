@@ -1309,3 +1309,4 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 [2026-11-09 19:25] taak: MCP-server meldt nu website_url + icons (INDXR-merkteken) in serverInfo — connector-icoon in Claude toonde een Vercel-achtige driehoek | gewijzigd: backend/mcp_server.py
 [2026-11-09 16:30] taak: Claude-directory-portal stap 1–9 klaargezet (draft), MCP-iconen live (665c72b, deploy groen) | gewijzigd: docs/marketing/claude-directory/submission.md
 [2026-11-09 17:00] taak: Claude Connectors Directory ingediend (Khidr), reviewer-account wachtwoord gezet + getest | gewijzigd: docs/marketing/claude-directory/submission.md
+[2026-11-09 17:30] taak: AlternativeTo-listing bijgewerkt (nieuwe beschrijving met Claude/ChatGPT-koppeling, 7 galerij-screenshots i.p.v. 4 oude, X + YouTube gekoppeld) — wacht op goedkeuring admin | gewijzigd: extern (alternativeto.net)
