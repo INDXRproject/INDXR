@@ -26,6 +26,7 @@ from typing import Any
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
+from mcp.types import Icon
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
@@ -155,6 +156,13 @@ def _edited_paragraphs(doc: Any) -> list[dict[str, Any]]:
 mcp = MCPServer(
     name="indxr",
     title="INDXR.AI",
+    website_url="https://indxr.ai",
+    # Brand mark for clients that show a connector icon (Claude falls back to a generic/stale favicon
+    # otherwise — seen 9-11 as a Vercel-like triangle).
+    icons=[
+        Icon(src="https://indxr.ai/web-app-manifest-512x512.png", mime_type="image/png", sizes=["512x512"]),
+        Icon(src="https://indxr.ai/favicon.svg", mime_type="image/svg+xml", sizes=["any"]),
+    ],
     instructions="Read a user's INDXR.AI transcript library: collections, search, transcript text, "
     "source citations, and existing AI summaries. Read-only — nothing here writes or deletes.",
     token_verifier=OpaqueTokenVerifier(),
