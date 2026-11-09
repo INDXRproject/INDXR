@@ -143,7 +143,7 @@ ADR-formaat:
 | Backend | FastAPI Python 3.12 op Railway (Docker) |
 | Transcriptie | YouTube captions (yt-dlp) + AssemblyAI fallback |
 | AI Samenvatting | Gemini 2.5 Flash via AssemblyAI EU LLM Gateway — twee modelstappen (ADR-090). Primair Gemini 2.5 Flash in beide stappen; per-call gateway-fallback: **stap 1 (structuur) → Claude Sonnet 4-6**, **stap 2 (uitwerking) → Claude Haiku 4.5** (`claude-haiku-4-5-20251001`). Bron: `backend/summary_pipeline.py` (`STRUCTURE_MODEL`/`STRUCTURE_FALLBACK`, `SECTION_MODEL`/`SECTION_FALLBACK`). ADR-068 (single-pass, haiku-only fallback) is hierdoor achterhaald. |
-| Rate limiting | Upstash Redis (sliding window) — **uit in prod** tot Upstash env-vars terug (noopLimiter) |
+| Rate limiting | Upstash Redis (fixed-window counter) — **staat aan in productie** (env-vars gezet, geverifieerd 2026-11-09 met een echte 70-gelijktijdige-calls-test tegen `/api/mcp`: nette ToolError boven de limiet, geen 500). Faalt open (geen limiet) als de env-vars ooit ontbreken — zie `backend/ratelimit.py` |
 | Payments | Stripe (Checkout Sessions, eenmalig, EUR) — live + getest |
 | Analytics | PostHog (session replay uit) |
 | Testing | Playwright E2E (9 specs) |
@@ -334,9 +334,16 @@ Als ze verschijnen: `git rm -r --cached <path>`
 - Frontend moet deze verwijderen en placeholder updaten
 - Als je duplicate rijen ziet: controleer `GET /api/jobs/{id}` retourneert `transcript_id` + RLS staat DELETE toe
 
-### Geen Sentry / uptime monitoring
-- Fouten alleen zichtbaar in Railway logs
-- Geen proactieve alerts
+### Sentry (backend) — geen frontend-Sentry, geen uptime monitoring
+- Sentry draait voor de **backend** (`sentry_sdk.init(dsn=SENTRY_DSN_BACKEND, ...)` in `main.py`,
+  `SENTRY_DSN_BACKEND` staat in Railway) — crashes/exceptions op de Python-kant komen aan in Sentry,
+  niet alleen in Railway-logs. Verwachte toolfouten (niet gevonden, rate limit) gooien bewust `ToolError`
+  i.p.v. een generieke exceptie, zodat ze niet als crash in Sentry belanden (zie `backend/mcp_server.py`).
+- **Geen frontend-Sentry** — fouten in Next.js/de browser zijn niet gewired naar Sentry; PostHog vangt
+  een deel daarvan (bv. `transcribe_error_unknown_code`), maar dat is geen volledige vervanging.
+- **Geen uptime-monitoring/heartbeats** — nog open, zie priorities.md 1.14 (BetterStack uptime +
+  healthchecks.io heartbeats, 1u werk, nog niet uitgevoerd). Tot die tijd: geen proactieve alert als de
+  backend plat gaat, alleen zichtbaar bij het handmatig checken van Railway-logs/`/health`.
 
 ---
 
