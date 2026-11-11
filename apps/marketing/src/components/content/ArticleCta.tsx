@@ -26,7 +26,7 @@ export function ArticleCta({ variant = "end" }: { variant?: "mid" | "end" }) {
   return (
     <aside className="mt-14 grid border-2 border-[var(--fg-strong)] sm:grid-cols-[1fr_auto]">
       <div className="p-6 sm:p-8">
-        <p className="mb-2 font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">Transcripts, done properly</p>
+        <p className="mb-2 font-mono text-xs uppercase tracking-[0.08em] text-[var(--fg)]">All your sources. One searchable archive.</p>
         <p className="text-2xl font-bold tracking-[-0.02em] text-[var(--fg-strong)] sm:text-3xl">Try it on your own file.</p>
         <p className="mt-3 text-[var(--fg-subtle)]">
           YouTube captions free · AI transcription from {formatEurExact(cheapestPerMin)}/min · no subscription.

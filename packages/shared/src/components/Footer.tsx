@@ -45,7 +45,7 @@ export function Footer() {
             <img src="/logo/indxr-horizontal-black-transparent.png" alt="INDXR.AI" className="h-12 w-auto dark:hidden" />
             <img src="/logo/indxr-horizontal-white-transparent.png" alt="INDXR.AI" className="hidden h-12 w-auto dark:block" />
           </a>
-          <p className="mt-3 font-mono text-xs uppercase tracking-[0.08em] text-fg">Transcripts, done properly.</p>
+          <p className="mt-3 font-mono text-xs uppercase tracking-[0.08em] text-fg">All your sources. One searchable archive.</p>
         </div>
         {columns.map((col) => (
           <div key={col.title}>
