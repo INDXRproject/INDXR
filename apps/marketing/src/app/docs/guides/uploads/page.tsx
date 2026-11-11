@@ -79,6 +79,15 @@ export default function DocsUploadsPage() {
           Uploading needs a free account — the uploader only appears once you are signed in.
         </DocsCallout>
 
+        <AnchorHeading as="h2">Spelling hints</AnchorHeading>
+        <p className="text-[var(--fg-subtle)] leading-relaxed">
+          Before you start, an optional &ldquo;+ Spelling hints&rdquo; field lets you list names and
+          terms the AI should spell correctly — a person&apos;s name, a technical term, a place.
+          Separate terms with commas. This only applies to AI transcription (captions don&apos;t use
+          it). Keep the list short and specific to the recording — a long, generic list can make
+          things worse, since a hint can overwrite a word the AI already heard correctly.
+        </p>
+
                 <DocsFigure
           src="/docs/screenshots/error-storage_full.png"
           alt="The error card shown when your library storage is full: a new transcript is blocked and no credits are lost."

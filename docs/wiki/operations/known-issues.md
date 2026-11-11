@@ -673,3 +673,13 @@ gebruikt om te weten dat een job al afgehandeld is. Zonder die rij (ook bij amou
 telkens opnieuw aanroepen. Saldo-impact van de amount=0-rij zelf: geen (`credits + 0` is een no-op).
 Een skip-bij-amount-0 is dus **niet** zonder meer veilig — het zou de reconciliatie-vangnet breken.
 Niet gewijzigd — gerapporteerd aan Khidr i.p.v. zelf een fix gekozen (financiële logica, ADR-050-ontwerp).
+
+## Spelling hints (ADR-109) — echte AI-transcriptie-testruns niet uitgevoerd (2026-11-11)
+De spelling-hints-feature (AssemblyAI `keyterms_prompt`) is volledig gebouwd en code-geverifieerd
+(migratie toegepast + `job_cor_eur()` getest met/zonder hints geeft het verwachte +$0,05/u-verschil,
+beide apps build groen, `check-playlist-invariants.sh` groen) maar de geplande 3 testparen (UFC/Tristar,
+filosofie/geschiedenis-college, medisch/juridisch) met/zonder hints zijn **niet** echt gedraaid —
+deze sessie had geen browser-tool beschikbaar om door de UI te gaan, en directe curl-calls tegen de
+backend zouden een echte AssemblyAI-rekening maken zonder dat de resultaten interactief te verifiëren
+waren. Openstaand: Khidr (of een vervolgsessie met browsertoegang) draait de 3 paren via de echte UI,
+noteert vóór/na-citaten met tijdstempel, en bevestigt dat de Universal-2-fallback ook met hints werkt.
