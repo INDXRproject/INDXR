@@ -35,3 +35,20 @@ Volgorde: 1 vandaag, 2 morgen, 3 overmorgen. Daarna de Show HN (`show-hn.md`), d
 
 Ritme: elke dag 2–3 oprechte reacties, ~10 behulpzame reacties per eigen post (de 9:1-vuistregel).
 Lees per sub de zijbalk-regels voordat je iets van jezelf plaatst.
+
+## Reddit-profiel (Khidr vult in: reddit.com/settings/profile)
+- Display name: `Khidr | INDXR`
+- About: `Solo dev from the Netherlands. I build INDXR (indxr.ai): lectures, interviews and videos as transcripts you can search, cite and use in Claude or ChatGPT. Ask me anything about transcripts, Obsidian or MCP.`
+- Social link: https://indxr.ai · Avatar: `https://indxr.ai/press/indxr-avatar.jpg`
+- Waarom zo: de band met INDXR staat open en bloot in het profiel; dat is de basis om later eerlijk naar indxr.ai te verwijzen.
+
+## Later naar indxr.ai verwijzen zonder gedoe
+1. Alleen in een draad waar iemand precies dit probleem heeft (transcript van colleges/interviews, bronnen in Claude).
+2. Altijd melden: "Disclosure: I built this." Geen verkapte aanbeveling.
+3. Eerst het antwoord zelf geven (ook gratis alternatieven noemen), de link als laatste regel.
+4. Hooguit één op de tien reacties met een link; nooit dezelfde tekst twee keer.
+5. Per sub de regels lezen; waar zelfpromotie verboden is (GradSchool, PhD, AskAcademia, Journalism): nooit linken, ook niet als het past.
+Risico als je dit loslaat: verwijderde reacties, ban in die sub, of een site-brede shadowban (je ziet je eigen reacties nog, niemand anders).
+
+## Gereedschap: niet Bazzly
+Bazzly (claude.ai-connector "Bazzly Reddit Research") post via eigen accounts en geeft upvotes (vote manipulation, tegen de regels van Reddit), $199/maand. Niet gebruiken. Claude kan Reddit zelf niet openen (browser en WebFetch geblokkeerd). Werkwijze: Khidr opent een draad en plakt de tekst (of de link + screenshot), Claude schrijft de reactie. Het Obsidian-forum (forum.obsidian.md) kan Claude wél lezen: daar zoekt Claude passende draden.
