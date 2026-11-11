@@ -124,7 +124,7 @@ function renderBroadcastEmailHtml(params: {
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
         <tr>
           <td align="center" style="padding:16px 32px;color:#77726d;font-family:${EMAIL_FONT};font-size:12px;line-height:1.5;">
-            INDXR.AI &mdash; Transcripts, done properly.
+            INDXR.AI &mdash; All your sources. One searchable archive.
           </td>
         </tr>
       </table>

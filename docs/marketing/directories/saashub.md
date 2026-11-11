@@ -2,7 +2,7 @@
 Waar: https://www.saashub.com, rechtsboven Register, daarna "Submit Product". Na verificatie kun je onder Manage → Submit de lijst van 110 directories afwerken.
 - **Name:** INDXR.AI
 - **Website:** https://indxr.ai/?utm_source=saashub&utm_medium=directory&utm_campaign=listing-2026-11
-- **Tagline:** Transcripts, done properly — for everything you learn from
+- **Tagline:** All your sources, one searchable archive — in Claude too
 - **Description:** zie common-copy.md, de lange versie.
 - **Categories:** Transcription, Speech to Text, Productivity, Education
 - **Alternatives (voeg toe als "alternative to"):** Otter.ai, TurboScribe, Descript, HappyScribe, Rev

@@ -28,7 +28,7 @@ Volgorde sinds 9-11 (avond): 1 titel · 2 Claude-quotes · 3 eigen kennis apart 
 Nog open: video (YouTube-link; wacht op het kanaal, zie `social/accounts-kit.md`).
 
 ## Galerij 7-11 (vervangen)
-1. Titelkaart met logo, "All your sources. One searchable archive." en "Transcripts, done properly."
+1. Titelkaart met logo, "All your sources. One searchable archive." (oude tagline "Transcripts, done properly." vervangen 11-11)
 2. Captions tegenover INDXR (JFK, Rice 1962, publiek domein).
 3. De bibliotheek met zoeken in titels en transcripttekst. **Mockup in stijl B met verzonnen titels.** Na de redesign vervangen door een echte screenshot.
 4. Zeven exportformaten.
