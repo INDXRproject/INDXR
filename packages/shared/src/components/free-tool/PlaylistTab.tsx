@@ -14,6 +14,7 @@ import { useAuth } from "../../hooks/useAuth"
 import { useCompletionReceipt } from "../../hooks/useCompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
 import { useRecentSpellingHints } from "../../hooks/useRecentSpellingHints"
+import { keytermsSignature } from "../../lib/spellingHints"
 import { createClient } from "../../utils/supabase/client"
 
 export interface PlaylistStats {
@@ -86,7 +87,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   // Spelling hints (keyterms-ADR): one list for the whole playlist job, lifted here so a retry
   // (which starts a NEW playlist_extraction_jobs row) carries the same list as the original run.
   const [spellingHints, setSpellingHints] = useState<string[]>([])
-  const recentSpellingHints = useRecentSpellingHints()
+  const { lists: recentSpellingHints, recordUsed: recordSpellingHintsUsed } = useRecentSpellingHints()
   // Entry list rebuilt from the DB (video_metadata) on resume so PlaylistManager
   // can re-render the per-video list; statuses come from the DB via videoStatuses.
   const [resumePlaylist, setResumePlaylist] = useState<{ title: string; entries: Array<{ id: string; title: string; duration?: number }> } | null>(null)
@@ -548,7 +549,8 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       }
 
       // Start extraction job on the backend. Idempotency (ADR-019): één sleutel per start-handeling.
-      const _idemAction = `playlist:${playlistUrl ?? ''}`
+      // keyterms-ADR dedup fix: andere hints = andere handeling, dus mee in de actie-string.
+      const _idemAction = `playlist:${playlistUrl ?? ''}:${keytermsSignature(spellingHintsArg ?? [])}`
       const response = await fetch('/api/playlist/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -563,6 +565,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           spelling_hints: spellingHintsArg ?? [],
         }),
       })
+      if (spellingHintsArg && spellingHintsArg.length > 0) recordSpellingHintsUsed(spellingHintsArg)
       clearIdempotencyKey(_idemAction)
 
       if (!response.ok) {
@@ -650,7 +653,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       }
 
       // Een retry is een BEWUSTE nieuwe handeling → een eigen actie-id, dus een nieuwe sleutel t.o.v. de start.
-      const _idemAction = `playlist-retry:${fallbackMetaRef.current.url ?? ''}`
+      const _idemAction = `playlist-retry:${fallbackMetaRef.current.url ?? ''}:${keytermsSignature(spellingHints)}`
       const response = await fetch('/api/playlist/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -665,6 +668,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           spelling_hints: spellingHints,
         }),
       })
+      if (spellingHints.length > 0) recordSpellingHintsUsed(spellingHints)
       clearIdempotencyKey(_idemAction)
 
       if (!response.ok) {

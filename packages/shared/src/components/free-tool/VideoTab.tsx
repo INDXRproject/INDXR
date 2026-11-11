@@ -24,6 +24,7 @@ import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
 import { SpellingHintsField } from "../transcribe/SpellingHintsField"
+import { keytermsSignature } from "../../lib/spellingHints"
 import { useRecentSpellingHints } from "../../hooks/useRecentSpellingHints"
 import { Notice } from "../ui/notice"
 import { NOTICE_ICON, NOTICE_TITLE, notice } from "../../lib/notice"
@@ -66,6 +67,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [videoPublishedAt, setVideoPublishedAt] = useState<string | null>(null)
   const [languageDetected, setLanguageDetected] = useState<boolean | null>(null)
   const [isReextracting, setIsReextracting] = useState(false)
+  // Re-extract-with-AI inline confirm (point 2 fix): the one-line upsell used to fire
+  // handleWhisperUpsell immediately on click, skipping the cost block entirely — so hints were
+  // never possible on this path. Now it expands an inline SpellingHintsField + confirm first.
+  const [showReextractConfirm, setShowReextractConfirm] = useState(false)
   const { user, credits, refreshCredits } = useAuth()
 
   // Whisper confirmation step state
@@ -94,7 +99,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
   const [useWhisper, setUseWhisper] = useState(false)
   // Spelling hints (keyterms-ADR): only meaningful when AI transcription is the active choice.
   const [spellingHints, setSpellingHints] = useState<string[]>([])
-  const recentSpellingHints = useRecentSpellingHints()
+  const { lists: recentSpellingHints, recordUsed: recordSpellingHintsUsed } = useRecentSpellingHints()
   // Track if Whisper was triggered automatically (no captions available)
   const [whisperAutoTriggered, setWhisperAutoTriggered] = useState(false)
 
@@ -185,6 +190,10 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
     setLoading(false)
     setWhisperStatus('idle')
+    // Point 5 fix: the success path never reset this (only _handleWhisperError did), so the
+    // isReextracting-gated beforeunload guard below stayed armed forever after a completed
+    // "Re-extract with AI" job — the "Leave site?" dialog kept firing on every later navigation.
+    setIsReextracting(false)
     setShowDuplicateChoices(false)
     setPendingWhisperData(null)
     setIsAlreadyProcessing(false)
@@ -806,8 +815,11 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('video_id', videoId)
       if (pendingWhisperData.title) formData.append('title', pendingWhisperData.title)
       if (pendingWhisperData.duration > 0) formData.append('duration', String(pendingWhisperData.duration))
-      if (spellingHints.length > 0) formData.append('spelling_hints', spellingHints.join(','))
-      const _idemAction = `single:${videoId}`
+      if (spellingHints.length > 0) { formData.append('spelling_hints', spellingHints.join(',')); recordSpellingHintsUsed(spellingHints) }
+      // keyterms-ADR dedup fix: a hinted vs unhinted request for the same video is a different
+      // handeling — the action string must carry the hint signature so it never reuses an
+      // in-flight key from a differently-hinted run on the same video.
+      const _idemAction = `single:${videoId}:${keytermsSignature(spellingHints)}`
       formData.append('idempotency_key', idempotencyKey(_idemAction))
 
       const response = await fetch('/api/transcribe/whisper', {
@@ -901,6 +913,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     if (!currentVideoId) return
     posthog.capture('whisper_upsell_clicked')
 
+    setShowReextractConfirm(false)
     setLoading(true)
     setIsReextracting(true)
     setError(null)
@@ -913,8 +926,8 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('source_type', 'youtube')
       formData.append('video_id', currentVideoId)
       if (videoTitle) formData.append('title', videoTitle)
-      if (spellingHints.length > 0) formData.append('spelling_hints', spellingHints.join(','))
-      const _idemAction = `single:${currentVideoId}`
+      if (spellingHints.length > 0) { formData.append('spelling_hints', spellingHints.join(',')); recordSpellingHintsUsed(spellingHints) }
+      const _idemAction = `single:${currentVideoId}:${keytermsSignature(spellingHints)}`
       formData.append('idempotency_key', idempotencyKey(_idemAction))
 
       const response = await fetch('/api/transcribe/whisper', { method: 'POST', body: formData })
@@ -1167,9 +1180,13 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                 </div>
                 <MethodBadge method="ai" className="mt-0.5 shrink-0">AI transcription</MethodBadge>
               </div>
-              <div className="border-t-2 border-border-strong px-4 py-3">
-                <SpellingHintsField value={spellingHints} onChange={setSpellingHints} recentLists={recentSpellingHints} />
-              </div>
+              <SpellingHintsField
+                value={spellingHints}
+                onChange={setSpellingHints}
+                recentLists={recentSpellingHints}
+                suggestTitle={pendingWhisperData.title || videoTitle}
+                suggestChannel={videoChannel}
+              />
               <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
                 <span className="font-bold">Total</span>
                 <span className="text-[22px] font-semibold tabular-nums text-fg-strong">{known ? `${cost} credit${cost === 1 ? "" : "s"}` : `${cost}+ credits`}</span>
@@ -1289,15 +1306,42 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                    accountHref: appHref('/dashboard/account'),
                    contactHref: user ? appHref('/dashboard/messages?tab=support') : marketingHref('/contact'),
                    onRetryUrl: handleRetry,
-                   onUseAi: user ? handleWhisperUpsell : undefined,
+                   // point 2 fix: "Try with AI" from an error card used to fire handleWhisperUpsell
+                   // immediately (no cost block, so hints were never possible here either) — now it
+                   // opens the same inline confirm+hints box as the post-caption upsell.
+                   onUseAi: user ? () => setShowReextractConfirm(true) : undefined,
                    onSwitchToAudio: onSwitchToAudio ? () => handleGuardedTabSwitch(onSwitchToAudio) : undefined,
                  })
                  // bot_detection (point 6): "Try again" is the primary action and usually clears the
                  // block; AI sits below as a different route, framed as prose (no priced button, no
                  // accent) so it doesn't read as "we're broken, pay us".
                  const note = errCode === 'bot_detection' && user ? (
-                   <>Still failing? <button type="button" onClick={handleWhisperUpsell} className="font-medium text-fg underline underline-offset-2 hover:text-fg-strong">AI transcription</button> is the reliable way in — it costs credits, and you get them back if it can&apos;t finish either.</>
+                   <>Still failing? <button type="button" onClick={() => setShowReextractConfirm(true)} className="font-medium text-fg underline underline-offset-2 hover:text-fg-strong">AI transcription</button> is the reliable way in — it costs credits, and you get them back if it can&apos;t finish either.</>
                  ) : undefined
+                 const reextractCost = videoDuration ? Math.ceil(videoDuration / 60) : 1
+                 if (showReextractConfirm && user) {
+                   return (
+                     <div className="w-full overflow-hidden border-2 border-border-strong bg-bg text-left">
+                       <SpellingHintsField
+                         value={spellingHints}
+                         onChange={setSpellingHints}
+                         recentLists={recentSpellingHints}
+                         suggestTitle={videoTitle}
+                         suggestChannel={videoChannel}
+                       />
+                       <div className="flex items-center justify-end gap-2 border-t-2 border-border-strong bg-bg-subtle px-4 py-3">
+                         <Button variant="ghost" size="sm" onClick={() => setShowReextractConfirm(false)} disabled={isReextracting}>
+                           Cancel
+                         </Button>
+                         <Button size="sm" onClick={handleWhisperUpsell} disabled={loading || isReextracting}>
+                           {isReextracting
+                             ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Extracting…</>
+                             : `Try with AI · ${reextractCost} credit${reextractCost !== 1 ? 's' : ''}`}
+                         </Button>
+                       </div>
+                     </div>
+                   )
+                 }
                  return <ErrorCard className="w-full" {...copy} note={note} />
                })()
              ) : isAlreadyProcessing && loading && whisperStatus !== 'idle' ? (
@@ -1429,12 +1473,35 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
           {lastProcessingMethod === 'youtube_captions' && credits !== null && (() => {
              const requiredCredits = videoDuration ? Math.ceil(videoDuration / 60) : 1;
              const hasEnoughCredits = credits >= requiredCredits;
+             if (hasEnoughCredits && showReextractConfirm) {
+               return (
+                 <div className="mt-4 overflow-hidden border-2 border-border-strong bg-bg text-left">
+                   <SpellingHintsField
+                     value={spellingHints}
+                     onChange={setSpellingHints}
+                     recentLists={recentSpellingHints}
+                     suggestTitle={videoTitle}
+                     suggestChannel={videoChannel}
+                   />
+                   <div className="flex items-center justify-end gap-2 border-t-2 border-border-strong bg-bg-subtle px-4 py-3">
+                     <Button variant="ghost" size="sm" onClick={() => setShowReextractConfirm(false)} disabled={isReextracting}>
+                       Cancel
+                     </Button>
+                     <Button size="sm" onClick={handleWhisperUpsell} disabled={loading || isReextracting}>
+                       {isReextracting
+                         ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Extracting…</>
+                         : `Re-extract with AI · ${requiredCredits} credit${requiredCredits !== 1 ? 's' : ''}`}
+                     </Button>
+                   </div>
+                 </div>
+               );
+             }
              return (
                <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-fg-muted">
                  <span>YouTube captions not accurate enough?</span>
                  {hasEnoughCredits ? (
                    <button
-                     onClick={handleWhisperUpsell}
+                     onClick={() => setShowReextractConfirm(true)}
                      disabled={loading || isReextracting}
                      className="font-medium text-fg underline-offset-2 hover:underline disabled:opacity-50 disabled:no-underline inline-flex items-center"
                    >

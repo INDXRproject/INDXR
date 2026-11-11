@@ -22,6 +22,7 @@ import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
 import { SpellingHintsField } from "../transcribe/SpellingHintsField"
+import { keytermsSignature } from "../../lib/spellingHints"
 import { useRecentSpellingHints } from "../../hooks/useRecentSpellingHints"
 import { readJson, ResponseError } from "../../lib/http"
 import { CREDIT_COSTS } from "../../lib/pricing"
@@ -67,7 +68,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const [error, setError] = useState<{ message: string; code?: string } | null>(null)
   // Spelling hints (keyterms-ADR): uploads are always AI transcription, so this is always relevant.
   const [spellingHints, setSpellingHints] = useState<string[]>([])
-  const recentSpellingHints = useRecentSpellingHints()
+  const { lists: recentSpellingHints, recordUsed: recordSpellingHintsUsed } = useRecentSpellingHints()
 
   // Active job tracked via Realtime + polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
@@ -418,10 +419,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       const formData = new FormData()
       formData.append('source_type', 'upload')
       formData.append('audio_file', file)
-      if (spellingHints.length > 0) formData.append('spelling_hints', spellingHints.join(','))
+      if (spellingHints.length > 0) { formData.append('spelling_hints', spellingHints.join(',')); recordSpellingHintsUsed(spellingHints) }
       // Idempotency (ADR-019): één sleutel per upload-handeling. De backend bindt 'm bovendien aan de
-      // content-hash, zodat één sleutel niet twee verschillende bestanden kan dekken.
-      const _idemAction = `upload:${file.name}:${file.size}`
+      // content-hash, zodat één sleutel niet twee verschillende bestanden kan dekken. keyterms-ADR
+      // dedup fix: ook de hint-signature in de actie-string — hetzelfde bestand met andere hints is
+      // een andere handeling.
+      const _idemAction = `upload:${file.name}:${file.size}:${keytermsSignature(spellingHints)}`
       formData.append('idempotency_key', idempotencyKey(_idemAction))
 
       const backendUrl = process.env.NEXT_PUBLIC_AUDIO_UPLOAD_URL || 'http://localhost:8000'
@@ -705,9 +708,12 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             </div>
             <MethodBadge method="ai">AI transcription</MethodBadge>
           </div>
-          <div className="border-t-2 border-border-strong px-4 py-3">
-            <SpellingHintsField value={spellingHints} onChange={setSpellingHints} recentLists={recentSpellingHints} />
-          </div>
+          <SpellingHintsField
+            value={spellingHints}
+            onChange={setSpellingHints}
+            recentLists={recentSpellingHints}
+            suggestTitle={file?.name}
+          />
           <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
             <span className="font-bold">Total</span>
             {estimatedCredits !== null ? (

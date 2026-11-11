@@ -18,6 +18,7 @@ import { CostBreakdown, BalanceLine, type CostSegment } from "./transcribe/CostB
 import { MethodBadge } from "./transcribe/MethodBadge";
 import { ErrorCard } from "./transcribe/ErrorCard";
 import { resolveErrorCopy } from "./transcribe/errorCopy";
+import { SpellingHintsField } from "./transcribe/SpellingHintsField";
 import { CREDIT_COSTS, FREE_TIER, playlistFreeIds } from "../lib/pricing";
 import { MAX_PLAYLIST_VIDEOS_PER_JOB, PLAYLIST_LARGE_JOB_WARN_AT } from "../lib/limits";
 import type { ReceiptData } from "../hooks/useCompletionReceipt";
@@ -568,6 +569,13 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
                           <button type="button" onClick={() => setShowAllFailed(true)} className="mb-3 block text-xs font-bold text-fg-strong underline underline-offset-4 hover:text-fg cursor-pointer">
                             Show all {compRetryableEntries.length}
                           </button>
+                        )}
+                        {/* keyterms-ADR follow-up (point 2): retry reuses the original run's hints by
+                            default (lifted state in PlaylistTab), but the user may want to add one
+                            right before retrying a name that came back wrong — same field, no separate
+                            confirm step needed since this block is already a confirm step. */}
+                        {onSpellingHintsChange && compRetryableIds.some((id) => whisperVideoIds?.has(id)) && (
+                          <SpellingHintsField value={spellingHints} onChange={onSpellingHintsChange} recentLists={recentSpellingHints} />
                         )}
                         {/* Retry is the single action here; Audio Upload lives in the permanent block
                             below (the one place it's the only way in). On < md the button is full-width. */}
