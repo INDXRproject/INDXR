@@ -52,3 +52,10 @@ Risico als je dit loslaat: verwijderde reacties, ban in die sub, of een site-bre
 
 ## Gereedschap: niet Bazzly
 Bazzly (claude.ai-connector "Bazzly Reddit Research") post via eigen accounts en geeft upvotes (vote manipulation, tegen de regels van Reddit), $199/maand. Niet gebruiken. Claude kan Reddit zelf niet openen (browser en WebFetch geblokkeerd). Werkwijze: Khidr opent een draad en plakt de tekst (of de link + screenshot), Claude schrijft de reactie. Het Obsidian-forum (forum.obsidian.md) kan Claude wél lezen: daar zoekt Claude passende draden.
+
+## Links altijd met herkomst
+Elke link naar indxr.ai die we zelf plaatsen krijgt `?utm_source=<kanaal>`: `x`, `reddit`, `hn`, `obsidian-forum`, `youtube`. PostHog leest die bij de eerste bezoek (first-touch). Zonder utm zie je X alleen als verwijzer `t.co`. Links naar claude.ai/directory/indxr kunnen geen utm dragen; daar meet het directory-portaal (verbindingen, toolcalls).
+Eerste X-post 11-11 had geen utm (docs-link + directory-link in een reactie); verkeer daarvan herkennen we aan verwijzer t.co.
+
+## Log
+- 2026-11-11: HN-profiel ingevuld; eerste 3 concepten klaar (zie boven). Dagelijkse ronde ingepland 13:41 (HN + Obsidian-forum, concepten in drafts/).
