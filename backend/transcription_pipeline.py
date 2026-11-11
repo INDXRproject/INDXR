@@ -165,11 +165,15 @@ def _resume_reject_reason(data: dict) -> Optional[str]:
     return None
 
 
-async def _submit_and_poll(audio_path: str, *, job_id: Optional[str], heartbeat_fn, supabase) -> dict:
+async def _submit_and_poll(
+    audio_path: str, *, job_id: Optional[str], heartbeat_fn, supabase,
+    keyterms: Optional[list] = None,
+) -> dict:
     """
     Dien in bij AssemblyAI en poll tot done (submit+poll, commit 3). Vervangt de blocking
     transcribe()-call zodat we per poll een heartbeat tikken (lange jobs triggeren de watchdog niet)
     en de wachtrij-/verwerkings-fase apart kunnen meten (Operations: queue-wait vs processing).
+    keyterms: optionele spelling-hints-lijst (keyterms_prompt), None/leeg = geen add-on.
 
     Resume-veilig: staat er al een provider_transcript_id op DEZE jobrij en is die STRAK geldig
     (niet-terminaal, binnen TTL, en de live poll geeft queued/processing), dan pollen we die door
@@ -234,7 +238,7 @@ async def _submit_and_poll(audio_path: str, *, job_id: Optional[str], heartbeat_
 
     # ── Verse submission ──
     if provider_id is None:
-        sub = await asyncio.to_thread(submit_assemblyai, audio_path)
+        sub = await asyncio.to_thread(submit_assemblyai, audio_path, keyterms)
         if not sub.get('success'):
             return {'success': False, 'error': sub.get('error', 'submit failed')}
         provider_id = sub['transcript_id']
@@ -286,6 +290,10 @@ async def _submit_and_poll(audio_path: str, *, job_id: Optional[str], heartbeat_
                 # Vlag op de jobrij zodat _geld_scope de add-on-COR alleen bij deze jobs telt
                 # (legacy pre-diarisatie jobs blijven false → geen retroactieve COR-verschuiving).
                 diarization=True,
+                # Spelling hints: de daadwerkelijk gebruikte termen op de jobrij (NULL/leeg = geen
+                # add-on). Overleeft een worker-herstart-resume omdat dit bij elke completion wordt
+                # herschreven, niet alleen bij een verse submission.
+                keyterms=keyterms or None,
             )
             return {
                 'success': True,
@@ -497,6 +505,7 @@ async def do_assemblyai_transcription(
     proxy_session_id: Optional[str] = None,
     heartbeat_fn=None,
     known_duration_seconds: Optional[float] = None,
+    keyterms: Optional[list] = None,
 ) -> dict:
     """
     Full AssemblyAI transcription pipeline.
@@ -506,6 +515,10 @@ async def do_assemblyai_transcription(
 
     When job_id is given, updates the transcription_jobs Supabase row with
     intermediate status (downloading / transcribing / saving / complete / error).
+
+    keyterms: optionele spelling-hints-lijst (keyterms_prompt). Niet-leeg → master-cache read/write
+    worden overgeslagen (een gehinte run is per-request-specifiek, geen cache-key-schema-wijziging
+    nodig) en de termen landen op de job- en transcriptrij (+$0,05/u add-on-COR, zie keyterms-ADR).
 
     Returns:
         {"success": True,  "transcript_id": str, "credit_cost": int, ...}
@@ -553,8 +566,10 @@ async def do_assemblyai_transcription(
         channel: Optional[str] = None
 
         # ── Step 0: master_transcripts cache check (AI warm path, YouTube only) ──
-        # Upload path (video_id=None) has no cache entry — skip.
-        if video_id is not None:
+        # Upload path (video_id=None) has no cache entry — skip. Hinted requests also skip: the
+        # cache key has no room for a per-request term list, and a hinted/unhinted run of the same
+        # video must never share a cache entry (keyterms-ADR).
+        if video_id is not None and not keyterms:
             mc = await master_transcripts_read(video_id, source_method="audio_transcription")
             if mc is not None:
                 logger.info(f"[pipeline] CACHE HIT: video={video_id} model={mc['transcription_model']} job={job_id}")
@@ -886,6 +901,7 @@ async def do_assemblyai_transcription(
         # worker-herstart de lopende provider-job veilig her-pollt i.p.v. dubbel in te dienen.
         whisper_result = await _submit_and_poll(
             str(audio_path), job_id=job_id, heartbeat_fn=heartbeat_fn, supabase=supabase,
+            keyterms=keyterms,
         )
         # ADR-096: provider-fase (submit→completed, incl. upload+queue+processing).
         transcribe_ms = int((time.time() - assemblyai_start) * 1000)
@@ -966,6 +982,8 @@ async def do_assemblyai_transcription(
             insert_data['language_confidence'] = _lconf
         if collection_id:
             insert_data['collection_id'] = collection_id
+        if keyterms:
+            insert_data['keyterms'] = keyterms
 
         result = await asyncio.to_thread(
             lambda: supabase.table('transcripts').insert(insert_data).execute()
@@ -974,8 +992,10 @@ async def do_assemblyai_transcription(
 
         # Best-effort master cache write — YouTube-pad only (privacy-grens), alleen als
         # taal bekend is. (transcripts.language is NULLABLE en blijft dat; we schrijven alleen een
-        # bekende taal naar de cache — een verzonnen 'unknown' zou de cache vervuilen.)
-        if video_id is not None and language:
+        # bekende taal naar de cache — een verzonnen 'unknown' zou de cache vervuilen.) Hinted runs
+        # slaan de cache-write ook over (keyterms-ADR) — anders zou een later ONhinted verzoek een
+        # gehinte transcriptie als "warm" cache-hit terugkrijgen.
+        if video_id is not None and language and not keyterms:
             asyncio.create_task(master_transcripts_write(
                 video_id=video_id,
                 language=language,

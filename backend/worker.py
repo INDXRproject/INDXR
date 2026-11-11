@@ -102,6 +102,7 @@ async def run_whisper_job(
     user_id: str,
     video_id: str,
     title: Optional[str] = None,
+    keyterms: Optional[list] = None,
 ) -> None:
     """
     ARQ task: standalone YouTube Whisper transcription.
@@ -109,6 +110,7 @@ async def run_whisper_job(
     Fase 4: idempotency-check via credits_deducted vlag + heartbeat op transcription_jobs.
     Bij read-failure defaultt already_deducted=True (fail-safe: liever gratis dan dubbel).
     ack_late=True wordt deployed in sessie D, nadat alle idempotency-vlaggen live zijn.
+    keyterms: optionele spelling-hints-lijst (keyterms_prompt), None/leeg = geen add-on.
     """
     logger.info(f"→ run_whisper_job(job_id={job_id!r}, video={video_id!r})")
     supabase = get_supabase_client()
@@ -132,6 +134,7 @@ async def run_whisper_job(
         audio_title=title,
         proxy_session_id=job_id[:8],
         heartbeat_fn=_hb,
+        keyterms=keyterms,
     )
     if result['success']:
         logger.info(f"← run_whisper_job ● (transcript_id={result['transcript_id']}, {result['credit_cost']}cr)")
@@ -435,7 +438,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved,is_retry,video_metadata')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,total_videos,video_results,credits_reserved,is_retry,video_metadata,keyterms')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -468,6 +471,8 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
     reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
     # Retry-job: gratis-3 is al in de originele run verbruikt -> geen gratis-tier hier.
     is_retry: bool = bool(job.get('is_retry'))
+    # Spelling hints: één lijst voor de hele playlist-job (zelfde principe als video_metadata).
+    keyterms: Optional[list] = job.get('keyterms') or None
 
     if video_index >= len(video_ids):
         logger.error(f"{log_prefix} video_index out of bounds (total={len(video_ids)})")
@@ -557,6 +562,7 @@ async def process_playlist_video(ctx: dict, playlist_id: str, video_index: int) 
                 reservation_mode=reservation_mode,
                 playlist_id=playlist_id,
                 heartbeat_fn=_hb_playlist,
+                keyterms=keyterms,
             )
             if result['success']:
                 rpc_success = True
@@ -688,7 +694,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     try:
         row = await asyncio.to_thread(
             lambda: supabase.table('playlist_extraction_jobs')
-            .select('user_id,video_ids,use_whisper_ids,collection_id,video_results,credits_reserved,is_retry')
+            .select('user_id,video_ids,use_whisper_ids,collection_id,video_results,credits_reserved,is_retry,keyterms')
             .eq('id', playlist_id)
             .single()
             .execute()
@@ -715,6 +721,8 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
     reservation_mode: bool = (job.get('credits_reserved') or 0) > 0
     # Retry-job: gratis-3 is al in de originele run verbruikt -> geen gratis-tier hier.
     is_retry: bool = bool(job.get('is_retry'))
+    # Spelling hints: zelfde lijst als de originele run (één lijst per playlist-job).
+    keyterms: Optional[list] = job.get('keyterms') or None
 
     # Heartbeat at start — watchdog detects stale 'retry_pending' jobs (ADR-030 Gap 1 fix).
     # This keeps the heartbeat fresh so watchdog won't re-enqueue a running retry-pass.
@@ -829,6 +837,7 @@ async def process_playlist_retries(ctx: dict, playlist_id: str) -> None:
                     reservation_mode=reservation_mode,
                     playlist_id=playlist_id,
                     heartbeat_fn=_hb_retry,
+                    keyterms=keyterms,
                 )
                 if result['success']:
                     rpc_success = True

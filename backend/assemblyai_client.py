@@ -1,6 +1,7 @@
 import assemblyai as aai
 import os
 import logging
+from typing import List, Optional
 
 logger = logging.getLogger("indxr-backend")
 
@@ -8,24 +9,39 @@ aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 # EU-endpoint (eu-west-1) voor data-residency — alle async transcriptie draait in de EU.
 aai.settings.base_url = "https://api.eu.assemblyai.com"
 
-# speech_models is een LANGUAGE ROUTER, geen error-fallback-lijst: Universal-3.5 Pro dekt 18 talen
-# natief; elke andere taal wordt door Universal-2 (99 talen) bediend. Chain =
-# ["universal-3-5-pro", "universal-2"] per AssemblyAI's eigen aanbeveling. universal-3-pro is bewust
-# weggelaten: zijn 6 natieve talen zijn een subset van 3.5 Pro's 18, dus met 3.5 Pro eerst zou het
-# nooit gekozen worden (ADR-071). language_detection MOET aan zodat de router per gedetecteerde taal
-# kan kiezen. Geldige AssemblyAI-ids gebruiken streepjes: "universal-3-5-pro" (NIET "universal-3.5-pro").
-_TRANSCRIPTION_CONFIG = aai.TranscriptionConfig(
-    speech_models=["universal-3-5-pro", "universal-2"],
-    language_detection=True,
-    punctuate=True,
-    format_text=True,
-    # Sprekerherkenning (diarisatie). Async add-on van +$0,02/u bovenop het modeltarief
-    # (NIET in het basistarief — AssemblyAI-prijspagina). We geven GEEN speakers_expected mee:
-    # het model bepaalt zelf het aantal sprekers. Elk woord krijgt hierdoor een .speaker-label
-    # ('A'/'B'/…); _build_segments stempelt dat per segment. Kost per job in transcription_jobs.
-    # diarization=true (COR-add-on via _geld_scope). Captions lopen hier niet langs → geen add-on.
-    speaker_labels=True,
-)
+
+def _build_config(keyterms: Optional[List[str]] = None) -> aai.TranscriptionConfig:
+    """
+    Bouwt de TranscriptionConfig per call (was een module-constante) zodat keyterms_prompt
+    (spelling hints) per job kan variëren.
+
+    speech_models is een LANGUAGE ROUTER, geen error-fallback-lijst: Universal-3.5 Pro dekt 18
+    talen natief; elke andere taal wordt door Universal-2 (99 talen) bediend. Chain =
+    ["universal-3-5-pro", "universal-2"] per AssemblyAI's eigen aanbeveling. universal-3-pro is
+    bewust weggelaten: zijn 6 natieve talen zijn een subset van 3.5 Pro's 18, dus met 3.5 Pro eerst
+    zou het nooit gekozen worden (ADR-071). language_detection MOET aan zodat de router per
+    gedetecteerde taal kan kiezen. Geldige AssemblyAI-ids gebruiken streepjes: "universal-3-5-pro"
+    (NIET "universal-3.5-pro").
+    """
+    kwargs = dict(
+        speech_models=["universal-3-5-pro", "universal-2"],
+        language_detection=True,
+        punctuate=True,
+        format_text=True,
+        # Sprekerherkenning (diarisatie). Async add-on van +$0,02/u bovenop het modeltarief
+        # (NIET in het basistarief — AssemblyAI-prijspagina). We geven GEEN speakers_expected mee:
+        # het model bepaalt zelf het aantal sprekers. Elk woord krijgt hierdoor een .speaker-label
+        # ('A'/'B'/…); _build_segments stempelt dat per segment. Kost per job in transcription_jobs.
+        # diarization=true (COR-add-on via _geld_scope). Captions lopen hier niet langs → geen add-on.
+        speaker_labels=True,
+    )
+    # Spelling hints (keyterms_prompt). Async add-on van +$0,05/u, onafhankelijk van diarisatie.
+    # Alleen meesturen als er echt termen zijn — een lege lijst is niet hetzelfde als "geen hints"
+    # op elke AssemblyAI SDK-versie, en kost_config/transcription_jobs.keyterms gebruikt NULL/leeg
+    # als "geen add-on" (zie de keyterms-migratie).
+    if keyterms:
+        kwargs["keyterms_prompt"] = keyterms
+    return aai.TranscriptionConfig(**kwargs)
 
 
 def _build_segments(transcript) -> list:
@@ -77,15 +93,16 @@ def _build_segments(transcript) -> list:
     return segments
 
 
-def submit_assemblyai(audio_path: str) -> dict:
+def submit_assemblyai(audio_path: str, keyterms: Optional[List[str]] = None) -> dict:
     """
     Dien een audiobestand NON-BLOCKING in bij AssemblyAI (upload + create job). Retourneert direct
     de provider-transcript-id; de pipeline pollt daarna zelf (submit+poll, commit 3) zodat de
     heartbeat per poll tikt en een lange job de watchdog niet triggert. Blokkeert NIET tot done.
+    keyterms: optionele spelling-hints-lijst (keyterms_prompt), None/leeg = geen add-on.
     Returns: { 'success': True, 'transcript_id': str } | { 'success': False, 'error': str }
     """
     try:
-        transcriber = aai.Transcriber(config=_TRANSCRIPTION_CONFIG)
+        transcriber = aai.Transcriber(config=_build_config(keyterms))
         transcript = transcriber.submit(audio_path)
         # submit() zet de job op de wachtrij en retourneert direct een id + status=queued.
         if transcript.status == aai.TranscriptStatus.error:

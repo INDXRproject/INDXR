@@ -35,6 +35,7 @@ from storage import r2_write_bytes, r2_read_bytes, r2_delete_object
 from ratelimit import check_ip_rate_limit, client_ip_from_request, hash_ip
 from assemblyai_client import submit_assemblyai, poll_assemblyai
 from mailer import send_quick_checkout_ready_email
+from spelling_hints import parse_keyterms
 
 # Load environment variables
 load_dotenv()
@@ -255,6 +256,7 @@ class PlaylistExtractRequest(BaseModel):
     is_retry: bool = False  # retry-/retry-all-job: onderdrukt de gratis-3 (die is al in de originele run verbruikt)
     parent_playlist_id: Optional[str] = None  # B: originele playlist-job bij een Retry-all (lineage voor ronde-telling)
     idempotency_key: Optional[str] = None  # ADR-019: één sleutel per handeling; een retry is een NIEUWE handeling → nieuwe sleutel
+    spelling_hints: Optional[List[str]] = None  # keyterms-ADR: één lijst voor de hele playlist-job
 
 class WhisperRequest(BaseModel):
     user_id: str
@@ -910,6 +912,7 @@ async def transcribe_with_whisper(
     duration: Optional[float] = Form(None),  # forwarded by Next.js when known upfront
     origin: Optional[str] = Form(None),  # deel 4: herkomst van de job (bv. 'error_card_ai'); frontend vult later
     idempotency_key: Optional[str] = Form(None),  # ADR-019: één sleutel per handeling → geen dubbele reservering
+    spelling_hints: Optional[str] = Form(None),  # keyterms-ADR: comma-separated termen
     _: None = Depends(verify_backend_secret),
 ):
     """
@@ -924,6 +927,11 @@ async def transcribe_with_whisper(
         return JSONResponse(status_code=400, content={"error": "video_id required for YouTube transcription", "code": "invalid_request"})
     if source_type == "upload" and not audio_file:
         return JSONResponse(status_code=400, content={"error": "audio_file required for upload transcription", "code": "invalid_request"})
+
+    try:
+        parsed_keyterms = parse_keyterms(spelling_hints) or None
+    except ValueError as e:
+        return JSONResponse(status_code=422, content={"error": str(e), "code": "too_many_spelling_hints"})
 
     # --- Auth ---
     # Upload path: browser sends Supabase JWT in Authorization header; verify and extract real user_id.
@@ -1174,6 +1182,7 @@ async def transcribe_with_whisper(
                 user_id=user_id,
                 video_id=video_id,
                 title=title,
+                keyterms=parsed_keyterms,
             )
         else:
             # Fallback: ARQ_REDIS_URL not configured (local dev without Redis).
@@ -1184,6 +1193,7 @@ async def transcribe_with_whisper(
                 user_id, video_id,
                 job_id=job_id,
                 audio_title=title,
+                keyterms=parsed_keyterms,
             ))
     else:
         # Upload path: bytes not queue-serializable — stays on asyncio.create_task.
@@ -1214,6 +1224,7 @@ async def transcribe_with_whisper(
             audio_title=title or audio_filename,
             known_duration_seconds=known_duration,
             heartbeat_fn=_upload_hb,
+            keyterms=parsed_keyterms,
         ))
 
     logger.info(f"Whisper job created: {job_id} (user={user_id}, source={source_type}, video={video_id})")
@@ -1365,10 +1376,19 @@ async def _run_quick_quote_preview(quote_id: str, file_index: int, preview_path:
 
 
 @app.post("/api/quote/create")
-async def create_quick_quote(request: Request, files: List[UploadFile] = File(...)):
+async def create_quick_quote(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    spelling_hints: Optional[str] = Form(None),  # keyterms-ADR: één lijst voor de hele offerte
+):
     """Anonieme offerte: upload tot MAX_QUICK_QUOTE_FILES bestanden, krijg per bestand duur+prijs
     + een gratis voorproefje (achtergrond, poll via GET /api/quote/{id}). Geen credits/reservering
     hier — dat gebeurt pas na betaling (Next.js webhook)."""
+    try:
+        quote_keyterms = parse_keyterms(spelling_hints) or None
+    except ValueError as e:
+        return JSONResponse(status_code=422, content={"error": str(e), "code": "too_many_spelling_hints"})
+
     client_ip = client_ip_from_request(request.headers, request.client.host if request.client else "unknown")
     ip_h = hash_ip(client_ip)
 
@@ -1460,6 +1480,7 @@ async def create_quick_quote(request: Request, files: List[UploadFile] = File(..
                 'files': quote_files,
                 'total_credits': total_credits,
                 'total_price_cents': total_price_cents,
+                'keyterms': quote_keyterms,
             }).execute()
         )
 
@@ -1509,7 +1530,10 @@ async def get_quick_quote(quote_id: str, token: str):
     })
 
 
-async def _dispatch_one_quick_quote_file(job_id: str, user_id: str, tmp_path: str, filename: Optional[str], known_duration: Optional[float]) -> None:
+async def _dispatch_one_quick_quote_file(
+    job_id: str, user_id: str, tmp_path: str, filename: Optional[str], known_duration: Optional[float],
+    keyterms: Optional[list] = None,
+) -> None:
     """Draait de reservation-aware whisper-pipeline voor één snelle-balie-bestand. settle+refund
     gebeurt AL binnen run_whisper_reservation_aware (zelfde wrapper als het normale upload-pad) —
     hier alleen de heartbeat erbij, identiek aan de bestaande /api/transcribe/whisper upload-tak."""
@@ -1527,6 +1551,7 @@ async def _dispatch_one_quick_quote_file(job_id: str, user_id: str, tmp_path: st
         audio_title=filename,
         known_duration_seconds=known_duration,
         heartbeat_fn=_hb,
+        keyterms=keyterms,
     )
 
 
@@ -1612,6 +1637,7 @@ async def dispatch_quick_quote(quote_id: str, user_id: str = Form(...), _: None 
         raise HTTPException(status_code=404, detail="Quote not found")
 
     quote_files = quote['files']
+    quote_keyterms = quote.get('keyterms') or None
     pending_indices = _pending_quick_quote_file_indices(quote_files)
 
     if quote['status'] == 'pending':
@@ -1671,6 +1697,7 @@ async def dispatch_quick_quote(quote_id: str, user_id: str = Form(...), _: None 
         tasks.append(asyncio.create_task(_dispatch_one_quick_quote_file(
             job_id=job_id, user_id=user_id, tmp_path=tmp_path,
             filename=qf.get('filename'), known_duration=qf.get('duration_seconds'),
+            keyterms=quote_keyterms,
         )))
         # Origineel niet langer nodig in R2 — hierboven al lokaal gelezen voor dispatch.
         await asyncio.to_thread(r2_delete_object, QUICK_QUOTE_R2_BUCKET, qf['r2_key'])
@@ -1944,6 +1971,11 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
             "code": "storage_full",
         })
 
+    try:
+        _playlist_keyterms = parse_keyterms(request.spelling_hints) or None
+    except ValueError as e:
+        return JSONResponse(status_code=422, content={"error": str(e), "code": "too_many_spelling_hints"})
+
     supabase = get_supabase_client()
 
     # Idempotency (ADR-019). Sleutel = de handeling; hash bindt 'm aan playlist_url + de (gesorteerde) set
@@ -2006,6 +2038,7 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
                 'collection_id': request.collection_id,
                 'video_metadata': request.video_metadata or {},
                 'is_retry': request.is_retry,
+                'keyterms': _playlist_keyterms,
             }).execute()
         )
     except Exception as e:
