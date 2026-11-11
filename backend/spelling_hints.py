@@ -54,3 +54,15 @@ def parse_keyterms(raw: Optional[Union[str, List[str]]]) -> List[str]:
         raise ValueError(f"Too many spelling hints ({len(terms)}); maximum is {MAX_KEYTERMS}.")
 
     return terms
+
+
+def keyterms_signature(terms: Optional[List[str]]) -> str:
+    """
+    Stable, order-independent fingerprint of a term list — for idempotency hashing and dedup
+    comparisons. Two requests for the same video with DIFFERENT (or absent vs present) hints must
+    never collide: a hinted and an unhinted request are different handelingen (ADR-109 follow-up),
+    so they must hash differently and never get merged into one job.
+    """
+    if not terms:
+        return "none"
+    return "|".join(sorted(t.lower() for t in terms))

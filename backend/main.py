@@ -35,7 +35,7 @@ from storage import r2_write_bytes, r2_read_bytes, r2_delete_object
 from ratelimit import check_ip_rate_limit, client_ip_from_request, hash_ip
 from assemblyai_client import submit_assemblyai, poll_assemblyai
 from mailer import send_quick_checkout_ready_email
-from spelling_hints import parse_keyterms
+from spelling_hints import parse_keyterms, keyterms_signature
 
 # Load environment variables
 load_dotenv()
@@ -1068,34 +1068,43 @@ async def transcribe_with_whisper(
     # Playlist-video-jobs met NULL heartbeat + oude created_at worden correct uitgesloten.
     # Legacy tijd-gebaseerde resource-dedup — ALLEEN zonder idempotentiesleutel. Met een sleutel is die de
     # énige dedup (een bewuste retry met een nieuwe sleutel wordt niet geblokkeerd door een vastgelopen job).
+    # keyterms-ADR follow-up: een hinted en een ongehinte aanvraag voor dezelfde video zijn een ANDERE
+    # handeling (andere kosten, ander AssemblyAI-verzoek) — nooit samenvoegen. Vergelijk daarom de
+    # keyterms-signature van de kandidaat-job met die van dit verzoek vóórdat we 'm teruggeven; fetch een
+    # klein kandidatenvenster (i.p.v. limit=1) zodat een niet-matchende meest-recente job geen blokkade is.
     if source_type == "youtube" and video_id and not idempotency_key:
         _video_url_check = f"https://www.youtube.com/watch?v={video_id}"
         _dedup_fresh = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
         _dedup_hb = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
         _existing = await asyncio.to_thread(
             lambda: supabase.table('transcription_jobs')
-                .select('id,status')
+                .select('id,status,keyterms')
                 .eq('user_id', user_id)
                 .eq('video_url', _video_url_check)
                 .in_('status', ['pending', 'downloading', 'transcribing', 'saving'])
                 .or_(f'created_at.gt.{_dedup_fresh},last_heartbeat_at.gt.{_dedup_hb}')
-                .limit(1)
+                .limit(5)
                 .execute()
         )
-        if _existing.data:
-            _ex = _existing.data[0]
+        _req_sig = keyterms_signature(parsed_keyterms)
+        _ex = next((r for r in (_existing.data or []) if keyterms_signature(r.get('keyterms')) == _req_sig), None)
+        if _ex:
             logger.info(f"[dedup] Returning existing job {_ex['id']} status={_ex['status']} for {video_id} (user={user_id})")
             return JSONResponse({"job_id": _ex['id'], "status": _ex['status'], "deduplicated": True})
 
     # Idempotency (ADR-019). Sleutel = de handeling; request_hash bindt 'm aan de INHOUD (single: video_url;
-    # upload: content-hash, zodat één sleutel niet twee verschillende bestanden dekt). Eerst een LEES vóór de
-    # cap zodat een duplicaat-van-een-lopende-job niet tegen de concurrency-cap aanloopt; de atomische claim
-    # volgt ná de cap. Alleen actief als de client een sleutel meestuurt.
+    # upload: content-hash, zodat één sleutel niet twee verschillende bestanden dekt). keyterms-ADR
+    # follow-up: de hash draagt nu ook de keyterms-signature — een hinted en een ongehinte aanvraag voor
+    # dezelfde video/hetzelfde bestand zijn een ANDERE handeling en mogen nooit via hetzelfde idempotency-
+    # record samenvallen (anders verdwijnen de hints stil in een "already processing"-merge). Eerst een
+    # LEES vóór de cap zodat een duplicaat-van-een-lopende-job niet tegen de concurrency-cap aanloopt; de
+    # atomische claim volgt ná de cap. Alleen actief als de client een sleutel meestuurt.
     _idem_kind = 'upload' if source_type == 'upload' else 'single'
     _idem_hash = None
     if idempotency_key:
-        _idem_hash = (request_hash(user_id, 'upload', content_hash(audio_content)) if source_type == 'upload'
-                      else request_hash(user_id, 'single', f"https://www.youtube.com/watch?v={video_id}" if video_id else ""))
+        _keyterms_sig = keyterms_signature(parsed_keyterms)
+        _idem_hash = (request_hash(user_id, 'upload', content_hash(audio_content), _keyterms_sig) if source_type == 'upload'
+                      else request_hash(user_id, 'single', f"https://www.youtube.com/watch?v={video_id}" if video_id else "", _keyterms_sig))
         _look = await asyncio.to_thread(lookup_idempotency, supabase, idempotency_key, _idem_hash)
         if _look and _look.get('mismatch'):
             _cleanup_tmp(upload_tmp_path)
@@ -1979,12 +1988,15 @@ async def start_playlist_extraction(request: PlaylistExtractRequest, http_reques
     supabase = get_supabase_client()
 
     # Idempotency (ADR-019). Sleutel = de handeling; hash bindt 'm aan playlist_url + de (gesorteerde) set
-    # video's + whisper-keuze. Een RETRY/retry-all is een BEWUSTE nieuwe handeling → de client stuurt een
-    # NIEUWE sleutel → niet geblokkeerd. Lees vóór de cap (duplicaat telt niet mee); atomische claim ná de cap.
+    # video's + whisper-keuze + keyterms-signature (keyterms-ADR follow-up: andere hints voor dezelfde
+    # playlist is een ANDERE handeling, mag nooit samenvallen). Een RETRY/retry-all is een BEWUSTE nieuwe
+    # handeling → de client stuurt een NIEUWE sleutel → niet geblokkeerd. Lees vóór de cap (duplicaat telt
+    # niet mee); atomische claim ná de cap.
     _pl_hash = None
     if request.idempotency_key:
         _pl_hash = request_hash(request.user_id, 'playlist', request.playlist_url or '',
-                                ','.join(sorted(request.video_ids or [])), ','.join(sorted(request.use_whisper_ids or [])))
+                                ','.join(sorted(request.video_ids or [])), ','.join(sorted(request.use_whisper_ids or [])),
+                                keyterms_signature(_playlist_keyterms))
         _look = await asyncio.to_thread(lookup_idempotency, supabase, request.idempotency_key, _pl_hash)
         if _look and _look.get('mismatch'):
             return JSONResponse(status_code=422, content={"error": "This action key was already used for a different request.", "code": "idempotency_mismatch"})
