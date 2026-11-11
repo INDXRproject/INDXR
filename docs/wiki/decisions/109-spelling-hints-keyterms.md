@@ -49,3 +49,47 @@ daadwerkelijk oplost: hints zijn per-request-specifiek, dus de cache-hit-kans wa
   `PlaylistTab`), omdat een retry een NIEUWE `playlist_extraction_jobs`-rij aanmaakt.
 - `/api/playlist/extract` se Zod-schema moest `spelling_hints` expliciet declareren (safeParse strip
   anders onbekende velden vóór ze de backend bereiken) — zelfde patroon als `is_retry`.
+
+## Vervolg — live test 2026-11-11, 3 bugs gevonden + gefixt
+
+Echte test (3 video's, 16–19 min, met/zonder hints + een herhaalrun op `contact@indxr.ai`) — resultaten
+in `docs/marketing/examples/spelling-hints.md`. Bracht drie bugs aan het licht, alle drie gefixt in
+dezelfde sessie:
+
+1. **Dedup/idempotency nam keyterms niet mee in de sleutel.** De legacy tijd-gebaseerde video-dedup
+   (`main.py`, alleen zonder idempotency-sleutel) en de idempotency-`request_hash` (met sleutel) waren
+   allebei gekeyed op user+video(/bestand) zonder keyterms — een hinted request voor een al lopende
+   ongehinte video werd stil als dezelfde handeling behandeld ("already being processed", hints weg).
+   Fix: nieuwe `keyterms_signature()` (backend `spelling_hints.py` + TS-mirror `spellingHints.ts`,
+   sorteer+lowercase+join, zodat volgorde niet telt) in (a) de `request_hash()`-aanroepen voor single/
+   upload/playlist, (b) de legacy dedup-query (vergelijkt nu een klein kandidatenvenster i.p.v.
+   `limit(1)` tegen de signature), en (c) de CLIENT-side idempotency-key action-string (`VideoTab`,
+   `AudioTab`, `PlaylistTab`) — zodat een andere hint-set altijd een structureel nieuwe sleutel munt
+   i.p.v. te botsen op een nog-niet-opgeruimde sessionStorage-sleutel van de vorige aanvraag.
+2. **Re-extract-with-AI/foutkaart-upsell/playlist-retry sloegen het hints-veld over.** Deze paden
+   riepen `handleWhisperUpsell`/`onRetryAll` direct aan zonder confirm-stap, dus er was geen plek voor
+   het veld. Fix: een inline confirm-box (`SpellingHintsField` + Confirm/Cancel) vóór elke van deze
+   triggers (`VideoTab`: de post-caption-upsell-regel, de ErrorCard `onUseAi`, en de bot_detection-note-
+   link delen nu één `showReextractConfirm`-state; `PlaylistManager`: het veld toont inline in het
+   al-bestaande retry-confirm-blok, wanneer er AI-video's tussen de retryable videos zitten).
+3. **"Leave site?" bleef actief na een geslaagde Re-extract-with-AI-job.** `_handleWhisperError` zette
+   `isReextracting` terug op `false`, maar het succespad `_handleWhisperComplete` deed dat nooit — de
+   `isReextracting`-gated `beforeunload`-guard bleef dus voor de rest van de sessie gewapend. Fix: één
+   ontbrekende `setIsReextracting(false)` in `_handleWhisperComplete`.
+
+**Géén bug in de COR/kosten-kant.** De oorspronkelijke hypothese ("keyterms wordt stilletjes NULL
+gemaakt door een latere update, COR mist de add-on") is **niet bevestigd** — live SQL op de 9 echte
+testjobs toonde dat `transcription_jobs.keyterms` correct bewaard blijft en `cost_eur` voor elke
+"met hints"-job exact overeenkomt met `job_cor_eur(...)` berekend MET de add-on-vlag (en zonder add-on
+voor de "zonder hints"-baselines). Geen recompute nodig. Het gerapporteerde "chips verdwijnen"-
+symptoom was een losse frontend-bug: `useRecentSpellingHints` fetchte eenmalig bij mount, dus binnen
+één paginasessie (VideoTab/AudioTab remounten niet tussen opeenvolgende runs) werden net-gebruikte
+hints nooit chips voor de VOLGENDE run. Fix: de hook retourneert nu ook `recordUsed(terms)`, dat de
+lijst optimistisch bijwerkt op het moment van indienen (geen DB-refetch, geen timing-race).
+
+**UI-redesign (zelfde sessie, poster-stijl):** mono-caps rij-label "Spelling hints" + "Optional · no
+extra cost" in het kostenblok, ingeklapt naar één uitlegregel + een outline-knop "Add names & terms",
+termen als verwijderbare pills i.p.v. los komma-tekst, een deterministische (geen LLM)
+titel/kanaal-extractie (`suggestTermsFromTitle`) die eigennamen als klikbare "From the title"-chips
+voorstelt, en een inline (geen toast) skip-melding bij een te-lang term of het 50-limiet.
+

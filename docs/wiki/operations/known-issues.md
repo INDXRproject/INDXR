@@ -674,12 +674,22 @@ telkens opnieuw aanroepen. Saldo-impact van de amount=0-rij zelf: geen (`credits
 Een skip-bij-amount-0 is dus **niet** zonder meer veilig — het zou de reconciliatie-vangnet breken.
 Niet gewijzigd — gerapporteerd aan Khidr i.p.v. zelf een fix gekozen (financiële logica, ADR-050-ontwerp).
 
-## Spelling hints (ADR-109) — echte AI-transcriptie-testruns niet uitgevoerd (2026-11-11)
-De spelling-hints-feature (AssemblyAI `keyterms_prompt`) is volledig gebouwd en code-geverifieerd
-(migratie toegepast + `job_cor_eur()` getest met/zonder hints geeft het verwachte +$0,05/u-verschil,
-beide apps build groen, `check-playlist-invariants.sh` groen) maar de geplande 3 testparen (UFC/Tristar,
-filosofie/geschiedenis-college, medisch/juridisch) met/zonder hints zijn **niet** echt gedraaid —
-deze sessie had geen browser-tool beschikbaar om door de UI te gaan, en directe curl-calls tegen de
-backend zouden een echte AssemblyAI-rekening maken zonder dat de resultaten interactief te verifiëren
-waren. Openstaand: Khidr (of een vervolgsessie met browsertoegang) draait de 3 paren via de echte UI,
-noteert vóór/na-citaten met tijdstempel, en bevestigt dat de Universal-2-fallback ook met hints werkt.
+## Spelling hints (ADR-109) — live getest 11-11, 3 bugs gevonden + gefixt (zie ADR-109 + LESSONS.md)
+De geplande 3 testparen (MMA/pharma/geschiedenis, met/zonder hints + een herhaalrun) zijn op 2026-11-11
+echt gedraaid op `contact@indxr.ai`. Resultaten staan in `docs/marketing/examples/spelling-hints.md`
+(échte citaten, niets verzonnen). De test bracht 3 bugs aan het licht die dezelfde sessie gefixt zijn:
+(1) dedup/idempotency-sleutel nam keyterms niet mee → een hinted request voor een al lopende
+ongehinte video werd stil samengevoegd; (2) "Re-extract with AI"/foutkaart-upsell/playlist-retry
+sloegen het hints-veld over (geen confirm-stap); (3) de "Leave site?"-dialoog bleef na een geslaagde
+Re-extract-with-AI-job permanent actief (`isReextracting` werd alleen op het foutpad gereset, niet op
+het succespad). Géén bug gevonden in de COR/kosten-kant: `transcription_jobs.keyterms` en `cost_eur`
+bleken voor alle 9 echte testjobs al correct (geverifieerd via SQL — zie ADR-109); het "chips
+verdwijnen"-symptoom was een losse frontend-staleness-bug (de recente-lijsten-hook fetchte maar één
+keer per paginasessie), nu opgelost met een optimistische update bij elke indiening.
+
+## Decodo-proxy 522 tijdens de 11-11 live test (operationeel, geen codewijziging)
+Tijdens de spelling-hints-test (11-11, ~22:10 UTC) gaf de Decodo-proxy een 522 (timeout) op 2 van de
+8 YouTube-audio-downloads — beide keren correct afgehandeld (credits gerefund, retryable error-type,
+geen verweesde reservering). Downloads duurden tot 11 minuten voor 61 MB bij de tragere pogingen.
+Geen actie nodig — bestaand retry-/refund-gedrag werkte zoals ontworpen; genoteerd als datapunt voor
+eventuele toekomstige Decodo-betrouwbaarheidsanalyse.
