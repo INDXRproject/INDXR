@@ -72,6 +72,8 @@ En vink aan: alle tools zelf getest (gedaan, als custom connector in Claude).
 **9. Compliance:** zeven verklaringen. Alle zeven gelden voor ons: geen financiële transacties, geen AI-media, geen verzameling van gespreksdata, publieke documentatie aanwezig.
 
 ## Status portal
+**Goedgekeurd 9-11 18:10** (automatische review, community connector). **Gepubliceerd 11-11 ~15:15** door Claude op akkoord Khidr → https://claude.ai/directory/connectors/indxr (verschijnen kan tot een uur duren). Usage/health in het portal: claude.ai/directory/manage/indxr. Edits na publiceren gaan opnieuw door review.
+
 **Ingediend 2026-11-09 door Khidr** ("Server submitted for review"). Reactie komt op contact@indxr.ai; status via claude.ai/directory/manage → Submissions. Reviewer-account getest door Khidr (inloggen werkt).
 
 ### Draft-notities (9-11, Claude)
