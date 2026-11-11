@@ -13,6 +13,7 @@ import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
 import { useAuth } from "../../hooks/useAuth"
 import { useCompletionReceipt } from "../../hooks/useCompletionReceipt"
 import { useJobStatus, JobStatusRow } from "../../hooks/useJobStatus"
+import { useRecentSpellingHints } from "../../hooks/useRecentSpellingHints"
 import { createClient } from "../../utils/supabase/client"
 
 export interface PlaylistStats {
@@ -82,6 +83,10 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [resumeData, setResumeData] = useState<{ jobId: string; completed: number; total: number; title?: string } | null>(null)
   const [resumeBarActive, setResumeBarActive] = useState(false)
+  // Spelling hints (keyterms-ADR): one list for the whole playlist job, lifted here so a retry
+  // (which starts a NEW playlist_extraction_jobs row) carries the same list as the original run.
+  const [spellingHints, setSpellingHints] = useState<string[]>([])
+  const recentSpellingHints = useRecentSpellingHints()
   // Entry list rebuilt from the DB (video_metadata) on resume so PlaylistManager
   // can re-render the per-video list; statuses come from the DB via videoStatuses.
   const [resumePlaylist, setResumePlaylist] = useState<{ title: string; entries: Array<{ id: string; title: string; duration?: number }> } | null>(null)
@@ -450,7 +455,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     setActiveJobId(jobId)
   }
 
-  const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string, collectionChoice?: CollectionChoice) => {
+  const handlePlaylistExtract = async (videoIds: string[], availabilityData?: any[], playlistTitle?: string, playlistUrl?: string, collectionChoice?: CollectionChoice, spellingHintsArg?: string[]) => {
     setError(null)
     setRetryRound(0)
     setProgressMessage("Initializing...")
@@ -555,6 +560,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           playlist_url: playlistUrl ?? null,
           video_metadata: videoMetadata,
           idempotency_key: idempotencyKey(_idemAction),
+          spelling_hints: spellingHintsArg ?? [],
         }),
       })
       clearIdempotencyKey(_idemAction)
@@ -656,6 +662,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
           playlist_url: fallbackMetaRef.current.url ?? null,
           is_retry: true,  // onderdrukt de gratis-3 server-side (die is al in de originele run verbruikt)
           idempotency_key: idempotencyKey(_idemAction),
+          spelling_hints: spellingHints,
         }),
       })
       clearIdempotencyKey(_idemAction)
@@ -799,6 +806,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         elapsedSeconds={elapsedSeconds}
         resumePlaylist={resumePlaylist}
         receipt={playlistReceipt}
+        spellingHints={spellingHints}
+        onSpellingHintsChange={setSpellingHints}
+        recentSpellingHints={recentSpellingHints}
       />
     </div>
   )

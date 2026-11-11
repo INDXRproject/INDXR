@@ -8,6 +8,7 @@ import { MethodBadge } from "./transcribe/MethodBadge";
 import { Switch } from "./ui/switch";
 import { playlistFreeIds } from "../lib/pricing";
 import { NOTICE_BAR, NOTICE_BASE, NOTICE_ICON, NOTICE_TITLE, noticeCompact } from "../lib/notice";
+import { SpellingHintsField } from "./transcribe/SpellingHintsField";
 import type { CollectionChoice } from "./PlaylistManager";
 
 interface VideoAvailability {
@@ -48,9 +49,15 @@ interface PlaylistAvailabilitySummaryProps {
   onCollectionChoiceChange: (c: CollectionChoice) => void
   onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => void
   onCancel: () => void
+  // keyterms-ADR: one spelling-hints list for the whole playlist job (owned by PlaylistTab so it
+  // survives this component remounting between the picker and availability screens, same reason
+  // collectionChoice is lifted).
+  spellingHints: string[]
+  onSpellingHintsChange: (terms: string[]) => void
+  recentSpellingHints?: string[][]
 }
 
-export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, collections, playlistTitle, collectionChoice, onCollectionChoiceChange, onProceed, onCancel }: PlaylistAvailabilitySummaryProps) {
+export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, collections, playlistTitle, collectionChoice, onCollectionChoiceChange, onProceed, onCancel, spellingHints, onSpellingHintsChange, recentSpellingHints = [] }: PlaylistAvailabilitySummaryProps) {
   const [expandedSection, setExpandedSection] = useState<'captions' | 'unavailable' | null>('unavailable')
 
   // Dedup on the VIDEO, not just the same method (Task 3 dedup-gap fix, 2026-09-12). Must match the
@@ -276,6 +283,11 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                  </div>
                </div>
              )}
+
+            {/* Spelling hints — AI transcription only, one list for the whole job (keyterms-ADR). */}
+            {extractableResults.some((v) => v.status === 'needs_whisper') && (
+              <SpellingHintsField value={spellingHints} onChange={onSpellingHintsChange} recentLists={recentSpellingHints} />
+            )}
 
             {/* Unavailable List (Expandable) */}
             {currentSummary.unavailable > 0 && (

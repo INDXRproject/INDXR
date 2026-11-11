@@ -71,6 +71,7 @@ interface PlaylistManagerProps {
     playlistTitle?: string,
     playlistUrl?: string,
     collectionChoice?: CollectionChoice,
+    spellingHints?: string[],
   ) => void;
   isExtracting: boolean;
   videoStatuses?: Record<string, VideoStatus>;
@@ -97,6 +98,11 @@ interface PlaylistManagerProps {
   elapsedSeconds?: number;
   resumePlaylist?: { title: string; entries: PlaylistEntry[] } | null;
   receipt?: ReceiptData;
+  /** keyterms-ADR: one spelling-hints list for the whole playlist job, lifted to PlaylistTab so it
+      also feeds the retry-job payload. */
+  spellingHints?: string[];
+  onSpellingHintsChange?: (terms: string[]) => void;
+  recentSpellingHints?: string[][];
 }
 
 function formatElapsed(seconds: number): string {
@@ -105,7 +111,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, videoErrorCodes = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, videoErrorCodes = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null, spellingHints = [], onSpellingHintsChange, recentSpellingHints = [] }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -401,7 +407,7 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
 
       setHasExtracted(true);
       setShowAvailabilityModal(false); // Hide inline summary
-      onExtract(extractableIds, enhancedResults, playlist?.title, url, collectionChoice);
+      onExtract(extractableIds, enhancedResults, playlist?.title, url, collectionChoice, spellingHints);
     }
   };
 
@@ -697,6 +703,9 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
              setAvailabilityResults(null);
              setAvailabilitySummary(null);
           }}
+          spellingHints={spellingHints}
+          onSpellingHintsChange={onSpellingHintsChange ?? (() => {})}
+          recentSpellingHints={recentSpellingHints}
         />
       )}
 

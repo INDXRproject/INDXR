@@ -9,6 +9,7 @@ import { PACKAGES, formatEur, cheapestCoveringPackage } from "../../lib/pricing"
 import { UPLOAD_EXTENSIONS, UPLOAD_ACCEPT_ATTR, UPLOAD_MAX_FILE_MB } from "../../lib/uploadFormats"
 import { Notice } from "../ui/notice"
 import { NOTICE_BAR } from "../../lib/notice"
+import { SpellingHintsField } from "../transcribe/SpellingHintsField"
 
 // growth-plan.md §6.2 Onderdeel D + §6.3 H3/H4/H5/H6: via/kw (+ gclid) are first-touch-captured
 // into the indxr_acq cookie by AcquisitionCapture — read them back out here so the balie's
@@ -74,6 +75,9 @@ export function QuickCheckoutPanel() {
   const [loading, setLoading] = useState(false)
   const [payLoading, setPayLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Spelling hints (keyterms-ADR): the balie always runs AI transcription, so this always applies.
+  // One list for the whole quote (all files), matching the one-list-per-job principle.
+  const [spellingHints, setSpellingHints] = useState<string[]>([])
   const previewTrackedRef = useRef(false)
   const pollAttemptsRef = useRef(0)
 
@@ -158,6 +162,7 @@ export function QuickCheckoutPanel() {
     try {
       const form = new FormData()
       files.forEach((f) => form.append("files", f))
+      if (spellingHints.length > 0) form.append("spelling_hints", spellingHints.join(","))
       const res = await fetch(`${BACKEND_URL}/api/quote/create`, { method: "POST", body: form })
       const data = await res.json()
       if (!res.ok) {
@@ -357,6 +362,10 @@ export function QuickCheckoutPanel() {
           </div>
         )}
       </div>
+
+      {files.length > 0 && (
+        <SpellingHintsField value={spellingHints} onChange={setSpellingHints} />
+      )}
 
       {error && (
         <Notice tone="error">{error}</Notice>

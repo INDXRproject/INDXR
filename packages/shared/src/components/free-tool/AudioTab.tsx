@@ -21,6 +21,8 @@ import { MethodBadge } from "../transcribe/MethodBadge"
 import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
+import { SpellingHintsField } from "../transcribe/SpellingHintsField"
+import { useRecentSpellingHints } from "../../hooks/useRecentSpellingHints"
 import { readJson, ResponseError } from "../../lib/http"
 import { CREDIT_COSTS } from "../../lib/pricing"
 import { idempotencyKey, clearIdempotencyKey } from "../../lib/idempotency"
@@ -63,6 +65,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
   const activeFilenameRef = useRef<string>('Audio Upload')
   const [watchdogRefundNotice, setWatchdogRefundNotice] = useState(false)
   const [error, setError] = useState<{ message: string; code?: string } | null>(null)
+  // Spelling hints (keyterms-ADR): uploads are always AI transcription, so this is always relevant.
+  const [spellingHints, setSpellingHints] = useState<string[]>([])
+  const recentSpellingHints = useRecentSpellingHints()
 
   // Active job tracked via Realtime + polling
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
@@ -413,6 +418,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
       const formData = new FormData()
       formData.append('source_type', 'upload')
       formData.append('audio_file', file)
+      if (spellingHints.length > 0) formData.append('spelling_hints', spellingHints.join(','))
       // Idempotency (ADR-019): één sleutel per upload-handeling. De backend bindt 'm bovendien aan de
       // content-hash, zodat één sleutel niet twee verschillende bestanden kan dekken.
       const _idemAction = `upload:${file.name}:${file.size}`
@@ -698,6 +704,9 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
               )}
             </div>
             <MethodBadge method="ai">AI transcription</MethodBadge>
+          </div>
+          <div className="border-t-2 border-border-strong px-4 py-3">
+            <SpellingHintsField value={spellingHints} onChange={setSpellingHints} recentLists={recentSpellingHints} />
           </div>
           <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
             <span className="font-bold">Total</span>

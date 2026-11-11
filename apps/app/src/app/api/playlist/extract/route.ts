@@ -28,6 +28,9 @@ const requestSchema = z.object({
   // already consumed by the original run). Fixed allow-list — must be declared here or
   // safeParse strips it before it reaches the backend.
   is_retry: z.boolean().optional(),
+  // keyterms-ADR: one spelling-hints list for the whole playlist job. Must be declared here
+  // or safeParse strips it before it reaches the backend (same reason as is_retry above).
+  spelling_hints: z.array(z.string()).max(50).optional(),
 });
 
 export async function POST(request: Request) {

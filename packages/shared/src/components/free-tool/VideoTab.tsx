@@ -23,6 +23,8 @@ import { MethodBadge } from "../transcribe/MethodBadge"
 import { BalanceLine } from "../transcribe/CostBreakdown"
 import { ErrorCard } from "../transcribe/ErrorCard"
 import { resolveErrorCopy } from "../transcribe/errorCopy"
+import { SpellingHintsField } from "../transcribe/SpellingHintsField"
+import { useRecentSpellingHints } from "../../hooks/useRecentSpellingHints"
 import { Notice } from "../ui/notice"
 import { NOTICE_ICON, NOTICE_TITLE, notice } from "../../lib/notice"
 
@@ -90,6 +92,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
 
   // Whisper toggle state
   const [useWhisper, setUseWhisper] = useState(false)
+  // Spelling hints (keyterms-ADR): only meaningful when AI transcription is the active choice.
+  const [spellingHints, setSpellingHints] = useState<string[]>([])
+  const recentSpellingHints = useRecentSpellingHints()
   // Track if Whisper was triggered automatically (no captions available)
   const [whisperAutoTriggered, setWhisperAutoTriggered] = useState(false)
 
@@ -801,6 +806,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('video_id', videoId)
       if (pendingWhisperData.title) formData.append('title', pendingWhisperData.title)
       if (pendingWhisperData.duration > 0) formData.append('duration', String(pendingWhisperData.duration))
+      if (spellingHints.length > 0) formData.append('spelling_hints', spellingHints.join(','))
       const _idemAction = `single:${videoId}`
       formData.append('idempotency_key', idempotencyKey(_idemAction))
 
@@ -907,6 +913,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       formData.append('source_type', 'youtube')
       formData.append('video_id', currentVideoId)
       if (videoTitle) formData.append('title', videoTitle)
+      if (spellingHints.length > 0) formData.append('spelling_hints', spellingHints.join(','))
       const _idemAction = `single:${currentVideoId}`
       formData.append('idempotency_key', idempotencyKey(_idemAction))
 
@@ -1159,6 +1166,9 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
                   {known && <p className="mt-0.5 font-mono text-xs text-fg-muted">{formatElapsed(pendingWhisperData.duration)}</p>}
                 </div>
                 <MethodBadge method="ai" className="mt-0.5 shrink-0">AI transcription</MethodBadge>
+              </div>
+              <div className="border-t-2 border-border-strong px-4 py-3">
+                <SpellingHintsField value={spellingHints} onChange={setSpellingHints} recentLists={recentSpellingHints} />
               </div>
               <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
                 <span className="font-bold">Total</span>

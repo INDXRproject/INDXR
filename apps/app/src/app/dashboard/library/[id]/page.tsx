@@ -102,6 +102,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
         characterCount={transcript.character_count ?? null}
         createdAt={transcript.created_at}
         language={transcript.language ?? null}
+        keytermsCount={Array.isArray(transcript.keyterms) ? transcript.keyterms.length : 0}
       />
       <div className="xl:hidden">
         <SourceCard {...sourceProps} compact />

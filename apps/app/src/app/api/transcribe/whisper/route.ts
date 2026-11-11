@@ -71,6 +71,7 @@ export async function POST(request: Request) {
     const videoId = formData.get('video_id') as string | null;
     const audioFile = formData.get('audio_file') as File | null;
     const duration = formData.get('duration') as string | null;
+    const spellingHints = formData.get('spelling_hints') as string | null;
 
     // Validate request
     if (!sourceType || !['youtube', 'upload'].includes(sourceType)) {
@@ -107,6 +108,9 @@ export async function POST(request: Request) {
     }
     if (audioFile) {
       backendFormData.append('audio_file', audioFile);
+    }
+    if (spellingHints) {
+      backendFormData.append('spelling_hints', spellingHints);
     }
 
     const response = await fetch(`${PYTHON_BACKEND_URL}/api/transcribe/whisper`, {

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@indxr/shared/utils/supabase/client";
+import { SpellingHintsBadge } from "@indxr/shared/components/transcribe/SpellingHintsField";
 import { Badge, transcriptBadges } from "./badges";
 import type { Transcript } from "./TranscriptList";
 
@@ -34,6 +35,8 @@ interface TranscriptHeaderProps {
   createdAt: string;
   /** Detected language code (ISO 639-1), or null when none is stored. */
   language: string | null;
+  /** keyterms-ADR: how many spelling hints were used for this transcription, 0/undefined = none. */
+  keytermsCount?: number;
 }
 
 /**
@@ -117,6 +120,7 @@ export function TranscriptHeader(props: TranscriptHeaderProps) {
         {badges.map((b) => (
           <Badge key={b.key} label={b.label} variant={b.variant} pencil={b.pencil} title={b.title} />
         ))}
+        <SpellingHintsBadge count={props.keytermsCount ?? 0} />
       </div>
     </div>
   );
