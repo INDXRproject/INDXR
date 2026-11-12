@@ -41,8 +41,8 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 **Mogelijke vorm (klein, geen financieel pad):**
 1. Per transcript en per collectie exporteren als `.bib` (BibTeX `@misc` / BibLaTeX `@video`), `.ris` en CSL-JSON: titel, kanaal als auteur, publicatiedatum, URL, medium (YouTube-video / audio-opname).
 2. Een vaste `citekey` (bv. `kagan2007death`) in de YAML-frontmatter van de Markdown-export, zodat een INDXR-note in Obsidian meteen werkt met Pandoc en de Citations-plugin.
-3. Meer stijlen dan APA: CSL-JSON + citeproc-js geeft APA, MLA, Chicago, Harvard enz. uit één bron (CSL kent >10.000 stijlen). Dan ook `get_source` (MCP) een `style`-parameter geven. (Khidr noemde meerdere stijlen 12-11 "staat al ergens"; in docs/ niet gevonden, dus hier vastgelegd.)
-Wacht op besluit Khidr.
+3. Meer stijlen dan APA: CSL-JSON + citeproc-js geeft APA, MLA, Chicago, Harvard enz. uit één bron (CSL kent >10.000 stijlen). Dan ook `get_source` (MCP) een `style`-parameter geven. (Idee van Khidr.)
+Uitgewerkt als CC-prompt (fase 1 bestanden+stijlen, fase 2 Send to Zotero): `cc-prompt-2026-11-12-zotero-citations.md`. Wacht op akkoord Khidr.
 
 ## Volgorde
 

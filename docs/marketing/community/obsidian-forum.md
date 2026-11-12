@@ -12,12 +12,12 @@ Account: `sinbadbuilds` (login contact@indxr.ai, Khidr). Claude leest het forum 
 - **De keten:** Zotero → plugin Better BibTeX → een `.bib`-bestand (of CSL-JSON) → in Obsidian een plugin die daaruit kiest → in de tekst een citekey als `[@kagan2007]` → bij export maakt Pandoc er een citaat en literatuurlijst van, in elke stijl.
 - **.bib = BibTeX:** een tekstbestand met per bron een blok (`@misc{kagan2007, author=..., title=..., url=..., year=...}`). Oud (LaTeX), maar de lingua franca. CSL-JSON is het modernere broertje (Zotero, Pandoc, citeproc-js).
 - **Stijlen:** CSL kent meer dan 10.000 citatiestijlen (APA, MLA, Chicago, Harvard, ...). Wie CSL-data levert, krijgt alle stijlen gratis via citeproc.
-- **Pijn:** de keten breekt vaak (draad 113012: na Zotero 8 werkten citekeys niet meer; workaround: hele bibliotheek handmatig naar een `.bib` exporteren).
+- **Eén voorbeeld van pijn (geen patroon bewezen):** draad 113012, na Zotero 8 werkten citekeys niet meer; workaround: hele bibliotheek handmatig naar `.bib`.
+- **Let op:** downloads zijn cumulatief en geen actieve gebruikers; alleen een ruwe vergelijking.
 - **Video's:** APA 7 citeert een quote uit video/audio met tijdstempel in plaats van pagina (`(Kagan, 2007, 23:14)`).
 - Gevolg voor INDXR: zie product-gat 3 in `docs/wiki/roadmap/product-gaps-2026-11-04.md`.
 
 ## Draden (nieuwste onderaan)
 - 12-11 Ibis (citatiepicker) — https://forum.obsidian.md/t/how-i-add-citations-to-my-obsidian-notes/121851
-- 12-11 LLM op je vault — https://forum.obsidian.md/t/how-to-better-use-llm-on-top-of-obsidian/121627
 - 12-11 onderzoeksnotities na een project — https://forum.obsidian.md/t/what-do-you-do-with-research-notes-once-a-project-is-finished/120011
 Concepten: `drafts/2026-11-12.md`.
