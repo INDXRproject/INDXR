@@ -1,5 +1,16 @@
 # Directories — keuze en inzendteksten (werkblok 2026-11-06)
 
+## Herziening 12-11 (besluit Khidr: kleine bedragen mogen als het de moeite waard is)
+**Betalen, ja:** AlternativeTo $5 (akkoord Khidr). There's An AI For That: eerst controleren of er een gratis route is (derden zeggen sinds aug. "gratis", onze check van 6-11 zei $49); zo niet, voorstel $49 eenmalig — enige directory waar mensen op een taak zoeken.
+**Betalen, nee:** Uneed ($14,99, publiek = founders), Toolify ($99), Futurepedia ($497), Microlaunch, Peerlist-verificatie, Glama-boost ($49/mnd), MCP Market fast-track ($29).
+**Gratis aanmaken (zichtbaarheid + links), op volgorde:**
+1. Officiële MCP Registry (registry.modelcontextprotocol.io) via `mcp-publisher` met `remotes`-entry; vraagt domeinverificatie. Glama, PulseMCP en API Tracker lezen het register automatisch uit → één actie, meerdere vermeldingen. Werk voor een chat met repo-toegang.
+2. awesome-mcp-servers (GitHub-PR, remote-servers in de zusterlijst; vraagt Glama-vermelding).
+3. MCP Market (gratis wachtrij), API Tracker (formulier).
+4. Al gedaan: Claude-directory, AlternativeTo, SaaSHub, Peerlist-profiel. Product Hunt als we klaar zijn.
+Bron MCP-directories: apideck.com/blog/mcp-server-directories (31-10-2026).
+
+
 **Doel:** ontdekt worden door verzamelaars (studenten, onderzoekers, kennisbank-bouwers, makers, RAG-bouwers), en long-tail SEO via de vergelijkingspagina's. **Geen betaalde traffic** (strategie 3-11). Betaalde opties alleen na ja/nee van Khidr.
 **Accounts aanmaken en betalen doet Khidr.** De teksten in deze map zijn klaar om te plakken.
 
