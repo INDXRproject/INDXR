@@ -482,11 +482,27 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
     // eslint-disable-next-line react-hooks/exhaustive-deps -- replay only when the check settles
   }, [isCheckingDuplicate])
 
+  // Prefill from the library's "Transcribe with AI" link: ?video=<url>&method=ai.
+  // The URL is set first; the reset effect below then sees the pending AI choice for
+  // that exact URL and selects AI instead of resetting to captions. Nothing starts on
+  // its own — the user still clicks Extract and sees the cost block.
+  const prefillAiUrlRef = useRef<string | null>(null)
+
   // Reset Whisper toggle when URL changes
   useEffect(() => {
+    // AI needs an account: only honour the prefilled AI choice for a signed-in user (in the app
+    // the user comes from the server-rendered AuthProvider, so it is known on first render).
+    if (prefillAiUrlRef.current && prefillAiUrlRef.current === url && user) {
+      prefillAiUrlRef.current = null
+      useWhisperRef.current = true
+      setUseWhisper(true)
+      setWhisperAutoTriggered(false)
+      return
+    }
     setUseWhisper(false)
     useWhisperRef.current = false
     setWhisperAutoTriggered(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url])
 
   const handleUrlChange = (newUrl: string) => {
@@ -505,6 +521,16 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       setError(null)
     }
   }
+
+  // Run the prefill once, after handleUrlChange exists (see prefillAiUrlRef above).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const prefill = params.get("video")
+    if (!prefill || validateYouTubeUrl(prefill, 'video').type !== 'VALID_VIDEO') return
+    if (params.get("method") === "ai") prefillAiUrlRef.current = prefill
+    handleUrlChange(prefill)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // "New transcription" (point 2): after a result the input collapses to a single action;
   // this returns the tab to a clean input state, mirroring the playlist "Start new extraction".

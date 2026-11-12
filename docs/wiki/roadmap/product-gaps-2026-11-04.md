@@ -24,6 +24,8 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 
 ## Gat 2: de upsell captions → AI is onzichtbaar
 
+**Status 2026-11-12 (akkoord Khidr: "ja op de knop"):** stap A gebouwd — op een captions-transcript in de bibliotheek staat een balk "These are YouTube's captions… · Transcribe with AI · N credits" (`AiUpgradeCard.tsx`). De knop opent `/dashboard/transcribe?mode=video&video=<url>&method=ai`; `VideoTab` vult de URL in en kiest AI (alleen voor een ingelogde gebruiker). Daarna de bestaande flow: Extract → kostenblok → bestaande reservering. Geen nieuwe creditlogica. Heeft de gebruiker al een AI-transcript van die video, dan toont de balk "Open AI transcript". PostHog-event `library_ai_upgrade_clicked`. Al bestaand (gevonden 12-11): direct na een captions-extractie staat onder het resultaat al "YouTube captions not accurate enough? Re-extract with AI · N credits" — het gat zat alleen in de bibliotheek. Niet gebouwd: het gratis voorproefje van de eerste minuut (stap 1–3 hieronder); dat raakt proxy + AssemblyAI-kosten en wacht op een apart besluit.
+
 **Nu (code):** vóór extractie kiest de gebruiker in `VideoTab.tsx` tussen captions en AI (radio, `useWhisper`). Na een captions-transcript is er geen weg terug naar "doe deze video goed". In de bibliotheek ontbreekt een knop om opnieuw te transcriberen met AI. Juist daar ziet de gebruiker hoe slecht captions zijn (geen leestekens, geen sprekers).
 
 **Plan:**

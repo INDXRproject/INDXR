@@ -8,6 +8,7 @@ import { TranscriptTabs, ViewTab } from "@/components/library/TranscriptTabs";
 import { TranscriptHeader } from "@/components/library/TranscriptHeader";
 import { AlternativeToNudge } from "@/components/library/AlternativeToNudge";
 import { SourceCard } from "@/components/library/SourceCard";
+import { AiUpgradeCard } from "@/components/library/AiUpgradeCard";
 
 interface PageProps {
   params: Promise<{
@@ -69,6 +70,22 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
     collectionName = (col as { name?: string } | null)?.name ?? null;
   }
 
+  // Captions transcript of a YouTube video → offer the AI version (gap 2). If the user already has
+  // an AI transcript of the same video, point there instead of selling it twice.
+  const isCaptions = transcript.processing_method === "youtube_captions" && !!transcript.video_id;
+  let aiTranscriptId: string | null = null;
+  if (isCaptions) {
+    const { data: aiRow } = await supabase
+      .from("transcripts")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("video_id", transcript.video_id)
+      .neq("processing_method", "youtube_captions")
+      .limit(1)
+      .maybeSingle();
+    aiTranscriptId = (aiRow as { id?: string } | null)?.id ?? null;
+  }
+
   // The source, shown as a citation card: sticky right column on desktop, one compact row on mobile.
   const sourceProps = {
     transcriptId: transcript.id,
@@ -110,6 +127,14 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
       <div className="mb-6">
         <TranscriptTabs tabs={tabs} activeId={activeTab} transcriptId={id} />
       </div>
+
+      {isCaptions && (activeTab === "original" || activeTab === "edited") && (
+        <AiUpgradeCard
+          videoId={transcript.video_id as string}
+          durationSeconds={transcript.duration ?? null}
+          aiTranscriptId={aiTranscriptId}
+        />
+      )}
 
       {activeTab === "original" || activeTab === "edited" ? (
         <TranscriptViewer
