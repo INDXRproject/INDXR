@@ -166,13 +166,17 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
     })()
   }, [])
 
-  // beforeunload guard while transcription is active (upload + processing)
+  // beforeunload guard ONLY while the file is actively uploading from the browser to the server
+  // (point 1, live-found 2026-11-12). Used to also cover 'processing' — but once the job is queued,
+  // it runs server-side; the UI already tells the user "it's safe to close this tab", so warning on
+  // navigation after that point contradicted the app's own message and gave a false "Leave site?"
+  // right after starting a job.
   useEffect(() => {
-    if (!isTranscribing) return
+    if (uploadPhase !== 'uploading') return
     const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
-  }, [isTranscribing])
+  }, [uploadPhase])
 
   // A selected file pushes the Transcribe button below the fold on a phone (the drop zone + cost card
   // are tall). Bring the primary action into view so the next step is never off-screen — this was the
