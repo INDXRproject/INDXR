@@ -31,11 +31,12 @@ cilostazol, vorapaxar, heparin, enoxaparin, dalteparin, fondaparinux, argatroban
 dabigatran, rivaroxaban, apixaban, edoxaban, warfarin, alteplase, protamine sulfate, thromboxane A2,
 glycoprotein IIb/IIIa, von Willebrand factor, prostacyclin).
 
-**Without hints:** "apiximab, eptifapatide, and tyrofibin" (should be apixaban, eptifibatide,
-tirofiban — note apixaban was even swapped for a different drug in the same class) and "cilosazol"
-(×2, should be cilostazol).
+**Without hints:** "apiximab, eptifapatide, and tyrofibin" (the speaker says abciximab,
+eptifibatide, tirofiban — the GP IIb/IIIa-blocker class) and "cilosazol" (×2, should be
+cilostazol).
 
-**With hints:** all 6 of those terms correct. One side effect of a hint: "factors 2, 7, 9 and 10"
+**With hints:** all 6 of those terms correct — including abciximab, matching what the speaker
+actually said. One side effect of a hint: "factors 2, 7, 9 and 10"
 became "factors II, VII, IX and X" (Roman numerals — arguably more correct for a pharmacology
 lecture, not a regression). Checked the rest (~2,000 words): 9 words differ, 1 is a mild regression
 ("activator" → "activators").

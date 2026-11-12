@@ -39,6 +39,19 @@ interface VideoTabProps {
 
 type WhisperStatus = 'idle' | 'pending' | 'downloading' | 'transcribing' | 'saving'
 
+const LIVE_WHISPER_STATUSES = new Set<WhisperStatus>(['pending', 'downloading', 'transcribing', 'saving'])
+
+// C2 fix (live test 2026-11-12): a "deduplicated" response attaches to an EXISTING job whose status
+// can already be terminal ('complete'/'error') by the time this request lands — e.g. two near-
+// simultaneous requests for the same video, the first one already failed via the temp-file race
+// (point B). Blindly assigning that raw status into whisperStatus produced an invalid value
+// (JobProgressCard's STATUS_LABEL has no 'error' entry → blank header, "no progress card"). useJobStatus's
+// own poll/realtime resolves the real terminal state within one tick regardless — this only decides
+// what shows in the meantime, so always normalise to a real in-progress label.
+function normalizeDedupStatus(raw: unknown): WhisperStatus {
+  return LIVE_WHISPER_STATUSES.has(raw as WhisperStatus) ? (raw as WhisperStatus) : 'pending'
+}
+
 const VIDEO_JOB_KEY = 'indxr-active-video-job'
 
 
@@ -856,7 +869,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       posthog.capture('job_accepted', { mode: 'video', method: 'ai' })
 
       const isDedup = !!jobData.deduplicated
-      const initialStatus = (isDedup ? jobData.status : 'pending') as WhisperStatus
+      const initialStatus = isDedup ? normalizeDedupStatus(jobData.status) : 'pending'
 
       sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
         jobId: jobData.job_id, videoId,
@@ -957,7 +970,7 @@ export function VideoTab({ onPlaylistDetected, onTranscriptLoaded, onSwitchToAud
       posthog.capture('job_accepted', { mode: 'video', method: 'ai' })
 
       const isDedup = !!jobData.deduplicated
-      const initialStatus = (isDedup ? jobData.status : 'pending') as WhisperStatus
+      const initialStatus = isDedup ? normalizeDedupStatus(jobData.status) : 'pending'
 
       sessionStorage.setItem(VIDEO_JOB_KEY, JSON.stringify({
         jobId: jobData.job_id, videoId: currentVideoId,

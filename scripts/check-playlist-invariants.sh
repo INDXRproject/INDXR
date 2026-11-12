@@ -14,6 +14,10 @@
 #      refund) and the TS mirror packages/shared/src/lib/pricing.summaryCreditCost (what the app renders),
 #      both against test-fixtures/summary_cost.json. A divergence means the app shows a different amount
 #      than the backend charges — a real-money bug.
+#   4. Spelling-hints delimiter split — backend/spelling_hints.parse_keyterms and the TS mirror
+#      packages/shared/src/lib/spellingHints.parseSpellingHints, both against
+#      test-fixtures/spelling_hints_split.json. A divergence means a comma/Arabic-comma/semicolon/
+#      newline list parses to a different term count client- vs server-side.
 #
 # There is NO CI in this repo, so nothing runs these tests automatically. This script IS the
 # enforcement: run it as part of the verification gate before committing a change that touches the
@@ -58,4 +62,12 @@ echo "── Upload formats · TypeScript mirror (packages/shared/src/lib/upload
 node --experimental-strip-types packages/shared/src/lib/uploadFormats.test.ts
 
 echo
-echo "✅ All invariants agree — free-slots helpers, the four hard limits, the summary cost formula, and the upload-format allowlist are in sync."
+echo "── Spelling-hints split · Python (backend/test_spelling_hints_split.py) ──"
+( cd backend && venv/bin/python3 test_spelling_hints_split.py )
+
+echo
+echo "── Spelling-hints split · TypeScript mirror (packages/shared/src/lib/spellingHints.test.ts) ──"
+node --experimental-strip-types packages/shared/src/lib/spellingHints.test.ts
+
+echo
+echo "✅ All invariants agree — free-slots helpers, the four hard limits, the summary cost formula, the upload-format allowlist, and the spelling-hints delimiter split are in sync."

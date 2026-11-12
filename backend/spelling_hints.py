@@ -5,7 +5,15 @@ Mirrors limits.py: plain constants, no app/FastAPI imports, so it can be unit-te
 The TS mirror lives in packages/shared/src/lib/spellingHints.ts (frontend validation uses the exact
 same numbers so a user never sees a client-accepted list that the backend then rejects).
 """
+import re
 from typing import List, Optional, Union
+
+# Split on comma, Arabic/Urdu comma (،), semicolon (both forms), Japanese/Chinese comma (、，), or a
+# newline — a user pasting a list from a document or writing Arabic naturally uses these instead of
+# (or mixed with) ",". Live test 2026-11-12: "الموطأ، الإمام مالك، ابن عبد البر" (Arabic commas) and
+# "Zubaidah\nBarmakids\nKhurasan; Raqqa" (newline + semicolon) both parsed as a single term before
+# this fix.
+_SPLIT_RE = re.compile(r"[,،;؛、，\n]+")
 
 # AssemblyAI accepts up to 1000 terms on Universal-3.5 Pro / 200 on Universal-2, max 6 words/term.
 # We cap well below both ceilings — AssemblyAI's own guidance warns long lists work AGAINST
@@ -19,8 +27,9 @@ def parse_keyterms(raw: Optional[Union[str, List[str]]]) -> List[str]:
     """
     Normalise a spelling-hints input into a clean term list.
 
-    Accepts a comma-joined string (form fields: VideoTab/AudioTab/quick-quote) or a list of
-    strings (JSON bodies: playlist extract). Trims whitespace, drops empties, dedupes
+    Accepts a string joined by comma/Arabic comma/semicolon/full-width comma/newline (form fields:
+    VideoTab/AudioTab/quick-quote) or a list of strings (JSON bodies: playlist extract). Trims
+    whitespace, drops empties, dedupes
     case-insensitively (first-seen casing wins), and silently drops any single term with more
     than MAX_WORDS_PER_TERM words (AssemblyAI would reject it; happens upstream in the UI too, so
     this is defense-in-depth, not the primary validation surface).
@@ -32,7 +41,7 @@ def parse_keyterms(raw: Optional[Union[str, List[str]]]) -> List[str]:
         return []
 
     if isinstance(raw, str):
-        candidates = raw.split(',')
+        candidates = _SPLIT_RE.split(raw)
     else:
         candidates = raw
 

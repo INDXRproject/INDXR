@@ -1,0 +1,8 @@
+{
+  "_comment": "GEDEELDE fixture voor de spelling-hints-splitter (keyterms-ADR, dedup fix 2026-11-12). backend/spelling_hints.py parse_keyterms() en packages/shared/src/lib/spellingHints.ts parseSpellingHints() moeten op dezelfde delimiter-set splitsen: komma, Arabische/Urdu-komma (،), beide puntkomma-vormen (;؛), Japans/Chinees komma (、，), en een newline. backend/test_spelling_hints_split.py en packages/shared/src/lib/spellingHints.test.ts checken allebei tegen deze fixture; scripts/check-playlist-invariants.sh draait beide. Live gevonden 2026-11-12: beide strings hieronder gaven vóór de fix 0 resp. 1 term in plaats van 3 resp. 4.",
+  "cases": [
+    { "input": "Eudaimonia, Wittgenstein, Habsburg", "expected_count": 3 },
+    { "input": "الموطأ، الإمام مالك، ابن عبد البر", "expected_count": 3 },
+    { "input": "Zubaidah\nBarmakids\nKhurasan; Raqqa", "expected_count": 4 }
+  ]
+}

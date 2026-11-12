@@ -10,18 +10,32 @@ export interface ParsedSpellingHints {
   error?: string
 }
 
+// Split on comma, Arabic/Urdu comma (،), semicolon (both forms), Japanese/Chinese comma (、，), or a
+// newline — mirrors backend/spelling_hints.py's _SPLIT_RE exactly (shared test cases in
+// test-fixtures/spelling_hints_split.json). A user pasting a list from a document, or writing
+// Arabic naturally, uses these instead of (or mixed with) ",". Live test 2026-11-12:
+// "الموطأ، الإمام مالك، ابن عبد البر" (Arabic commas) and "Zubaidah\nBarmakids\nKhurasan; Raqqa"
+// (newline + semicolon) both parsed as a single term before this fix.
+const SPLIT_RE = /[,،;؛、，\n]+/
+
+/** Raw multi-term split, no dedup/cap — used by the pill-input's paste handler to turn one pasted
+ *  blob into several candidate terms (each still goes through the normal per-term add/validate). */
+export function splitSpellingTerms(raw: string): string[] {
+  return raw.split(SPLIT_RE).map((t) => t.trim()).filter(Boolean)
+}
+
 /**
- * Split a comma-separated spelling-hints string into a clean term list: trims whitespace, drops
- * empties, dedupes case-insensitively (first-seen casing wins), and drops any single term with
- * more than MAX_WORDS_PER_TERM words. Returns a friendly error instead of silently truncating when
- * the result exceeds MAX_KEYTERMS, so the user knows to shorten the list.
+ * Split a spelling-hints string into a clean term list: trims whitespace, drops empties, dedupes
+ * case-insensitively (first-seen casing wins), and drops any single term with more than
+ * MAX_WORDS_PER_TERM words. Returns a friendly error instead of silently truncating when the
+ * result exceeds MAX_KEYTERMS, so the user knows to shorten the list.
  */
 export function parseSpellingHints(raw: string): ParsedSpellingHints {
   if (!raw) return { terms: [] }
 
   const seenLower = new Set<string>()
   const terms: string[] = []
-  for (const candidate of raw.split(",")) {
+  for (const candidate of splitSpellingTerms(raw)) {
     const term = candidate.trim()
     if (!term) continue
     if (term.split(/\s+/).length > MAX_WORDS_PER_TERM) continue
@@ -86,6 +100,16 @@ const TITLE_STOPWORDS = new Set([
   "highlights", "highlight", "moments", "moment", "clip", "clips", "short", "shorts",
   "must", "watch", "see", "now", "today", "finally", "actually", "literally", "exactly",
   "every", "single", "all", "only", "just", "still", "also", "even", "ever", "never", "always",
+  // Academic/course-title vocabulary (point E, live test 2026-11-12): "Taster Lecture" and
+  // "Antimicrobial Resistance" were suggested as if they were proper names — this audience's
+  // titles are full of these generic subject/format words. Prefer no suggestion to a useless one.
+  "lecture", "lectures", "taster", "introduction", "intro", "session", "sessions", "talk", "talks",
+  "overview", "fundamentals", "basics", "principles", "concepts", "theory", "theories",
+  "analysis", "course", "courses", "module", "unit", "chapter", "seminar", "workshop",
+  "masterclass", "class", "classes", "lesson", "lessons", "summary", "notes", "revision",
+  "exam", "exams", "test", "tests", "quiz", "syllabus", "curriculum", "study", "studies",
+  "resistance", "disease", "diseases", "syndrome", "mechanism", "mechanisms", "function",
+  "functions", "structure", "structures", "topic", "topics", "chapters",
 ])
 
 /**

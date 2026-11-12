@@ -3,7 +3,7 @@
 import { useId, useState } from "react"
 import { X } from "lucide-react"
 import { cn } from "../../lib/utils"
-import { validateTerm, suggestTermsFromTitle, MAX_KEYTERMS } from "../../lib/spellingHints"
+import { validateTerm, suggestTermsFromTitle, splitSpellingTerms, MAX_KEYTERMS } from "../../lib/spellingHints"
 import { Button } from "../ui/button"
 import { Notice } from "../ui/notice"
 
@@ -36,25 +36,30 @@ export function SpellingHintsField({
     (s) => !value.some((v) => v.toLowerCase() === s.toLowerCase())
   )
 
-  function addTerm(raw: string) {
-    const term = raw.trim()
-    if (!term) return
-    if (value.length >= MAX_KEYTERMS) {
+  // Handles both a single typed term (Enter/",") and a pasted multi-term blob — splitSpellingTerms
+  // breaks on comma/Arabic comma/semicolon/full-width comma/newline, so "الموطأ، الإمام مالك، ابن
+  // عبد البر" or a pasted "Zubaidah\nBarmakids\nKhurasan; Raqqa" each become several candidate
+  // terms instead of one (live test 2026-11-12 found both collapsing to 0-1 terms silently).
+  function addTerms(raw: string) {
+    const candidates = splitSpellingTerms(raw)
+    if (!candidates.length) return
+    let next = value
+    let skippedWords = 0
+    for (const term of candidates) {
+      if (next.length >= MAX_KEYTERMS) { skippedWords = -1; break }
+      const reason = validateTerm(term, next)
+      if (reason === "max_words") { skippedWords++; continue }
+      if (reason === "duplicate") continue
+      next = [...next, term]
+    }
+    if (skippedWords === -1) {
       setSkipMessage(`Maximum ${MAX_KEYTERMS} terms reached.`)
-      return
+    } else if (skippedWords > 0) {
+      setSkipMessage(`${skippedWords} term${skippedWords === 1 ? "" : "s"} skipped (max 6 words)`)
+    } else {
+      setSkipMessage(undefined)
     }
-    const reason = validateTerm(term, value)
-    if (reason === "max_words") {
-      setSkipMessage("1 term skipped (max 6 words)")
-      setDraft("")
-      return
-    }
-    if (reason === "duplicate") {
-      setDraft("")
-      return
-    }
-    setSkipMessage(undefined)
-    onChange([...value, term])
+    if (next !== value) onChange(next)
     setDraft("")
   }
 
@@ -70,7 +75,7 @@ export function SpellingHintsField({
   function handleDraftKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault()
-      addTerm(draft)
+      addTerms(draft)
     } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
       removeTerm(value[value.length - 1])
     }
@@ -106,7 +111,7 @@ export function SpellingHintsField({
                   <button
                     key={s}
                     type="button"
-                    onClick={() => addTerm(s)}
+                    onClick={() => addTerms(s)}
                     className="rounded-full border border-border bg-bg-subtle px-3 py-1 text-xs text-fg-muted hover:text-fg-strong hover:border-border-strong"
                   >
                     + {s}
@@ -143,7 +148,8 @@ export function SpellingHintsField({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={handleDraftKeyDown}
-              onBlur={() => addTerm(draft)}
+              onPaste={(e) => { e.preventDefault(); addTerms(e.clipboardData.getData("text")) }}
+              onBlur={() => addTerms(draft)}
               placeholder={value.length === 0 ? "Eudaimonia, Wittgenstein, Habsburg…" : "Add another"}
               className="min-w-[8ch] flex-1 bg-transparent text-sm outline-none placeholder:text-fg-muted"
             />
