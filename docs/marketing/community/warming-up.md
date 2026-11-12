@@ -59,3 +59,4 @@ Eerste X-post 11-11 had geen utm (docs-link + directory-link in een reactie); ve
 
 ## Log
 - 2026-11-11: HN-profiel ingevuld; eerste 3 concepten klaar (zie boven). Dagelijkse ronde ingepland 13:41 (HN + Obsidian-forum, concepten in drafts/).
+- 2026-11-12: ronde 2 — 3 concepten in drafts/2026-11-12.md (HN Yogurt/diarisatie, HN Humble Bundle/vibe-coding-veiligheid, Obsidian-forum Ibis/citeren met tijdstempel). Show HN nog niet (pas 1 dag reacties in de log).
