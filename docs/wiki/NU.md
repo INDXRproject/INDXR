@@ -18,10 +18,10 @@ Eerste betalende klanten. Nu 0. Criterium: terugkerende gebruikers uiterlijk 15-
 
 ## Marketing — loopt
 - **Claude-directory:** live sinds 11-11.
-- **Hacker News (`sinbadbuilds`):** 2 reacties geplaatst 12-11. Show HN vroegst di 17-11 of do 19-11, 15–17 u (`marketing/community/show-hn.md`).
+- **Hacker News (`sinbadbuilds`):** 2 reacties geplaatst 12-11. Show HN: als Khidr vindt dat we klaar zijn (geen datum).
 - **Obsidian-forum:** account aanmaken (Khidr), concepten in `marketing/community/drafts/2026-11-12.md`.
 - **Dagelijkse community-ronde:** 13:41, concepten in `marketing/community/drafts/`.
-- **Directories:** alleen gratis (besluit Khidr 12-11: nergens voor betalen). SaaSHub ingediend, Peerlist-profiel staat, AlternativeTo live. Uneed, There's An AI For That, Toolify, Peerlist Launchpad: geschrapt.
+- **Directories:** herziening 12-11 in `marketing/directories/README.md`. Volgende: officiële MCP Registry (gratis, voedt Glama/PulseMCP/API Tracker). AlternativeTo $5 akkoord; TAAFT eerst gratis route checken.
 - **Product Hunt:** na redesign; check 25-11.
 
 ## Ligt bij Khidr (besluit of actie)
