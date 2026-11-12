@@ -693,3 +693,15 @@ Tijdens de spelling-hints-test (11-11, ~22:10 UTC) gaf de Decodo-proxy een 522 (
 geen verweesde reservering). Downloads duurden tot 11 minuten voor 61 MB bij de tragere pogingen.
 Geen actie nodig — bestaand retry-/refund-gedrag werkte zoals ontworpen; genoteerd als datapunt voor
 eventuele toekomstige Decodo-betrouwbaarheidsanalyse.
+
+## `file_collision` niet toegevoegd aan de playlist-retry-gate (bewuste scope-keuze, 2026-11-12)
+De nieuwe foutcode `file_collision` (ADR-110) kreeg een eigen ErrorCard-copy en is uitgesloten van
+Sentry-alerting, maar is BEWUST niet toegevoegd aan de retryable-set `('bot_detection', 'timeout',
+'connection_error', 'server_error')` die drie plekken moet blijven ("keep in sync"): `backend/main.py`
+`_RETRYABLE_ERRORS` (bon-weergave, leesveld), `backend/worker.py` (playlist-retry-aanbod), en de SQL
+RPC `v_has_retryable` (`update_playlist_video_progress`, financieel-aangrenzend). Met de temp-file-
+race zelf gefixt (uniek pad per job) zou deze foutcode voortaan zeldzaam moeten zijn; een getroffen
+video valt nu in de "permanente fout"-bucket van de playlist-UI (de gebruiker kan 'm los opnieuw
+indienen) i.p.v. automatisch in "Retry all" te verschijnen — een bewust conservatieve, geld-neutrale
+default. Als Khidr 'm toch in de retry-aanbod wil: alle drie plekken + de SQL-migratie in dezelfde
+commit aanpassen.

@@ -87,6 +87,28 @@ symptoom was een losse frontend-bug: `useRecentSpellingHints` fetchte eenmalig b
 hints nooit chips voor de VOLGENDE run. Fix: de hook retourneert nu ook `recordUsed(terms)`, dat de
 lijst optimistisch bijwerkt op het moment van indienen (geen DB-refetch, geen timing-race).
 
+## Vervolg 2 — live test 2026-11-12, parser + suggestie-filter + dedup-statusweergave
+
+Zie ADR-110 voor de yt-dlp/download-robuustheidsbugs uit dezelfde testronde (apart domein). Drie
+kleinere, spelling-hints-specifieke bugs:
+
+- **Splitter zag alleen ","**: `الموطأ، الإمام مالك، ابن عبد البر` (Arabische komma's) en
+  `Zubaidah\nBarmakids\nKhurasan; Raqqa` (newline/puntkomma) gaven 0 resp. 1 term i.p.v. 3 resp. 4.
+  Fix: `backend/spelling_hints.py` en `packages/shared/src/lib/spellingHints.ts` splitsen nu allebei
+  op `[,،;؛、，\n]+`, gedeelde fixture `test-fixtures/spelling_hints_split.json` +
+  `check-playlist-invariants.sh`-sectie houdt ze gesynchroniseerd. De redesignde pill-input (vorige
+  sessie) had zijn EIGEN, ongesplitste paste-pad (`addTerm` nam de hele plak-tekst als één term) —
+  `addTerms`/`onPaste` gebruiken nu dezelfde `splitSpellingTerms()`.
+- **Titelsuggesties pakten generieke vakwoorden**: "Taster Lecture", "Antimicrobial Resistance" werden
+  als eigennamen voorgesteld. `TITLE_STOPWORDS` uitgebreid met academisch/cursus-vocabulaire (lecture,
+  introduction, session, resistance, syndrome, …) — "liever geen suggestie dan een nutteloze."
+- **Dedup-statusweergave**: een `deduplicated:true`-respons hangt aan een BESTAANDE job wiens status
+  al terminaal (`complete`/`error`) kan zijn tegen de tijd dat de nieuwe aanvraag aankomt (precies het
+  temp-file-race-scenario, ADR-110). De rauwe status werd blind in `whisperStatus` gezet —
+  `JobProgressCard`'s `STATUS_LABEL` kent geen `'error'`-sleutel → lege/kapotte kaart. Fix:
+  `normalizeDedupStatus()` valt terug op `'pending'` voor elke niet-live status; `useJobStatus`'s
+  eigen poll/realtime lost de echte eindstatus daarna gewoon op.
+
 **UI-redesign (zelfde sessie, poster-stijl):** mono-caps rij-label "Spelling hints" + "Optional · no
 extra cost" in het kostenblok, ingeklapt naar één uitlegregel + een outline-knop "Add names & terms",
 termen als verwijderbare pills i.p.v. los komma-tekst, een deterministische (geen LLM)
