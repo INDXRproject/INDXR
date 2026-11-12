@@ -35,7 +35,7 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 
 **Verificatie:** een captioned video in de testaccount laten zien met naast elkaar de eerste minuut van captions en van AI. De knop moet de bestaande AI-job starten met de juiste prijs. Een zesde voorproefje op één dag moet geweigerd worden. De vier invariant-tests (`./scripts/check-playlist-invariants.sh`) moeten groen blijven.
 
-## Gat 3 (gezien 12-11, nog geen besluit Khidr): bronnen niet naar Zotero
+## Gat 3 (gezien 12-11, akkoord Khidr 12-11 avond — uitvoering Claude Code lokaal): bronnen niet naar Zotero
 
 **Nu (code):** `get_source` (MCP) en `SourceCard.tsx` geven alleen een kant-en-klare APA-regel als tekst. Geen BibTeX-, RIS- of CSL-JSON-export (`grep -ri "bibtex|zotero|ris"` in apps/packages/backend = 0 treffers). Onderzoekers die Zotero, Pandoc of een picker als Ibis gebruiken, moeten een INDXR-bron dus met de hand overtypen.
 **Waarom het telt:** de doelgroep (studenten, onderzoekers, schrijvers) beheert bronnen in Zotero; APA-tijdstempels als locator (`(Kagan, 2007, 23:14)`) passen op INDXR's timestamps. Aanleiding: Obsidian-forumdraad over Ibis (zie `docs/marketing/community/drafts/2026-11-12.md`).
@@ -44,7 +44,7 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 1. Per transcript en per collectie exporteren als `.bib` (BibTeX `@misc` / BibLaTeX `@video`), `.ris` en CSL-JSON: titel, kanaal als auteur, publicatiedatum, URL, medium (YouTube-video / audio-opname).
 2. Een vaste `citekey` (bv. `kagan2007death`) in de YAML-frontmatter van de Markdown-export, zodat een INDXR-note in Obsidian meteen werkt met Pandoc en de Citations-plugin.
 3. Meer stijlen dan APA: CSL-JSON + citeproc-js geeft APA, MLA, Chicago, Harvard enz. uit één bron (CSL kent >10.000 stijlen). Dan ook `get_source` (MCP) een `style`-parameter geven. (Idee van Khidr.)
-Uitgewerkt als CC-prompt (fase 1 bestanden+stijlen, fase 2 Send to Zotero): `cc-prompt-2026-11-12-zotero-citations.md`. Wacht op akkoord Khidr.
+Uitgewerkt als CC-prompt (fase 1 bestanden+stijlen, fase 2 Send to Zotero): `cc-prompt-2026-11-12-zotero-citations.md`. Akkoord Khidr 12-11 avond (fase 1 en 2).
 
 ## Volgorde
 

@@ -1,4 +1,4 @@
-# CC-prompt: INDXR-bronnen in Zotero + meerdere citatiestijlen (12-11, wacht op akkoord Khidr)
+# CC-prompt: INDXR-bronnen in Zotero + meerdere citatiestijlen (12-11, AKKOORD Khidr 12-11 avond: fase 1 en 2)
 
 Idee meerdere stijlen: Khidr. Zotero-koppeling: n.a.v. Obsidian-forumonderzoek 12-11 (`docs/marketing/community/obsidian-forum.md`).
 
