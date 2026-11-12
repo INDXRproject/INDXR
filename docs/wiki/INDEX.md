@@ -8,6 +8,9 @@ Gebruik deze wiki voor de *waarom* achter technische en zakelijke beslissingen. 
 
 ## Snelle navigatie
 
+**Wat loopt er nu, wat ligt bij Khidr:** → [NU.md](NU.md) (één pagina, elke chat werkt hem bij)
+
+
 ### Start hier als je...
 
 **...nieuw bent in de codebase:**

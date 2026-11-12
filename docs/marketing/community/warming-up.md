@@ -4,6 +4,9 @@ Doel: `sinbadbuilds` wordt een gewoon, behulpzaam account vóór de Show HN en d
 Regel: reacties gaan over het onderwerp, niet over INDXR. Geen links naar indxr.ai, behalve waar
 iemand letterlijk om zoiets vraagt. Khidr plaatst, Claude schrijft concepten; Khidr maakt ze eigen.
 
+## Toon (feedback Khidr 12-11: "je praat als een AI, too much")
+Kort: 2–4 zinnen. Eén punt per reactie, geen opsomming van drie maatregelen. Geen afrondende wijsheid aan het eind ("None of this is AI-specific…"), geen "exactly", "neat trick", "makes a big difference". Gewoon zeggen wat je deed of vraagt, met kleine letters en losse zinnen mag.
+
 ## Hacker News: eerste 3 reacties (concepten)
 
 **1. "How do you keep up quality when you vibe-code?"** — https://news.ycombinator.com/item?id=50444380
@@ -59,3 +62,6 @@ Eerste X-post 11-11 had geen utm (docs-link + directory-link in een reactie); ve
 
 ## Log
 - 2026-11-11: HN-profiel ingevuld; eerste 3 concepten klaar (zie boven). Dagelijkse ronde ingepland 13:41 (HN + Obsidian-forum, concepten in drafts/).
+- 2026-11-12: ronde 2 — 3 concepten in drafts/2026-11-12.md (HN Yogurt/diarisatie, HN Humble Bundle/vibe-coding-veiligheid, Obsidian-forum Ibis/citeren met tijdstempel). Show HN nog niet (pas 1 dag reacties in de log).
+- 2026-11-12: Khidr plaatste HN-concept 1 en 2 van vandaag (2 aangepast). Toonregel toegevoegd. Product-gat 3 (Zotero-export) genoteerd.
+- 2026-11-12: Obsidian-forum verkend (categorieën, citeerketen Zotero/.bib/Pandoc, 2 extra concepten). Notities in obsidian-forum.md.
