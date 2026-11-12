@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
@@ -75,6 +75,14 @@ interface PlaylistManagerProps {
     spellingHints?: string[],
   ) => void;
   isExtracting: boolean;
+  /** Bumped by the parent every time the extraction request fails to even START (the POST itself
+      errored, before any per-video job exists — e.g. the 2026-11-12 playlist-500 incident).
+      hasExtracted was set the moment the user clicked, with nothing to ever reset it on THIS kind
+      of failure (videoStatuses never reaches a terminal state since no job started, so the normal
+      allDone/isCompleted path never fires either) — the selection screen, including "Review
+      extraction", stayed hidden forever. Any change to this number (not the initial value) resets
+      hasExtracted so the user can see the form and try again. */
+  extractStartFailedToken?: number;
   videoStatuses?: Record<string, VideoStatus>;
   /** Raw backend error_type per failed video (populated at completion). Lets the failure blocks
       key each card on the real code via the copy map, so an unmapped code shows the neutral card
@@ -112,7 +120,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, videoErrorCodes = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null, spellingHints = [], onSpellingHintsChange, recentSpellingHints = [] }: PlaylistManagerProps) {
+export function PlaylistManager({ onExtract, isExtracting, extractStartFailedToken, videoStatuses = {}, videoErrorCodes = {}, freeVideoIds, whisperVideoIds, isAuthenticated, onAuthRequired, onError, onSwitchToAudio, onRetryAll, elapsedSeconds = 0, resumePlaylist, receipt, retryRound = 0, retryEstimate = null, spellingHints = [], onSpellingHintsChange, recentSpellingHints = [] }: PlaylistManagerProps) {
   const { credits, refreshCredits } = useAuth()
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -130,6 +138,18 @@ export function PlaylistManager({ onExtract, isExtracting, videoStatuses = {}, v
   const [isCompleted, setIsCompleted] = useState(false)
   const [finalElapsed, setFinalElapsed] = useState(0)
   const [hasExtracted, setHasExtracted] = useState(false);
+  // Point C (2026-11-12 incident): a failed extraction START (the POST itself errored) never
+  // reaches a terminal per-video status, so the normal allDone/isCompleted reset never fires —
+  // hasExtracted stayed stuck true and the selection screen (incl. "Review extraction") never came
+  // back. The parent bumps extractStartFailedToken on exactly this failure; skip the very first
+  // render (ref guard) so mounting with an already-nonzero token doesn't spuriously reset.
+  const sawExtractStartFailedToken = useRef(extractStartFailedToken);
+  useEffect(() => {
+    if (extractStartFailedToken !== undefined && extractStartFailedToken !== sawExtractStartFailedToken.current) {
+      sawExtractStartFailedToken.current = extractStartFailedToken;
+      setHasExtracted(false);
+    }
+  }, [extractStartFailedToken]);
   const [existingDuplicates, setExistingDuplicates] = useState<Record<string, Array<{ transcriptId: string; processingMethod: string }>>>({}); // video_id -> [{ transcriptId, processingMethod }]
   const [inlineError, setInlineError] = useState<string | null>(null);
   // "Add to" picker (Gevonden 9-11 A3): the user's collections, and the choice — defaults to

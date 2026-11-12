@@ -87,6 +87,9 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
   // Spelling hints (keyterms-ADR): one list for the whole playlist job, lifted here so a retry
   // (which starts a NEW playlist_extraction_jobs row) carries the same list as the original run.
   const [spellingHints, setSpellingHints] = useState<string[]>([])
+  // Point C (2026-11-12 incident): tells PlaylistManager the extraction never even started, so it
+  // can reset its stuck hasExtracted flag and show the selection screen ("Review extraction") again.
+  const [extractStartFailedToken, setExtractStartFailedToken] = useState(0)
   const { lists: recentSpellingHints, recordUsed: recordSpellingHintsUsed } = useRecentSpellingHints()
   // Entry list rebuilt from the DB (video_metadata) on resume so PlaylistManager
   // can re-render the per-video list; statuses come from the DB via videoStatuses.
@@ -476,6 +479,14 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
     }
     // ──────────────────────────────────────────────────────────────────────
 
+    // Tracks a collection WE just inserted this call (not a reused existing one) — if the
+    // /api/playlist/extract POST below then fails, this collection is an orphan (created, but no
+    // job ever references it) and must be cleaned up in the catch block below. Declared OUTSIDE the
+    // try block so the catch block can see it (let/const inside try is not visible in catch). Live-
+    // found 2026-11-12: a run of failed playlist starts (the keyterms-column 500) left 4 identically
+    // named empty "Firas Zahabi Techniques" collections behind.
+    let justCreatedCollectionId: string | undefined = undefined;
+
     try {
       setLoading(true)
       setElapsedSeconds(0)
@@ -495,14 +506,14 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
         if (user) {
           if (collectionChoice?.mode === 'new') {
             const { data: newCol } = await supabase.from('collections').insert({ user_id: user.id, name: playlistTitle }).select('id').single()
-            if (newCol) autoCollectionId = newCol.id
+            if (newCol) { autoCollectionId = newCol.id; justCreatedCollectionId = newCol.id }
           } else {
             const { data: existingCol } = await supabase.from('collections').select('id').eq('user_id', user.id).ilike('name', playlistTitle).limit(1).maybeSingle()
             if (existingCol) {
               autoCollectionId = existingCol.id
             } else {
               const { data: newCol } = await supabase.from('collections').insert({ user_id: user.id, name: playlistTitle }).select('id').single()
-              if (newCol) autoCollectionId = newCol.id
+              if (newCol) { autoCollectionId = newCol.id; justCreatedCollectionId = newCol.id }
             }
           }
         }
@@ -600,11 +611,20 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       refreshCredits()  // ADR-050: reflect the reservation in the topbar immediately
 
     } catch (error: unknown) {
+      // A collection created earlier in THIS call is an orphan if the job never got created —
+      // nothing else will ever reference it. Best-effort: never let cleanup mask the real error.
+      if (justCreatedCollectionId) {
+        try {
+          const supabase = createClient()
+          await supabase.from('collections').delete().eq('id', justCreatedCollectionId)
+        } catch { /* best-effort — the real error below is what the user sees */ }
+      }
       const e = error as Error & { code?: string; ctx?: Partial<ErrorCtx> }
       if (e?.code) setError({ code: e.code, ctx: e.ctx })
       else setError({ title: "Extraction couldn't start", body: e instanceof Error ? e.message : "Failed to extract playlist" })
       setLoading(false)
       setProgressMessage("")
+      setExtractStartFailedToken((n) => n + 1)
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
     }
   }
@@ -796,6 +816,7 @@ export function PlaylistTab({ isAuthenticated, onAuthRequired, onSwitchToAudio, 
       <PlaylistManager
         onExtract={handlePlaylistExtract}
         isExtracting={loading}
+        extractStartFailedToken={extractStartFailedToken}
         videoStatuses={videoStatuses}
         videoErrorCodes={videoErrorCodes}
         freeVideoIds={freeVideoIds}
