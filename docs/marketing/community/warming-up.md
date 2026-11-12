@@ -64,3 +64,4 @@ Eerste X-post 11-11 had geen utm (docs-link + directory-link in een reactie); ve
 - 2026-11-11: HN-profiel ingevuld; eerste 3 concepten klaar (zie boven). Dagelijkse ronde ingepland 13:41 (HN + Obsidian-forum, concepten in drafts/).
 - 2026-11-12: ronde 2 — 3 concepten in drafts/2026-11-12.md (HN Yogurt/diarisatie, HN Humble Bundle/vibe-coding-veiligheid, Obsidian-forum Ibis/citeren met tijdstempel). Show HN nog niet (pas 1 dag reacties in de log).
 - 2026-11-12: Khidr plaatste HN-concept 1 en 2 van vandaag (2 aangepast). Toonregel toegevoegd. Product-gat 3 (Zotero-export) genoteerd.
+- 2026-11-12: Obsidian-forum verkend (categorieën, citeerketen Zotero/.bib/Pandoc, 2 extra concepten). Notities in obsidian-forum.md.
