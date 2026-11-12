@@ -33,6 +33,12 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 
 **Verificatie:** een captioned video in de testaccount laten zien met naast elkaar de eerste minuut van captions en van AI. De knop moet de bestaande AI-job starten met de juiste prijs. Een zesde voorproefje op één dag moet geweigerd worden. De vier invariant-tests (`./scripts/check-playlist-invariants.sh`) moeten groen blijven.
 
+## Gat 3 (gezien 12-11, nog geen besluit Khidr): bronnen niet naar Zotero
+
+**Nu (code):** `get_source` (MCP) en `SourceCard.tsx` geven alleen een kant-en-klare APA-regel als tekst. Geen BibTeX-, RIS- of CSL-JSON-export (`grep -ri "bibtex|zotero|ris"` in apps/packages/backend = 0 treffers). Onderzoekers die Zotero, Pandoc of een picker als Ibis gebruiken, moeten een INDXR-bron dus met de hand overtypen.
+**Waarom het telt:** de doelgroep (studenten, onderzoekers, schrijvers) beheert bronnen in Zotero; APA-tijdstempels als locator (`(Kagan, 2007, 23:14)`) passen op INDXR's timestamps. Aanleiding: Obsidian-forumdraad over Ibis (zie `docs/marketing/community/drafts/2026-11-12.md`).
+**Mogelijke vorm:** per transcript en per collectie "Export .bib / .ris" (type `video`/`motion_picture`, URL, kanaal als auteur, publicatiedatum). Klein, geen financieel pad. Wacht op besluit Khidr.
+
 ## Volgorde
 
 Eerst gat 1 (zoeken): het is klein, zonder kosten en zonder financieel pad, en de positionering beweert het. Daarna gat 2: dat raakt de proxy, AssemblyAI en de credit-flow, en daarom gaat het via CC met de financiële veiligheidsinstructie.
