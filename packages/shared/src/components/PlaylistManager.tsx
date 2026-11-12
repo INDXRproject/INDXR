@@ -396,7 +396,7 @@ export function PlaylistManager({ onExtract, isExtracting, extractStartFailedTok
     }
   };
 
-  const handleProceedWithExtraction = (finalResults: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => {
+  const handleProceedWithExtraction = (finalResults: VideoAvailability[], duplicateAction?: 'replace' | 'reset', freshHints?: string[]) => {
     // Prevent double extraction
     if (hasExtracted) return;
 
@@ -428,7 +428,9 @@ export function PlaylistManager({ onExtract, isExtracting, extractStartFailedTok
 
       setHasExtracted(true);
       setShowAvailabilityModal(false); // Hide inline summary
-      onExtract(extractableIds, enhancedResults, playlist?.title, url, collectionChoice, spellingHints);
+      // freshHints (point 2 fix) wins over the spellingHints prop, which may not have re-rendered
+      // yet with a term flushed in the SAME click that triggered this function.
+      onExtract(extractableIds, enhancedResults, playlist?.title, url, collectionChoice, freshHints ?? spellingHints);
     }
   };
 
@@ -436,6 +438,13 @@ export function PlaylistManager({ onExtract, isExtracting, extractStartFailedTok
   // Real count from the backend: playlist items that could not be resolved to a
   // playable video (private/members-only/deleted). Not a cap-driven subtraction.
   const missingCount = playlist?.unavailable_count ?? 0;
+  // Same exclusion as selectAll() (private videos + caption duplicates). "Select all" must compare
+  // against THIS, not availableCount — otherwise a playlist with any excluded video can never reach
+  // the fully-checked state, so the checkbox stays stuck on indeterminate and can't be toggled off.
+  const selectableCount = (playlist?.entries ?? []).filter(e =>
+    e.title !== "[Private video]" && e.title !== "[Private Video]" && e.title !== "Private video" &&
+    !existingDuplicates[e.id]?.some(d => d.processingMethod === 'youtube_captions')
+  ).length;
 
   // Derived progress/completion values (presentation only — no job state moved, ADR-080).
   const FAILED_STATES = ['bot_detection', 'timeout', 'error', 'no_captions', 'no_speech', 'members_only', 'age_restricted', 'youtube_restricted'];
@@ -595,7 +604,7 @@ export function PlaylistManager({ onExtract, isExtracting, extractStartFailedTok
                             right before retrying a name that came back wrong — same field, no separate
                             confirm step needed since this block is already a confirm step. */}
                         {onSpellingHintsChange && compRetryableIds.some((id) => whisperVideoIds?.has(id)) && (
-                          <SpellingHintsField value={spellingHints} onChange={onSpellingHintsChange} recentLists={recentSpellingHints} />
+                          <SpellingHintsField value={spellingHints} onChange={onSpellingHintsChange} recentLists={recentSpellingHints} subject="videos" />
                         )}
                         {/* Retry is the single action here; Audio Upload lives in the permanent block
                             below (the one place it's the only way in). On < md the button is full-width. */}
@@ -756,19 +765,19 @@ export function PlaylistManager({ onExtract, isExtracting, extractStartFailedTok
               <button
                 type="button"
                 role="checkbox"
-                aria-checked={selectedIds.size === availableCount && availableCount > 0 ? 'true' : selectedIds.size === 0 ? 'false' : 'mixed'}
-                onClick={() => (selectedIds.size === availableCount ? deselectAll() : selectAll())}
+                aria-checked={selectedIds.size === selectableCount && selectableCount > 0 ? 'true' : selectedIds.size === 0 ? 'false' : 'mixed'}
+                onClick={() => (selectedIds.size === selectableCount ? deselectAll() : selectAll())}
                 className="flex min-h-[36px] items-center gap-2 text-sm text-fg-subtle cursor-pointer"
               >
                 <span className={cn(
                   "flex h-4 w-4 items-center justify-center rounded border text-[10px] leading-none",
                   selectedIds.size > 0 ? "bg-accent border-accent text-fg-on-accent" : "border-border-strong"
                 )}>
-                  {selectedIds.size === availableCount && availableCount > 0 ? '✓' : selectedIds.size > 0 ? '–' : ''}
+                  {selectedIds.size === selectableCount && selectableCount > 0 ? '✓' : selectedIds.size > 0 ? '–' : ''}
                 </span>
                 Select all
               </button>
-              <span className="text-xs text-fg-muted">{selectedIds.size} of {availableCount} selected</span>
+              <span className="text-xs text-fg-muted">{selectedIds.size} of {selectableCount} selected</span>
               {!hasExtracted && (
                 <Button
                   onClick={handleCheckAvailability}

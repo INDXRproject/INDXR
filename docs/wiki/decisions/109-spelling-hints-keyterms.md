@@ -115,3 +115,47 @@ termen als verwijderbare pills i.p.v. los komma-tekst, een deterministische (gee
 titel/kanaal-extractie (`suggestTermsFromTitle`) die eigennamen als klikbare "From the title"-chips
 voorstelt, en een inline (geen toast) skip-melding bij een te-lang term of het 50-limiet.
 
+## Vervolg 3 — brede dataset 2026-11-12 + playlist-dubbelklik/Select-all-fix
+
+**Dataset uitgebreid tot ~5,8 uur unieke opnames**, telkens in paren met/zonder hints: MMA (EN,
+reeds in Vervolg 1), farmacologie (EN, idem), Abbasidische geschiedenis (EN, idem), Yale HIST 210
+(EN, vergeleken met de echte menselijke ondertiteling van de cursus), Stanford rechtsgeschiedenis
+(EN), Oxford Interfaith Forum (EN), een Postgres-talk (EN), Nederlandse geschiedenis (NL), twee
+Arabische universiteitscolleges (AR), en drie Kings and Generals-video's als mp3-upload op volle
+kwaliteit (EN). Volledige resultaten met citaten: `docs/marketing/examples/spelling-hints.md`.
+Samengevat:
+
+- **Sterk positief** bij zeldzame eigennamen/jargon die het model niet kent, in elke geteste taal:
+  Firas Zahabi 1→10 van 13; 6/6 medicijnnamen; "De Witt" 0→5 van 8 (NL); مرداويج 6× herstelsd en
+  al-Katib 3× (AR). (Herstel, niet herstelsd.)
+- **Neutraal tot licht negatief** bij helder Engels met al-bekende namen: Yale WER 3,65%→3,79% tegen
+  de menselijke ondertiteling; bij Stanford vielen hele zinnen weg.
+- **Het enige bevestigde risico blijft hetzelfde patroon als Vervolg 1**: een hint overschrijft een
+  ander, al-correct woord dat er op lijkt (Romani→Ramani 5×, Masrur→Mansur, Hamna→Hamza) — nooit een
+  verzonnen term die niet in de opname voorkomt.
+- **Testaudio-kwaliteit vertekent het effect**: op 20 kbps is de winst groter dan op volle kwaliteit,
+  waar hetzelfde bestand vaak al bijna goed was. Zie `docs/LESSONS.md` (2026-11-12).
+
+**Twee losse UI-bugs gefixt in dezelfde ronde (niet spelling-hints-specifiek qua oorzaak, maar
+gevonden via het hints-veld):**
+
+1. **Playlist-route had een dubbelklik nodig.** Getypte maar nog niet vastgezette tekst in het
+   hints-veld werd pas bij de eerste klik op "Extract" gecommit (via de input's `onBlur`) — maar
+   `onProceed`/`onExtract` lazen in DEZELFDE klik nog de oude `value`-prop (React had nog niet
+   herrenderd), dus de job startte pas bij een tweede klik. Fix: `SpellingHintsField` is nu een
+   `forwardRef`-component met een `flush(): string[]`-methode die synchroon (via ref-gespiegelde
+   state, niet React state) de net-getypte tekst samenvoegt en teruggeeft; `PlaylistAvailabilitySummary`
+   en `PlaylistManager` lezen dat in de click-handler en geven het als extra `freshHints`-parameter
+   door i.p.v. te wachten op een herrender.
+2. **"Select all" in de playlistlijst kon nooit "alles" bereiken.** De checkbox vergeleek
+   `selectedIds.size` met `availableCount` (= alle entries, inclusief private video's en al-als-
+   captions-getranscribeerde duplicaten), terwijl `selectAll()` die juist uitsluit — bij zo'n playlist
+   kon de teller dus nooit gelijk worden, de checkbox bleef voor altijd op indeterminate staan, en een
+   klik riep daardoor altijd `selectAll()` aan (nooit `deselectAll()`). Fix: nieuwe `selectableCount`
+   met dezelfde uitsluitingsfilter als `selectAll()`, gebruikt in de checkbox-vergelijkingen (niet in
+   de "N video's"-weergave, die blijft het echte totaal tonen).
+3. **Helptekst nu contextueel**: `SpellingHintsField` kreeg een `subject`-prop ("video" | "recording" |
+   "videos") — "in this recording?" bij uploads (`AudioTab`, `QuickCheckoutPanel`), "in these videos?"
+   bij playlists (`PlaylistAvailabilitySummary`, het retry-blok in `PlaylistManager`), ongewijzigd
+   "in this video?" bij een los YouTube-filmpje (`VideoTab`, default).
+

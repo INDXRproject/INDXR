@@ -1,11 +1,22 @@
 "use client"
 
-import { useId, useState } from "react"
+import { useId, useImperativeHandle, useRef, useState, forwardRef } from "react"
 import { X } from "lucide-react"
 import { cn } from "../../lib/utils"
 import { validateTerm, suggestTermsFromTitle, splitSpellingTerms, MAX_KEYTERMS } from "../../lib/spellingHints"
 import { Button } from "../ui/button"
 import { Notice } from "../ui/notice"
+
+/** Imperative handle (point 2, live-found 2026-11-12, playlist route): typing a term and
+ *  immediately clicking "Extract" without pressing Enter/comma first used to need two clicks — the
+ *  first click's blur committed the draft into React state, but the SAME click's onProceed handler
+ *  read the (not-yet-re-rendered) stale `value` prop, so it only saved the draft and never started
+ *  the job. `flush()` returns the fully-committed term list SYNCHRONOUSLY (merging any uncommitted
+ *  draft text), so a caller can read the real, current list in the same event handler that starts
+ *  the job — no dependency on React's render timing. */
+export interface SpellingHintsFieldHandle {
+  flush: () => string[]
+}
 
 /**
  * Optional spelling-hints row for AI transcription only (never shown for caption extraction —
@@ -13,46 +24,61 @@ import { Notice } from "../ui/notice"
  * no extra cost"), collapsed to one explanation line + an "Add names & terms" button by default,
  * expanding to pill-entry + title-derived suggestion chips + recent-lists chips.
  */
-export function SpellingHintsField({
-  value,
-  onChange,
-  recentLists = [],
-  suggestTitle,
-  suggestChannel,
-}: {
+export const SpellingHintsField = forwardRef<SpellingHintsFieldHandle, {
   value: string[]
   onChange: (terms: string[]) => void
   recentLists?: string[][]
   /** Video title/channel, used only to derive deterministic "From the title" suggestion chips. */
   suggestTitle?: string | null
   suggestChannel?: string | null
-}) {
+  /** "video" (default) | "recording" | "videos" — matches the help copy to the calling context. */
+  subject?: "video" | "recording" | "videos"
+}>(function SpellingHintsField({
+  value,
+  onChange,
+  recentLists = [],
+  suggestTitle,
+  suggestChannel,
+  subject = "video",
+}, ref) {
   const [expanded, setExpanded] = useState(value.length > 0)
   const [draft, setDraft] = useState("")
   const [skipMessage, setSkipMessage] = useState<string | undefined>()
   const fieldId = useId()
+  // Mirrors `value` and `draft` without waiting for a render — flush() reads these so it's
+  // correct even when called synchronously inside the same event that changed them.
+  const valueRef = useRef(value)
+  valueRef.current = value
+  const draftRef = useRef(draft)
+  draftRef.current = draft
 
   const suggestions = suggestTermsFromTitle(suggestTitle, suggestChannel).filter(
     (s) => !value.some((v) => v.toLowerCase() === s.toLowerCase())
   )
 
-  // Handles both a single typed term (Enter/",") and a pasted multi-term blob — splitSpellingTerms
-  // breaks on comma/Arabic comma/semicolon/full-width comma/newline, so "الموطأ، الإمام مالك، ابن
-  // عبد البر" or a pasted "Zubaidah\nBarmakids\nKhurasan; Raqqa" each become several candidate
-  // terms instead of one (live test 2026-11-12 found both collapsing to 0-1 terms silently).
-  function addTerms(raw: string) {
+  // Pure merge — no state writes, so flush() can call it synchronously. Splits on comma/Arabic
+  // comma/semicolon/full-width comma/newline, so a single typed term, a pasted multi-term blob, or
+  // the uncommitted draft at submit time are all handled the same way.
+  function mergeTerms(base: string[], raw: string): { next: string[]; skippedWords: number; atCap: boolean } {
     const candidates = splitSpellingTerms(raw)
-    if (!candidates.length) return
-    let next = value
+    let next = base
     let skippedWords = 0
+    let atCap = false
     for (const term of candidates) {
-      if (next.length >= MAX_KEYTERMS) { skippedWords = -1; break }
+      if (next.length >= MAX_KEYTERMS) { atCap = true; break }
       const reason = validateTerm(term, next)
       if (reason === "max_words") { skippedWords++; continue }
       if (reason === "duplicate") continue
       next = [...next, term]
     }
-    if (skippedWords === -1) {
+    return { next, skippedWords, atCap }
+  }
+
+  // Handles both a single typed term (Enter/",") and a pasted multi-term blob (live test
+  // 2026-11-12 found both collapsing to 0-1 terms silently before splitSpellingTerms existed).
+  function addTerms(raw: string) {
+    const { next, skippedWords, atCap } = mergeTerms(value, raw)
+    if (atCap) {
       setSkipMessage(`Maximum ${MAX_KEYTERMS} terms reached.`)
     } else if (skippedWords > 0) {
       setSkipMessage(`${skippedWords} term${skippedWords === 1 ? "" : "s"} skipped (max 6 words)`)
@@ -71,6 +97,19 @@ export function SpellingHintsField({
     onChange(terms)
     setExpanded(true)
   }
+
+  useImperativeHandle(ref, () => ({
+    flush: () => {
+      const { next } = mergeTerms(valueRef.current, draftRef.current)
+      if (next !== valueRef.current) {
+        onChange(next)
+        setDraft("")
+      }
+      return next
+    },
+  }))
+
+  const subjectText = subject === "recording" ? "this recording" : subject === "videos" ? "these videos" : "this video"
 
   function handleDraftKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
@@ -91,7 +130,7 @@ export function SpellingHintsField({
       {!expanded ? (
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3">
           <p className="text-xs text-fg-muted">
-            Names or jargon in this video? Add them so the AI spells them right.
+            Names or jargon in {subjectText}? Add them so the AI spells them right.
           </p>
           <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(true)} className="h-8 shrink-0">
             Add names &amp; terms
@@ -184,7 +223,7 @@ export function SpellingHintsField({
       )}
     </div>
   )
-}
+})
 
 /** "Spelling hints: N" label for the transcript detail page, next to the existing method/edited badges. */
 export function SpellingHintsBadge({ count }: { count: number }) {

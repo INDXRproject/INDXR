@@ -491,9 +491,17 @@ def extract_youtube_audio(
     # mono opus voordat het naar AssemblyAI gaat (zie ffmpeg hieronder), dus de brontbitrate boven ~48k
     # is verspilde egress: een 76-min video is 82 MB als bestaudio maar ~30-40 MB bij ~48-70 kbps, met
     # een IDENTIEK 12 kbps-eindresultaat. Fallback-keten, geen harde keuze — zakt netjes terug zodat een
-    # video die nu lukt nooit kan gaan falen: eerst ≤70k, dan ≤128k, dan bestaudio, dan best.
+    # video die nu lukt nooit kan gaan falen: eerst ≤70k, dan ≤128k, dan bestaudio, dan bestaudio*.
+    # Proxy-kosten-incident (live 2026-11-12): de LAATSTE schakel was kale 'best' — yt-dlp's
+    # catch-all die, zodra geen van de bestaudio-varianten matcht (bv. een formaten-manifest waar
+    # vcodec/acodec niet schoon getagd zijn voor dat specifieke player_client/moment), een GECOMBINEERD
+    # video+audio-formaat kan kiezen. Dewey (5qYUSUXHYKc, 7:47) trok zo 31,7–50,9 MB i.p.v. de ~3,7 MB
+    # die de audio-only-stream (opus @63kbps) daadwerkelijk is. 'bestaudio*' is yt-dlp's eigen
+    # audio-only-garantie-selector (soepeler matcher dan 'bestaudio' voor formaten met ontbrekende
+    # velden, maar NOOIT video) — geen kale 'best' meer ergens in de keten. Bij een video zonder ENIGE
+    # audio-only-stream faalt de download dan expliciet i.p.v. stilletjes 10x zo duur te worden.
     base_ydl_opts = {
-        'format': 'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/best',
+        'format': 'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/bestaudio*',
         'outtmpl': f"{base_output_path}.%(ext)s",
         'quiet': True,
         'no_warnings': True,
@@ -635,9 +643,27 @@ def extract_youtube_audio(
             # transcodering is geen download en hoort niet in de throughput). Excl. retry-backoff.
             attempt_ms = int((time.time() - attempt_started) * 1000)
             total_download_ms += attempt_ms
-            _log_attempt(attempt, session, raw_size_bytes, attempt_ms, 'success', f"client={client_label}")
+            # Proxy-kosten-incident: log het WERKELIJK gekozen format_id/codec per job (niet alleen de
+            # bytes) zodat een volgende MB/min-afwijking direct herleidbaar is naar "welk format won".
+            fmt_id = (info or {}).get('format_id')
+            fmt_vcodec = (info or {}).get('vcodec')
+            fmt_acodec = (info or {}).get('acodec')
+            fmt_abr = (info or {}).get('abr')
+            _log_attempt(
+                attempt, session, raw_size_bytes, attempt_ms, 'success',
+                f"client={client_label} format_id={fmt_id} vcodec={fmt_vcodec} acodec={fmt_acodec} abr={fmt_abr}",
+            )
+            if fmt_vcodec not in (None, 'none'):
+                # Canary: the format-selector chain should NEVER resolve to a combined video+audio
+                # format (that's exactly what caused the 31.7/50.9 MB-for-8-min incident). This is not
+                # expected to fire after the bestaudio* fallback fix — if it does, the selector chain
+                # needs another look, not a silent "it still worked."
+                logger.warning(
+                    f"[YT-DLP-AUDIO video-format-selected] video={video_id} job_attempt={attempt} "
+                    f"format_id={fmt_id} vcodec={fmt_vcodec} — expected an audio-only format (vcodec=none)"
+                )
             raw_size = raw_size_bytes / 1024 / 1024
-            logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB)")
+            logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB) format_id={fmt_id} abr={fmt_abr}")
 
             # Convert to mono Opus/OGG using ffmpeg (12kbps handles up to ~5 hours within 25MB)
             ffmpeg_cmd = [

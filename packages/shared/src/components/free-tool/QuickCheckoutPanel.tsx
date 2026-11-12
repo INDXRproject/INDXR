@@ -365,7 +365,7 @@ export function QuickCheckoutPanel() {
 
       {files.length > 0 && (
         <div className="overflow-hidden border-2 border-border-strong bg-bg">
-          <SpellingHintsField value={spellingHints} onChange={setSpellingHints} />
+          <SpellingHintsField value={spellingHints} onChange={setSpellingHints} subject="recording" />
         </div>
       )}
 

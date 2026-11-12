@@ -717,6 +717,7 @@ export function AudioTab({ onTranscriptLoaded }: AudioTabProps) {
             onChange={setSpellingHints}
             recentLists={recentSpellingHints}
             suggestTitle={file?.name}
+            subject="recording"
           />
           <div className="flex items-baseline justify-between border-t-2 border-border-strong px-4 py-3">
             <span className="font-bold">Total</span>

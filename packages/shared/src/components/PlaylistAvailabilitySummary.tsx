@@ -1,14 +1,14 @@
 import { ChevronDown, ChevronUp, Info, XCircle } from "lucide-react";
 import Image from "next/image";
 import { appHref } from "../lib/cross-host-links";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { CostBreakdown, BalanceLine } from "./transcribe/CostBreakdown";
 import { MethodBadge } from "./transcribe/MethodBadge";
 import { Switch } from "./ui/switch";
 import { playlistFreeIds } from "../lib/pricing";
 import { NOTICE_BAR, NOTICE_BASE, NOTICE_ICON, NOTICE_TITLE, noticeCompact } from "../lib/notice";
-import { SpellingHintsField } from "./transcribe/SpellingHintsField";
+import { SpellingHintsField, type SpellingHintsFieldHandle } from "./transcribe/SpellingHintsField";
 import type { CollectionChoice } from "./PlaylistManager";
 
 interface VideoAvailability {
@@ -47,7 +47,10 @@ interface PlaylistAvailabilitySummaryProps {
   playlistTitle: string
   collectionChoice: CollectionChoice
   onCollectionChoiceChange: (c: CollectionChoice) => void
-  onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset') => void
+  // freshHints: the synchronously-flushed hint list (point 2 fix) — the caller must use this
+  // INSTEAD of its own spellingHints prop snapshot, which may not have re-rendered yet with the
+  // just-flushed draft term.
+  onProceed: (results: VideoAvailability[], duplicateAction?: 'replace' | 'reset', freshHints?: string[]) => void
   onCancel: () => void
   // keyterms-ADR: one spelling-hints list for the whole playlist job (owned by PlaylistTab so it
   // survives this component remounting between the picker and availability screens, same reason
@@ -59,6 +62,13 @@ interface PlaylistAvailabilitySummaryProps {
 
 export function PlaylistAvailabilitySummary({ results, userCredits, unavailableCount, existingDuplicates, collections, playlistTitle, collectionChoice, onCollectionChoiceChange, onProceed, onCancel, spellingHints, onSpellingHintsChange, recentSpellingHints = [] }: PlaylistAvailabilitySummaryProps) {
   const [expandedSection, setExpandedSection] = useState<'captions' | 'unavailable' | null>('unavailable')
+  // Point 2 fix (live 2026-11-12): flush any uncommitted draft text synchronously on "Extract" click,
+  // so a term typed but not Enter/comma-committed still makes it into the job on the FIRST click.
+  const hintsFieldRef = useRef<SpellingHintsFieldHandle>(null)
+  function handleProceedClick() {
+    const fresh = hintsFieldRef.current?.flush() ?? spellingHints
+    onProceed(localResults, undefined, fresh)
+  }
 
   // Dedup on the VIDEO, not just the same method (Task 3 dedup-gap fix, 2026-09-12). Must match the
   // skip logic in PlaylistManager's enhancedResults: caption extraction is a duplicate if ANY transcript
@@ -286,7 +296,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
 
             {/* Spelling hints — AI transcription only, one list for the whole job (keyterms-ADR). */}
             {extractableResults.some((v) => v.status === 'needs_whisper') && (
-              <SpellingHintsField value={spellingHints} onChange={onSpellingHintsChange} recentLists={recentSpellingHints} />
+              <SpellingHintsField ref={hintsFieldRef} value={spellingHints} onChange={onSpellingHintsChange} recentLists={recentSpellingHints} subject="videos" />
             )}
 
             {/* Unavailable List (Expandable) */}
@@ -336,7 +346,7 @@ export function PlaylistAvailabilitySummary({ results, userCredits, unavailableC
                 <div className="ml-auto flex gap-2">
                     <Button variant="ghost" size="sm" onClick={onCancel} className="h-9">Cancel</Button>
                     {hasEnoughCredits ? (
-                        <Button size="sm" onClick={() => onProceed(localResults)} className="h-9">
+                        <Button size="sm" onClick={handleProceedClick} className="h-9">
                             {totalExtractionCredits > 0
                               ? `Extract — ${totalExtractionCredits} credit${totalExtractionCredits !== 1 ? 's' : ''}`
                               : 'Extract'}
