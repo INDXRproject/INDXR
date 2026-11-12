@@ -8,7 +8,7 @@ YouTube transcript SaaS. Next.js 16 frontend op Vercel, FastAPI Python backend o
 
 Bij het begin van elke sessie:
 
-1. Lees `docs/wiki/INDEX.md` — navigatiehub naar alle wiki-pagina's
+1. Lees `docs/wiki/INDEX.md` — navigatiehub naar alle wiki-pagina's — en `docs/wiki/NU.md` (wat er nu loopt in andere chats)
 2. Lees `docs/LESSONS.md` — terugkerende valkuilen, niet opnieuw maken
 3. Lees de laatste ~15 regels van `docs/LOG.md` — recente wijzigingen. `LOG.md` bevat **alleen handgeschreven sessie-entries**, chronologisch geordend (oudste boven, **nieuwste onderaan**); de laatste regels zijn dus het recentst. De post-commit-hook schrijft zijn commit-samenvatting **niet** in `LOG.md` maar in `docs/COMMITS.md` (gitignored machine-log — geen sessie leest dat).
 
@@ -100,6 +100,7 @@ Naast LOG.md (wat je deed) bestaat **`docs/LESSONS.md`** (wat je niet meer mag v
 ## Na elke voltooide taak
 
 1. Update de relevante wiki-pagina('s) in `docs/wiki/`
+   — en `docs/wiki/NU.md` (het ene overzicht: wat loopt, wat ligt bij Khidr). Ook bijwerken als je een taak start of een besluit van Khidr nodig hebt.
 2. Voeg **onderaan** `docs/LOG.md` een regel toe (chronologisch, nieuwste onderaan — dus aanvullen, niet vooraan invoegen):
    ```
    [YYYY-MM-DD HH:MM] taak: <beschrijving> | gewijzigd: <bestanden>
