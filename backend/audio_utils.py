@@ -85,6 +85,26 @@ BOT_BLOCK_KEYWORDS = [
     'http error 429',
     'too many requests',
     "this content isn't available",
+    # Point A3 (live-reproduced 2026-11-12, Sentry INDXR-BACKEND-AQ): a bare "unable to download
+    # video data: HTTP Error 403: Forbidden" on googlevideo was falling through to reason='other'
+    # (not transient) → attempts=1, never retried. A 403 on the actual media URL (not the page) is
+    # the same class of exit-IP/client rejection as the other bot-block signatures — a fresh proxy
+    # session (and, on the last attempt, a different player_client — see the attempt loop) usually
+    # resolves it.
+    'http error 403',
+    'forbidden',
+]
+# Decodo proxy-tunnel failures (connect-level, before any YouTube response) — same transient class
+# as the connection/server checks below, but with their own distinct phrasing so they weren't
+# matching either ('unable to connect to proxy' / 'tunnel connection failed' never contained
+# "http error 5" or any of the SSL/EOF connection keywords). Live-reproduced 2026-11-12: a 502/522
+# tunnel failure fell through to reason='other' → not retried.
+PROXY_TUNNEL_KEYWORDS = [
+    'unable to connect to proxy',
+    'tunnel connection failed',
+    'tunnelconnectionfailed',
+    'proxy authentication',
+    '407 proxy',
 ]
 
 
@@ -114,15 +134,19 @@ def _classify_ytdlp_error(error_str: str) -> tuple[str, bool, bool]:
         'remotedisconnected', 'broken pipe', 'connection reset',
     ))
     is_server = 'http error 5' in error_str  # 5xx: transient server-side
+    # 502/522 Decodo tunnel failures — distinct phrasing from both is_connection and is_server (see
+    # PROXY_TUNNEL_KEYWORDS comment above), point A3.
+    is_proxy = any(kw in error_str for kw in PROXY_TUNNEL_KEYWORDS)
     is_bot_block = (not is_permanent) and (
         'video unavailable' in error_str or any(kw in error_str for kw in BOT_BLOCK_KEYWORDS)
     )
-    is_transient = is_partial_write or is_timeout or is_connection or is_server or is_bot_block
+    is_transient = is_partial_write or is_timeout or is_connection or is_server or is_proxy or is_bot_block
     reason = (
         'permanent' if is_permanent else
         'bot_block' if is_bot_block else
         'partial_write' if is_partial_write else
         'timeout' if is_timeout else
+        'proxy' if is_proxy else
         'connection' if is_connection else
         'server' if is_server else
         'other'
@@ -335,6 +359,7 @@ def extract_youtube_audio(
     progress_cb: Optional[Callable[[int, int], None]] = None,
     summary_cb: Optional[Callable[[int, int, int], None]] = None,
     screen_normal_bytes_per_sec: Optional[float] = None,
+    unique_suffix: Optional[str] = None,
 ) -> tuple[str, str, Optional[str], int]:
     """
     Extract audio from YouTube video using yt-dlp.
@@ -364,6 +389,15 @@ def extract_youtube_audio(
                     each retry uses a fresh Decodo session-ID (different exit IP),
                     which is required when the previous residential IP went offline
                     mid-download. Takes precedence over proxy_url per attempt.
+        unique_suffix: Per-JOB disambiguator for the temp file path (e.g. the job_id).
+                    Without it, two concurrent jobs for the SAME video_id (two users, or a
+                    dedupe-missed retry) download to the literal same /tmp path — one job's
+                    start-of-attempt cleanup (`glob(base_output_path + ".*")` → remove) deletes
+                    the OTHER job's in-progress partial file, and yt-dlp's own .part→final
+                    rename collides. Both jobs then fail with "Unable to rename file: No such
+                    file or directory" (Sentry INDXR-BACKEND-AP, live-reproduced 2026-11-12:
+                    two near-simultaneous requests for the same video). None → unchanged
+                    legacy path (tests / other callers that don't pass a job context).
 
     Returns:
         Tuple of (audio_path, video_title, channel, raw_bytes) where raw_bytes is the
@@ -375,7 +409,8 @@ def extract_youtube_audio(
         Exception: If download fails after all attempts
     """
     import glob
-    base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}")
+    _suffix = f"_{unique_suffix}" if unique_suffix else ""
+    base_output_path = os.path.join(output_dir, f"yt_audio_{video_id}{_suffix}")
     final_output_path = f"{base_output_path}.ogg"
 
     # Fix 2/3: wall-clock deadline voor de HELE extract (alle pogingen samen), afgeleid van de
@@ -469,11 +504,8 @@ def extract_youtube_audio(
         'nocheckcertificate': True,
         'js_runtimes': {'node': {}},
         'progress_hooks': [_deadline_hook],  # Fix 3: breekt de download echt af op de deadline
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['ios', 'web_embedded'],
-            },
-        },
+        # player_client wordt PER POGING gezet (zie de retry-loop) — niet hier statisch, sinds
+        # point A2 (2026-11-12 meting op yt-dlp 2026.10.26).
     }
 
     max_attempts = 3
@@ -549,7 +581,24 @@ def extract_youtube_audio(
         else:
             masked = 'none'
 
-        logger.info(f"[YT-DLP-AUDIO attempt={attempt}/{max_attempts} video={video_id} proxy=@{masked}]")
+        # Point A2 (measured live 2026-11-12 on yt-dlp 2026.10.26, 10 real videos through Decodo):
+        # ['ios', 'web_embedded'] still reliably returns audio formats on every tested video (ADR-027 —
+        # ios bypasses the PO-token requirement, works with HTTP proxies) and stays the primary choice
+        # for every attempt but the last. The LAST attempt drops the override entirely, so yt-dlp's own
+        # defaults (web/tv_samsung/visionos, per yt-dlp 2026.10.21) are used — measured to expose MORE
+        # audio-only formats (a lower abr floor on several videos, e.g. OcMFwazVJaU: 48.8 vs 53.8 kbps
+        # with the explicit override), which is exactly the smaller-format gap behind point A4's 61MB-
+        # vs-7.5MB disparity. This also means any FUTURE yt-dlp default-client change (like the
+        # tv_samsung addition) is picked up automatically without a code change. Deliberately NOT used
+        # on every attempt: the bare-defaults path hit YouTube's bot-detection on one of three videos in
+        # a separate captions-cascade check where ios/web_embedded and tv/android both succeeded — it is
+        # a good LAST resort, not a reliable primary.
+        is_last_attempt = attempt == max_attempts
+        if not is_last_attempt:
+            ydl_opts['extractor_args'] = {'youtube': {'player_client': ['ios', 'web_embedded']}}
+        client_label = 'ytdlp-defaults' if is_last_attempt else 'ios+web_embedded'
+
+        logger.info(f"[YT-DLP-AUDIO attempt={attempt}/{max_attempts} video={video_id} proxy=@{masked} client={client_label}]")
         job_attempts = attempt
         session = _proxy_session_id(attempt_proxy)
         attempt_started = time.time()
@@ -586,7 +635,7 @@ def extract_youtube_audio(
             # transcodering is geen download en hoort niet in de throughput). Excl. retry-backoff.
             attempt_ms = int((time.time() - attempt_started) * 1000)
             total_download_ms += attempt_ms
-            _log_attempt(attempt, session, raw_size_bytes, attempt_ms, 'success')
+            _log_attempt(attempt, session, raw_size_bytes, attempt_ms, 'success', f"client={client_label}")
             raw_size = raw_size_bytes / 1024 / 1024
             logger.info(f"[YT-DLP-AUDIO] downloaded: {raw_path} ({raw_size:.2f}MB)")
 

@@ -335,6 +335,14 @@ def _classify_download_error(
     the user, and are logged, but tailored copy lives in the map. Keep the two in sync.
     """
     lower = error_msg.lower()
+    # Temp-file collision (point B/C1, live-reproduced 2026-11-12, Sentry INDXR-BACKEND-AP): two
+    # concurrent jobs for the SAME video wrote to the same /tmp path before each job got its own
+    # unique_suffix (extract_youtube_audio). The yt-dlp rename error contains "failed to extract" too
+    # (it's wrapped in "Failed to extract audio from YouTube: ERROR: ..."), which would otherwise
+    # misclassify as 'ytdlp_parse' — check this specific, unambiguous phrase FIRST, before any looser
+    # pattern. Retryable (a fresh attempt gets a fresh unique path), never a yt-dlp-version issue.
+    if 'unable to rename file' in lower:
+        return 'file_collision'
     if any(kw in lower for kw in MEMBERS_ONLY_KEYWORDS):
         return 'members_only'
     if any(kw in lower for kw in ('age-restricted', 'age restricted', 'only available on youtube', 'confirm your age')):
@@ -744,6 +752,9 @@ async def do_assemblyai_transcription(
                         progress_cb=_write_dl_progress,                       # point 2: voortgangsbalk
                         summary_cb=_write_dl_summary,                         # meet: download_ms + attempts
                         screen_normal_bytes_per_sec=_screen_vnorm,            # ADR-095: vroege screening
+                        # Punt B (temp-file-race, live gevonden 2026-11-12): uniek pad per job zodat twee
+                        # concurrent jobs voor dezelfde video niet naar hetzelfde /tmp-pad schrijven.
+                        unique_suffix=job_id,
                     ),
                     heartbeat_fn,
                     timeout=_dl_timeout + 180,  # coarse backstop rond de harde deadline → 'timeout' (retryable)
@@ -776,7 +787,7 @@ async def do_assemblyai_transcription(
                 if error_type == 'youtube_restricted' and not getattr(e, 'permanent', False):
                     error_type = 'bot_detection'
                 # bot_detection/timeout/members_only zijn verwachte operationele uitkomsten, geen bugs.
-                if error_type not in ('bot_detection', 'timeout', 'connection_error', 'server_error', 'members_only', 'no_captions'):
+                if error_type not in ('bot_detection', 'timeout', 'connection_error', 'server_error', 'members_only', 'no_captions', 'file_collision'):
                     with sentry_sdk.push_scope() as scope:
                         scope.set_tag("pipeline", "do_assemblyai_transcription")
                         scope.set_tag("step", "audio_download")

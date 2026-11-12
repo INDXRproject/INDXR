@@ -177,6 +177,15 @@ const COPY: Record<string, Entry> = {
   proxy_error: audioFetchFailed("We couldn't reach this video's audio"),
   ytdlp_parse: audioFetchFailed("We couldn't read this video's audio"),
   extraction_error: audioFetchFailed("We couldn't fetch this video's audio"),
+  // Own code (point C1, live-reproduced 2026-11-12): two jobs for the same video collided on a
+  // shared temp path — fixed server-side (each job now gets its own path), kept as a distinct,
+  // honest category rather than folding it into the generic "connection problem" copy.
+  file_collision: {
+    title: "Two requests collided",
+    body: () =>
+      "Another request for this video was already running when this one started. Please try again.",
+    actions: retryOrAudio,
+  },
   no_speech: {
     title: "No speech detected",
     body: () =>
