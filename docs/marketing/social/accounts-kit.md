@@ -5,7 +5,7 @@ Claude zet alles klaar wat erop hoort, zoals beelden, teksten en eerste posts, e
 het account bestaat en in het Chrome-profiel "INDXR.ai" is ingelogd. **Plaats niets in communities voordat de
 CC-prompt van 9-11 klaar en getest is** (Connected apps, privacy, zoekvolgorde).
 
-Gebruik voor elk account `contact@indxr.ai` (Fastmail), zet 2FA aan en bewaar de inloggegevens in Proton Pass.
+Gebruik voor elk account `contact@indxr.ai` (Fastmail), zet 2FA aan en bewaar de inloggegevens in Proton Pass. Mailbox-werkwijze (labels, regel, handtekening): `docs/wiki/operations/mailbox.md`.
 Je privéadres nooit invullen. Als adres alleen "Netherlands" waar het verplicht is.
 
 ## Volgorde en status
