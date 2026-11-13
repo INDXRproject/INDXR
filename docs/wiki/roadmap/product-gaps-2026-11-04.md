@@ -35,6 +35,23 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 
 **Verificatie:** een captioned video in de testaccount laten zien met naast elkaar de eerste minuut van captions en van AI. De knop moet de bestaande AI-job starten met de juiste prijs. Een zesde voorproefje op één dag moet geweigerd worden. De vier invariant-tests (`./scripts/check-playlist-invariants.sh`) moeten groen blijven.
 
+**Gebouwd 13-11.** `yt-dlp --download-sections` bleek LIVE GEBROKEN door de Decodo-proxy (ffmpeg's
+range-fetch geeft "Error opening input: End of file" meteen na een succesvolle proxy-tunnel, op
+een video die via het normale volledige-download-pad gewoon werkt) — zie ADR-112. Fallback: de
+bewezen volledige download (`extract_youtube_audio`, ADR-110-formaat-selector) + een lokale
+ffmpeg-trim (`extract_preview_clip`, geen netwerk). **Consequentie: een voorproefje kost dezelfde
+proxy-egress als een volledige download van die video** (gemeten: 8,1-min video → 4,04 MB, consistent
+met ADR-110's MB/min), niet de kleinere "alleen de eerste minuut"-kost die het plan voorzag — bewust
+geaccepteerd, begrensd door de 5/dag-limiet + de video_id-cache (een 2e gebruiker met dezelfde video
+triggert geen nieuwe download/AssemblyAI-call, live geverifieerd: 2e aanroep `cached: true`, 0
+nieuwe download-/AssemblyAI-logregels).
+**Niet onafhankelijk verifieerbaar vanuit deze sessie:** het volledige klikpad in een browser (geen
+browser-tool beschikbaar), de 429 ná een 6e voorproefje, en "de link verdwijnt bij een ANDER
+captions-transcript van hetzelfde account" zijn niet end-to-end getest met twee echte accounts —
+wel: de backend-functie zelf (download+AssemblyAI+cache) 2× live aangeroepen (1e `cached: false`,
+2e `cached: true`), `pnpm build` groen, `check-playlist-invariants.sh` groen. Khidr: test zelf met
+een echte browser-sessie (testaccount, een captions-transcript ≥2 min).
+
 ## Gat 3 (gezien 12-11, akkoord Khidr 12-11 avond — uitvoering Claude Code lokaal): bronnen niet naar Zotero
 
 **Nu (code):** `get_source` (MCP) en `SourceCard.tsx` geven alleen een kant-en-klare APA-regel als tekst. Geen BibTeX-, RIS- of CSL-JSON-export (`grep -ri "bibtex|zotero|ris"` in apps/packages/backend = 0 treffers). Onderzoekers die Zotero, Pandoc of een picker als Ibis gebruiken, moeten een INDXR-bron dus met de hand overtypen.

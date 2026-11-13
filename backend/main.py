@@ -102,6 +102,7 @@ from audio_utils import (
     estimate_upload_reserve_cost,
     extract_preview_clip,
     extract_youtube_audio,
+    extract_youtube_preview_clip,
     validate_audio_file,
     compress_audio_if_needed,
     MembersOnlyVideoError,
@@ -840,6 +841,59 @@ async def get_video_metadata(video_id: str, api_only: bool = False, _: None = De
         raise HTTPException(status_code=404, detail=f"Failed to fetch video metadata: {str(e)}")
     finally:
         record_proxy_bytes("metadata", getattr(_md_ydl, "egress_read", 0))
+
+
+class PreviewCompareRequest(BaseModel):
+    video_id: str
+
+
+@app.post("/api/preview/compare")
+async def preview_compare(request: PreviewCompareRequest, _: None = Depends(verify_backend_secret)):
+    """Free "compare the first minute" preview (product-gaps gat 2 stap 4, akkoord Khidr 12-11) —
+    no credits, no reservation, never touches credit_transactions. Caller (Next.js route) does the
+    auth/ownership/rate-limit/duration checks; this endpoint only does the actual download+transcribe
+    and the cross-user cache (preview_comparisons, keyed by video_id — a second user comparing the
+    same video gets the cached result, no second AssemblyAI call or proxy download)."""
+    db = get_supabase_client()
+    cached = db.table("preview_comparisons").select("ai_segments").eq("video_id", request.video_id).maybe_single().execute()
+    if cached and cached.data:
+        return {"ai_segments": cached.data["ai_segments"], "cached": True}
+
+    proxy_url = get_proxy_url()
+    try:
+        clip_path, full_bytes = await asyncio.to_thread(extract_youtube_preview_clip, request.video_id, "/tmp", proxy_url, 60)
+    except MembersOnlyVideoError:
+        raise HTTPException(status_code=422, detail="This video is members-only and can't be previewed.")
+    except Exception as e:
+        logger.warning(f"[preview-compare] download failed video={request.video_id}: {e}")
+        raise HTTPException(status_code=502, detail="Could not download this video's audio for the preview.")
+
+    try:
+        submitted = await asyncio.to_thread(submit_assemblyai, clip_path)
+        if not submitted.get("success"):
+            raise HTTPException(status_code=502, detail=submitted.get("error", "AssemblyAI submit failed"))
+        transcript_id = submitted["transcript_id"]
+
+        ai_segments = None
+        for _ in range(20):  # 60s audio transcribes fast; 20x3s=60s is a generous bound
+            await asyncio.sleep(3)
+            polled = await asyncio.to_thread(poll_assemblyai, transcript_id)
+            if not polled.get("success"):
+                raise HTTPException(status_code=502, detail=polled.get("error", "AssemblyAI poll failed"))
+            if polled["status"] == "completed":
+                ai_segments = polled["transcript"]
+                break
+            if polled["status"] == "error":
+                raise HTTPException(status_code=502, detail=polled.get("error", "AssemblyAI transcription failed"))
+        if ai_segments is None:
+            raise HTTPException(status_code=504, detail="Preview transcription timed out.")
+    finally:
+        if os.path.exists(clip_path):
+            os.remove(clip_path)
+
+    db.table("preview_comparisons").upsert({"video_id": request.video_id, "ai_segments": ai_segments}).execute()
+    logger.info(f"[preview-compare] video={request.video_id} full_download_bytes={full_bytes} segments={len(ai_segments)}")
+    return {"ai_segments": ai_segments, "cached": False}
 
 
 def _cleanup_tmp(path: Optional[str]) -> None:

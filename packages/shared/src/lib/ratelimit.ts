@@ -34,6 +34,9 @@ const limiters = {
   free:      makeLimiter(50,  '1 h',  '@upstash/ratelimit:free'),
   login:     makeLimiter(10, '15 m', '@upstash/ratelimit:login'),
   signup:    makeLimiter(5,   '1 h',  '@upstash/ratelimit:signup'),
+  // Free "compare the first minute" preview (product-gaps gat 2 stap 4) — max 5/user/day, keyed
+  // by user id (always called from an authenticated route).
+  previewCompare: makeLimiter(5, '1 d', '@upstash/ratelimit:preview-compare'),
 };
 
 // Export limiters for direct use in actions

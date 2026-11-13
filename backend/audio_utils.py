@@ -334,6 +334,29 @@ def extract_preview_clip(src_path: str, dest_path: str, seconds: int) -> str:
     return dest_path
 
 
+def extract_youtube_preview_clip(video_id: str, output_dir: str, proxy_url: Optional[str] = None, seconds: int = 60) -> tuple[str, int]:
+    """Downloads a YouTube video's audio and trims it to the first `seconds` (free "compare the
+    first minute" preview). Tried yt-dlp's native `download_ranges` first (asks the CDN for just
+    that byte range) — live-tested 2026-11-13 and found BROKEN through the Decodo proxy (ffmpeg's
+    range-fetch gets "Error opening input: End of file" right after the proxy TCP connect
+    succeeds, on a video that downloads fine with the normal full-file path). Falls back to the
+    proven, already-optimized full download (`extract_youtube_audio`, ADR-110 — smallest
+    audio-only format, same retry/classification as every other job) + a local ffmpeg trim
+    (`extract_preview_clip`, no network, can't fail the same way). Costs the same proxy egress as
+    a normal full extraction of this video — bounded by the per-user daily cap and the per-video
+    cache in the caller, not by downloading less here. Returns (clip_path, full_download_bytes) —
+    the full bytes are the real egress for cost logging; the full file is deleted after trimming."""
+    full_path, _ext, _codec, full_bytes = extract_youtube_audio(video_id, output_dir=output_dir, proxy_url=proxy_url, unique_suffix=f"preview{seconds}")
+    clip_path = os.path.join(output_dir, f"preview_{video_id}.ogg")
+    try:
+        extract_preview_clip(full_path, clip_path, seconds)
+    finally:
+        if os.path.exists(full_path):
+            os.remove(full_path)
+    logger.info(f"[PREVIEW-CLIP] video={video_id} seconds={seconds} full_download_bytes={full_bytes}")
+    return clip_path, full_bytes
+
+
 def _proxy_session_id(proxy_url: Optional[str]) -> str:
     """Haal het (niet-geheime) Decodo-session-id uit een proxy-URL voor logging. De URL is
     `http://user-<USER>-session-<SID>:<PASS>@<HOST>:<PORT>`; we geven <SID> terug en raken het

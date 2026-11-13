@@ -61,7 +61,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
 
   const [{ data: transcript, error }, { data: profileData }] = await Promise.all([
     supabase.from("transcripts").select("*").eq("id", id).eq("user_id", user.id).single(),
-    supabase.from("profiles").select("rag_chunk_size, citation_style").eq("id", user.id).single(),
+    supabase.from("profiles").select("rag_chunk_size, citation_style, preview_compare_seen").eq("id", user.id).single(),
   ]);
 
   if (error || !transcript) {
@@ -159,9 +159,12 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
 
       {isCaptions && (activeTab === "original" || activeTab === "edited") && (
         <AiUpgradeCard
+          transcriptId={transcript.id}
           videoId={transcript.video_id as string}
           durationSeconds={transcript.duration ?? null}
           aiTranscriptId={aiTranscriptId}
+          previewCompareSeen={!!profileData?.preview_compare_seen}
+          existingPreview={transcript.preview_ai_segments ? { aiSegments: transcript.preview_ai_segments, captionsSegments: (transcript.transcript as Array<{ text: string; offset: number; duration: number }>).filter((s) => s.offset < 60) } : null}
         />
       )}
 
