@@ -37,6 +37,12 @@ Daarna: label `P8DV` toevoegen (zie hierboven).
 
 Alleen contact@indxr.ai heeft een handtekening. De catch-all `*@indxr.ai` heeft er geen: een antwoord op mail die aan een ander @indxr.ai-adres is gestuurd, gaat zonder handtekening de deur uit, tenzij je vanaf contact@ antwoordt.
 
+## Wie ruimt de inbox op
+
+- **Postronde (geplande taak "Administratie TWV: postronde (dagelijks)", 21:47):** archiveert alleen factuur- en betaalmails, en pas nadat de pdf in de kwartaalmap staat. Al het andere en mails met een ster laat hij bewust staan. Stand 13-11: de taak staat **uit** (sinds 13-11 16:31, samen met de andere TWV-taken) en heeft nog nooit gedraaid.
+- **Inboxronde watkosteenhond.nl:** alleen mail aan info@watkosteenhond.nl.
+- **INDXR-meldingen** (Sentry, Ahrefs, Google-beveiliging, aanmeldcodes): geen automatische ronde. Ze krijgen het label `P8DV` en worden met de hand gearchiveerd. Mails met een ster zijn van Khidr en blijven in de inbox.
+
 ## Valkuil: labelen in bulk
 
 "Alles selecteren" + Labels in de Fastmail-UI labelde op 13-11 maar 60 van de 184 gevonden mails (alleen de geladen gesprekken), terwijl de teller "184 selected" toonde. Na een bulkactie altijd de controlezoekopdracht draaien; de rest via de koppeling labelen (`update_email`, in batches van 50 ids).
