@@ -46,6 +46,15 @@ Twee gaten die de positionering ("elke lezing, interview en video waar je van le
 3. Meer stijlen dan APA: CSL-JSON + citeproc-js geeft APA, MLA, Chicago, Harvard enz. uit één bron (CSL kent >10.000 stijlen). Dan ook `get_source` (MCP) een `style`-parameter geven. (Idee van Khidr.)
 Uitgewerkt als CC-prompt (fase 1 bestanden+stijlen, fase 2 Send to Zotero): `cc-prompt-2026-11-12-zotero-citations.md`. Akkoord Khidr 12-11 avond (fase 1 en 2).
 
+**Fase 1 gebouwd (13-11, ADR-111):** CSL-JSON als bron, citeproc-js/citeproc-py met de echte
+APA7/MLA9/Chicago/Harvard-CSL-stijlen, `.ris`/`.bib`/CSL-JSON-export per transcript + collectie,
+`citekey` in de markdown-frontmatter, Zotero Connector-metatags, stijlkeuze onthouden
+(`profiles.citation_style`). **Niet onafhankelijk te verifiëren vanuit deze sessie:** een echte
+import in Zotero-desktop en een Obsidian-vault+Pandoc-rendering van `[@citekey]` vereisen een
+GUI-app die een headless Claude Code-omgeving niet heeft — Khidr kan dit zelf controleren met een
+gedownloade export. **Fase 2 (Send to Zotero) niet gebouwd** — geblokkeerd op Khidr: welke
+Zotero-OAuth-app-gegevens hij registreert (zie `docs/wiki/NU.md` → "Ligt bij Khidr").
+
 ## Volgorde
 
 Eerst gat 1 (zoeken): het is klein, zonder kosten en zonder financieel pad, en de positionering beweert het. Daarna gat 2: dat raakt de proxy, AssemblyAI en de credit-flow, en daarom gaat het via CC met de financiële veiligheidsinstructie.

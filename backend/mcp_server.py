@@ -31,6 +31,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 
+import citation
 from credit_manager import get_supabase_client
 from ratelimit import check_user_rate_limit
 
@@ -461,39 +462,18 @@ async def get_transcript(id: str, start_minute: float = 0, minutes: float = 15) 
 
 # ── Tool 4: get_source ───────────────────────────────────────────────────────
 
-_MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-]
-
-
-def _apa_date(iso: str | None) -> str | None:
-    if not iso:
-        return None
-    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", iso)
-    if not m:
-        return None
-    year, month, day = m.groups()
-    return f"{year}, {_MONTHS[int(month) - 1]} {int(day)}"
-
-
-def _build_citation(title: str, channel: str | None, video_id: str | None, published_at: str | None) -> str:
-    """Port of buildCitation in apps/app/src/components/library/SourceCard.tsx."""
-    date = _apa_date(published_at) or "n.d."
-    if video_id:
-        author = (channel or "").strip() or "Unknown channel"
-        return f"{author}. ({date}). {title} [Video]. YouTube. https://youtu.be/{video_id}"
-    return f"{title} [Audio recording]. ({date})."
-
 
 @mcp.tool(
     title="Get source",
     annotations={"title": "Get source", "readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
 )
-async def get_source(id: str) -> dict[str, Any]:
+async def get_source(id: str, style: str = "apa") -> dict[str, Any]:
     """This transcript's source: title, channel, link, duration, word count, language, publication
-    date, collection, when it was added, and a ready APA-7 citation."""
+    date, collection, when it was added, and a ready citation (`style`: apa (default), mla,
+    chicago, or harvard — ADR-111)."""
     await _rate_limit_or_raise("get_source")
+    if style not in citation.CITATION_STYLES:
+        raise ToolError(f"Unknown citation style '{style}'. Use one of: {', '.join(citation.CITATION_STYLES)}.")
     user_id = _current_user_id()
     tid = _require_transcript_id(id)
     db = get_supabase_client()
@@ -516,6 +496,7 @@ async def get_source(id: str) -> dict[str, Any]:
         collection_name = (col or {}).get("name")
 
     title = row.get("title") or "Untitled"
+    csl_item = citation.build_csl_json(tid, title, row.get("channel"), row.get("video_id"), row.get("published_at"))
     return {
         "title": title,
         "channel": row.get("channel"),
@@ -526,7 +507,10 @@ async def get_source(id: str) -> dict[str, Any]:
         "published_at": row.get("published_at"),
         "collection": collection_name,
         "added_at": row.get("created_at"),
-        "citation_apa7": _build_citation(title, row.get("channel"), row.get("video_id"), row.get("published_at")),
+        "citation": citation.render_citation(csl_item, style),
+        # Kept for backward compatibility with existing callers of this exact field — always APA,
+        # regardless of `style` (same engine as "citation" when style="apa").
+        "citation_apa7": citation.render_citation(csl_item, "apa"),
     }
 
 

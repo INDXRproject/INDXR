@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, FileAudio } from "lucide-react";
 import { formatDetailDate } from "./TranscriptHeader";
+import { CITATION_STYLES, type CitationStyle } from "@indxr/shared/lib/citationStyles";
+
+const STYLE_LABEL: Record<CitationStyle, string> = { apa: "APA", mla: "MLA", chicago: "Chicago", harvard: "Harvard" };
 
 // The source of a transcript, as a citation card (stijl B, 2026-11-07). "Sources done right": every
 // transcript shows where it came from — channel, length, language, when you added it — and gives a
@@ -79,11 +82,19 @@ export interface SourceCardProps {
   collectionName?: string | null;
   isAi: boolean;
   compact?: boolean;
+  /** profiles.citation_style — remembered per account (ADR-111), default "apa". */
+  citationStyle?: CitationStyle;
 }
 
 export function SourceCard(p: SourceCardProps) {
   const [copied, setCopied] = useState(false);
   const [publishedAt, setPublishedAt] = useState<string | null>(p.publishedAt ?? null);
+  const [style, setStyle] = useState<CitationStyle>(p.citationStyle ?? "apa");
+  // Instant fallback (no network round-trip) so the Cite box is never empty while the styled
+  // citeproc-js render (below) is in flight — identical APA text on first paint, replaced once the
+  // real engine responds (or left as-is for MLA/Chicago/Harvard, which this helper can't produce).
+  const [rendered, setRendered] = useState<{ plain: string; html: string } | null>(null);
+
   // First view of an older (or just-extracted) YouTube transcript: look the upload date up once and
   // store it (POST /api/transcripts/[id]/published-at — YouTube Data API only, no proxy fallback).
   useEffect(() => {
@@ -95,8 +106,25 @@ export function SourceCard(p: SourceCardProps) {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [publishedAt, p.videoId, p.transcriptId]);
-  const citation = buildCitation({ ...p, publishedAt });
-  const citationHtml = buildCitationHtml({ ...p, publishedAt });
+
+  // citeproc-js render (the real APA7/MLA9/Chicago/Harvard styles — ADR-111), fetched once
+  // publishedAt is known and again whenever the style dropdown changes.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/transcripts/${p.transcriptId}/citation?style=${style}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled && j?.plain) setRendered({ plain: j.plain, html: j.html }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [p.transcriptId, style, publishedAt]);
+
+  function changeStyle(next: CitationStyle) {
+    setStyle(next);
+    fetch("/api/account/citation-style", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ style: next }) }).catch(() => {});
+  }
+
+  const citation = rendered?.plain ?? buildCitation({ ...p, publishedAt });
+  const citationHtml = rendered?.html ?? buildCitationHtml({ ...p, publishedAt });
   const words = p.characterCount ? Math.round(p.characterCount / 5).toLocaleString("en") : null;
   const lang = languageName(p.language);
   const thumb = p.thumbnailUrl || (p.videoId ? `https://i.ytimg.com/vi/${p.videoId}/hqdefault.jpg` : null);
@@ -210,9 +238,21 @@ export function SourceCard(p: SourceCardProps) {
         ))}
       </dl>
       <div className="border-t-2 border-fg-strong p-4">
-        <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.06em] text-fg-muted">Cite</p>
+        <div className="mb-1 flex items-center justify-between">
+          <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-fg-muted">Cite</p>
+          <select
+            value={style}
+            onChange={(e) => changeStyle(e.target.value as CitationStyle)}
+            aria-label="Citation style"
+            className="border border-border bg-bg font-mono text-[11px] text-fg-muted"
+          >
+            {CITATION_STYLES.map((s) => (
+              <option key={s} value={s}>{STYLE_LABEL[s]}</option>
+            ))}
+          </select>
+        </div>
         <p className="mb-1 select-all break-words text-xs leading-relaxed text-fg" dir="auto">{citation}</p>
-        <p className="mb-3 text-[11px] text-fg-muted">Check capitals: APA uses sentence case.</p>
+        {style === "apa" && <p className="mb-3 text-[11px] text-fg-muted">Check capitals: APA uses sentence case.</p>}
         {CopyBtn}
       </div>
     </div>

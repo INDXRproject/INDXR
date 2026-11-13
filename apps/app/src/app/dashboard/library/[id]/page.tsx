@@ -17,6 +17,34 @@ interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+// Zotero Connector support (ADR-111, fase 1 point 5): Zotero's "Exposing your metadata" scheme
+// recognizes these Highwire Press meta tags on any page, no public indexing required — the
+// browser extension reads them straight out of this authenticated page's own <head> when a
+// signed-in user is looking at it. citation_dissertation_institution carries the publisher
+// (YouTube) since there's no citation_publisher tag in Zotero's scheme for this item shape.
+export async function generateMetadata({ params }: PageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return {};
+  const { data: transcript } = await supabase
+    .from("transcripts")
+    .select("title, channel, video_id, published_at")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+  if (!transcript) return {};
+  const other: Record<string, string> = {
+    citation_title: transcript.title || "Untitled Transcript",
+    citation_author: transcript.channel || (transcript.video_id ? "Unknown channel" : "Unknown"),
+  };
+  if (transcript.published_at) other.citation_online_date = transcript.published_at;
+  if (transcript.video_id) {
+    other.citation_public_url = `https://youtu.be/${transcript.video_id}`;
+  }
+  return { other };
+}
+
 export default async function TranscriptPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
@@ -33,7 +61,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
 
   const [{ data: transcript, error }, { data: profileData }] = await Promise.all([
     supabase.from("transcripts").select("*").eq("id", id).eq("user_id", user.id).single(),
-    supabase.from("profiles").select("rag_chunk_size").eq("id", user.id).single(),
+    supabase.from("profiles").select("rag_chunk_size, citation_style").eq("id", user.id).single(),
   ]);
 
   if (error || !transcript) {
@@ -100,6 +128,7 @@ export default async function TranscriptPage({ params, searchParams }: PageProps
     createdAt: transcript.created_at,
     collectionName,
     isAi: !!transcript.processing_method && transcript.processing_method !== "youtube_captions",
+    citationStyle: (profileData?.citation_style as "apa" | "mla" | "chicago" | "harvard" | undefined) ?? "apa",
   };
 
   return (

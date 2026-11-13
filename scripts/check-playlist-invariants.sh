@@ -70,4 +70,12 @@ echo "── Spelling-hints split · TypeScript mirror (packages/shared/src/lib/
 node --experimental-strip-types packages/shared/src/lib/spellingHints.test.ts
 
 echo
-echo "✅ All invariants agree — free-slots helpers, the four hard limits, the summary cost formula, the upload-format allowlist, and the spelling-hints delimiter split are in sync."
+echo "── Citation rendering · Python (backend/test_citation.py) ──"
+( cd backend && venv/bin/python3 test_citation.py )
+
+echo
+echo "── Citation rendering · TypeScript (packages/shared/src/lib/citation.test.ts) ──"
+node --experimental-strip-types packages/shared/src/lib/citation.test.ts
+
+echo
+echo "✅ All invariants agree — free-slots helpers, the four hard limits, the summary cost formula, the upload-format allowlist, the spelling-hints delimiter split, and citation rendering are in sync."

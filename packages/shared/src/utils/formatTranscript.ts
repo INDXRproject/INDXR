@@ -7,6 +7,7 @@ import {
   SUBTITLE_TARGET_CPS,
   SUBTITLE_CEIL_CPS,
 } from '../lib/subtitleConfig';
+import { buildCitekey } from '../lib/citekey';
 
 export interface TranscriptItem {
   text: string;
@@ -886,6 +887,9 @@ function buildYamlFrontmatter(
       : 'YouTube captions';
     lines.push(`transcript_source: "${src}"`);
   }
+  // ADR-111 (Zotero fase 1): a stable citekey so `[@citekey]` works in Obsidian/Pandoc without the
+  // user having to look one up — deterministic from title/channel/publishedAt alone.
+  lines.push(`citekey: "${buildCitekey({ channel: context?.channel, title, publishedAt: context?.publishedAt })}"`);
   lines.push(`created: "${new Date().toISOString().slice(0, 10)}"`);
   lines.push('type: youtube');
   lines.push(tagsLine);
