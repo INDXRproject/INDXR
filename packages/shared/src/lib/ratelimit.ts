@@ -34,13 +34,43 @@ const limiters = {
   free:      makeLimiter(50,  '1 h',  '@upstash/ratelimit:free'),
   login:     makeLimiter(10, '15 m', '@upstash/ratelimit:login'),
   signup:    makeLimiter(5,   '1 h',  '@upstash/ratelimit:signup'),
-  // Free "compare the first minute" preview (product-gaps gat 2 stap 4) — max 5/user/day, keyed
-  // by user id (always called from an authenticated route).
-  previewCompare: makeLimiter(5, '1 d', '@upstash/ratelimit:preview-compare'),
 };
 
 // Export limiters for direct use in actions
 export { limiters };
+
+// Free "compare the first minute" preview (product-gaps gat 2 stap 4) — max 5/user/day, but a
+// FAILED attempt (live found 2026-11-14: YouTube bot-detection on the preview path itself) must
+// not cost the user a slot — a botcheck is retryable within a minute and isn't the user's fault.
+// @upstash/ratelimit's sliding-window limiter always consumes on `.limit()`, so this is a plain
+// manual counter (same fixed-window INCR+EXPIRE-nx shape as backend/ratelimit.py) with the
+// peek/consume split that requires: check remaining WITHOUT incrementing, only INCR after the
+// backend call actually succeeds.
+const PREVIEW_COMPARE_MAX_PER_DAY = 5;
+const PREVIEW_COMPARE_PREFIX = '@upstash/ratelimit:preview-compare';
+let previewCompareRedis: Redis | null = null;
+function getPreviewCompareRedis(): Redis | null {
+  if (!UPSTASH_ENABLED) return null;
+  if (!previewCompareRedis) {
+    previewCompareRedis = new Redis({ url: process.env.UPSTASH_REDIS_REST_URL!, token: process.env.UPSTASH_REDIS_REST_TOKEN! });
+  }
+  return previewCompareRedis;
+}
+
+export async function previewCompareRemaining(userId: string): Promise<number> {
+  const redis = getPreviewCompareRedis();
+  if (!redis) return PREVIEW_COMPARE_MAX_PER_DAY; // no-op fallback for local dev without Upstash
+  const count = Number((await redis.get<number>(`${PREVIEW_COMPARE_PREFIX}:${userId}`)) ?? 0);
+  return Math.max(0, PREVIEW_COMPARE_MAX_PER_DAY - count);
+}
+
+export async function previewCompareConsumeSlot(userId: string): Promise<void> {
+  const redis = getPreviewCompareRedis();
+  if (!redis) return;
+  const key = `${PREVIEW_COMPARE_PREFIX}:${userId}`;
+  const count = await redis.incr(key);
+  if (count === 1) await redis.expire(key, 86400);
+}
 
 // 3. Helper to get Client IP in Vercel/Next.js environment
 export function getClientIp(req: Request): string {

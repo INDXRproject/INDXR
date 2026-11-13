@@ -68,3 +68,43 @@ niet over het netwerk gaat en dus niet op dezelfde manier kan falen.
   en een UI-klik-sessie). Wel geverifieerd: de backend-functie zelf end-to-end 2× live aangeroepen
   (1e `cached: false` incl. echte download+AssemblyAI-call, 2e `cached: true`, 0 nieuwe
   download-/AssemblyAI-logregels), `pnpm build` groen, `check-playlist-invariants.sh` groen.
+
+## Vervolg — hoofdchat-review 14-11 (NU.md item 5+6)
+
+**Item 5 (testsporen):** het settle-/refund-testscript van 13-11 23:44–00:16 draaide tegen
+productie met een los nieuw account (`test-settle-*@example.invalid`) en een nep-playlist
+(`vid0`/`vid1`/`vid2`) — 13 Sentry-meldingen en een "externe" signup die de groeicijfers vervuilde.
+Financieel geen bug: elke reservering in `credit_transactions` heeft een kloppende
+settlement/refund (`reserved = consumed + refunded` klopt op elke rij), en geen ANDER account had
+activiteit in hetzelfde tijdvenster (22:40–00:20, query bevestigd) — dus de ruis is geïsoleerd tot
+dit ene testaccount. Fix: account op `is_internal=true` gezet; LESSONS-regel toegevoegd
+(productietests altijd tegen de vaste e2e-pool, nooit een los nieuw account of verzonnen
+video-id's). Sentry-meldingen zelf op resolved zetten is bij de hoofdchat (Sentry-dashboard-toegang
+hier niet beschikbaar).
+
+**Item 6 (YouTube-botcheck op het voorproefje-pad):**
+- **Meting:** in de laatste 7 dagen (excl. het testaccount) had 0 van de 64 echte AI-transcriptiejobs
+  (51 compleet, 13 fout — 9× `ytdlp_parse`, 4× `proxy_error`) `bot_detection` als foutreden. De
+  botcheck die hoofdchat op het voorproefje-pad zag (Sentry BA/B9, video `0agjc6at75o`, 0 B egress,
+  3 pogingen) is dus geen structureel probleem van het betaalde AI-pad — vermoedelijk opgewekt door
+  de burst aan losse proxy-sessies tijdens het testen zelf (zie ook de bestaande LESSONS-regel over
+  lokale testruns die als bot-gedrag overkomen).
+- **Mislukt voorproefje telt niet meer mee voor de 5/dag.** De oude implementatie consumeerde de
+  Upstash-sliding-window-teller VÓÓR de download-poging (elke poging, geslaagd of niet, kostte een
+  slot). Vervangen door een expliciete peek/consume-splitsing
+  (`previewCompareRemaining`/`previewCompareConsumeSlot`, handmatige INCR+EXPIRE-nx-teller — dezelfde
+  vorm als `backend/ratelimit.py` — want `@upstash/ratelimit`'s sliding-window-limiter heeft geen
+  "peek zonder consumeren"): de route checkt de resterende slots vóór de backend-aanroep, maar
+  verhoogt de teller alleen bij een GESLAAGDE respons. Geverifieerd tegen de echte Upstash-instance:
+  6× INCR+EXPIRE+GET gedraaid, teller 1→6, `remaining` correct 4→0→0 (nooit negatief).
+- **Specifieke foutmelding voor bot-detectie.** `backend/main.py`'s `preview_compare` classificeert
+  de download-fout nu tegen `audio_utils.BOT_BLOCK_KEYWORDS` (dezelfde lijst als het betaalde
+  AI-pad) — een match geeft `503 {code: "bot_detection", message: "YouTube blocked the download
+  this time. Try again in a minute."}`, anders de generieke `502 download_failed`. Geverifieerd: de
+  exacte Sentry-foutregel ("Sign in to confirm you're not a bot…") matcht de classificatie-logica.
+- **Bewijs in de log:** één verse geslaagde aanroep (`yqc9zX04DXs`, `cached: false`, 7 segmenten,
+  7.484.977 bytes download) + de classificatie-test tegen de echte Sentry-tekst (match op "sign in
+  to confirm you're not a bot" → `bot_detection`). Een echte live-reproductie van een MISLUKT
+  voorproefje kon niet op afroep geforceerd worden (YouTube's botcheck is niet deterministisch
+  oproepbaar) — de classificatielogica is dus bewezen tegen de exacte eerder geobserveerde
+  foutregel, niet tegen een nieuwe live-herhaling.

@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@indxr/shared/utils/supabase/server';
-import { limiters } from '@indxr/shared/lib/ratelimit';
+import { previewCompareRemaining, previewCompareConsumeSlot } from '@indxr/shared/lib/ratelimit';
 
 // Free "compare the first minute" preview (product-gaps gat 2 stap 4, akkoord Khidr 12-11) — no
 // credits, no reservation. Captions-only (that's the whole point — showing the AI difference on a
 // captions transcript), video >= 2 min (otherwise the preview is nearly the whole thing), max
 // 5/user/day. Re-fetching an already-compared transcript is a free cache hit (no rate-limit
 // consumption, no backend call) — "a comparison already made for THIS transcript stays openable."
+// A FAILED attempt (e.g. YouTube bot-detection, live found 2026-11-14) does NOT consume a daily
+// slot — the quota check and the quota consumption are deliberately two separate steps.
 
 export const runtime = 'nodejs';
 
@@ -49,8 +51,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'This video is too short for a first-minute preview.' }, { status: 400 });
   }
 
-  const { success } = await limiters.previewCompare.limit(user.id);
-  if (!success) {
+  const remaining = await previewCompareRemaining(user.id);
+  if (remaining <= 0) {
     return NextResponse.json({ error: "You've reached today's preview limit. Try again tomorrow.", code: 'rate_limited' }, { status: 429 });
   }
 
@@ -63,8 +65,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       signal: AbortSignal.timeout(90000),
     });
     if (!res.ok) {
-      const detail = await res.json().catch(() => null);
-      return NextResponse.json({ error: detail?.detail || 'Could not generate the preview.' }, { status: 502 });
+      const body = await res.json().catch(() => null);
+      const detail = body?.detail;
+      const message = (typeof detail === 'object' ? detail?.message : detail) || 'Could not generate the preview.';
+      const code = typeof detail === 'object' ? detail?.code : undefined;
+      // A failed attempt (bot-detection or any other download/transcribe failure) never consumes
+      // a daily slot — only a successful comparison does (see previewCompareConsumeSlot below).
+      return NextResponse.json({ error: message, code }, { status: res.status });
     }
     const body = await res.json();
     aiSegments = body.ai_segments;
@@ -72,6 +79,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'Could not generate the preview.' }, { status: 502 });
   }
 
+  await previewCompareConsumeSlot(user.id);
   await supabase.from('transcripts').update({ preview_ai_segments: aiSegments }).eq('id', id).eq('user_id', user.id);
   await supabase.from('profiles').update({ preview_compare_seen: true }).eq('id', user.id);
 

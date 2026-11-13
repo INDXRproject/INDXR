@@ -107,6 +107,7 @@ from audio_utils import (
     compress_audio_if_needed,
     MembersOnlyVideoError,
     MEMBERS_ONLY_KEYWORDS,
+    BOT_BLOCK_KEYWORDS,
 )
 from credit_manager import (
     check_user_balance,
@@ -866,7 +867,13 @@ async def preview_compare(request: PreviewCompareRequest, _: None = Depends(veri
         raise HTTPException(status_code=422, detail="This video is members-only and can't be previewed.")
     except Exception as e:
         logger.warning(f"[preview-compare] download failed video={request.video_id}: {e}")
-        raise HTTPException(status_code=502, detail="Could not download this video's audio for the preview.")
+        # YouTube bot-detection is retryable within a minute or two (a fresh proxy session usually
+        # clears it) — live-reproduced 2026-11-14 on the preview path itself (Sentry BA/B9). Tell the
+        # caller so the Next.js route can give a "try again" message instead of a dead end.
+        error_str = str(e).lower()
+        if any(kw in error_str for kw in BOT_BLOCK_KEYWORDS):
+            raise HTTPException(status_code=503, detail={"code": "bot_detection", "message": "YouTube blocked the download this time. Try again in a minute."})
+        raise HTTPException(status_code=502, detail={"code": "download_failed", "message": "Could not download this video's audio for the preview."})
 
     try:
         submitted = await asyncio.to_thread(submit_assemblyai, clip_path)
