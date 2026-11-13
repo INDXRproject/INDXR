@@ -62,3 +62,37 @@ twee overal te gebruiken.
   codewijziging.
 - `docs/LESSONS.md`: twee nieuwe regels (versiebeleid-cadans; client-geschiktheid is doel-specifiek,
   niet generiek "werkt/werkt niet").
+
+## Vervolg — format selector audio-only + MB/min-meting (2026-11-12/13)
+
+Na een live proxy-kosten-incident (Dewey `5qYUSUXHYKc`, 31,7/50,9 MB voor 8 min audio — een
+combined video+audio-formaat werd gekozen) is `base_ydl_opts['format']` veranderd van
+`'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/best'` naar
+`'bestaudio[abr<=70]/bestaudio[abr<=128]/bestaudio/bestaudio*'` — de kale `best`-fallback kon een
+gecombineerd formaat opleveren zodra geen enkele `bestaudio`-variant matchte; `bestaudio*` garandeert
+altijd audio-only, ook als abr/codec-metadata ontbreekt. `format_id`/`vcodec`/`acodec`/`abr` worden nu
+per poging gelogd (`[YT-DLP-AUDIO-ATTEMPT]`) plus een WARNING-canary als `vcodec` ooit niet `none` is
+(zou na de fix nooit meer mogen vuren).
+
+**Live gemeten (5 video's, verschillende lengte, via de echte productiefunctie
+`extract_youtube_audio`):**
+
+| Video | Lengte | format_id | MB/min |
+|---|---|---|---|
+| Dewey (`5qYUSUXHYKc`) | 7:47 | — | 0,470 |
+| MMA (`8YvEPC8irZY`) | 15:41 | — | 0,735 |
+| Pharma (`eZBtQ0rDnG4`) | 16:11 | 249 (opus, audio-only) | 0,351 |
+| History (`OcMFwazVJaU`) | 19:24 | — | 0,404 |
+| TED "History of our world" (`yqc9zX04DXs`) | 17:41 | 250 (opus, audio-only) | 0,404 |
+
+Alle 5 onder het doel van ≤1,5 MB/min, alle audio-only.
+
+**Correctie op de eerder gerapporteerde Pharma-meting (1,633 MB/min, 12-11):** drie herhaalruns op
+13-11 met de huidige code geven alle drie exact 0,351 MB/min, telkens in **1 poging** met hetzelfde
+kleine audio-only-formaat (`format_id=249`, 49 kbps opus, 5,67 MB). Er bestaat geen kleiner
+audio-only-formaat op dit moment (bare yt-dlp-defaults bevestigen dezelfde ~5,9 MB-ondergrens via een
+ander format_id). De eerdere 1,633 MB/min was dus geen format-selectie-fout — de meest waarschijnlijke
+verklaring is dat die meting één of meer mislukte pogingen meetelde (partial-download-egress van een
+afgebroken poging telt terecht mee als echte kost, zie `extract_youtube_audio`'s
+`cumulative_bytes`-ontwerp), niet een structureel te-groot gekozen formaat. Geen codewijziging nodig
+voor Pharma specifiek; de bredere format-selector-fix (audio-only garanderen) staat al.
